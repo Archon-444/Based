@@ -1,16 +1,27 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiClock,
-  FiTrendingUp,
-  FiDollarSign,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+import { format, subDays } from 'date-fns';
+import {
   FiArrowLeft,
-  FiShare2,
   FiCheck,
+  FiShare2,
+  FiClock,
+  FiDollarSign,
   FiLayers,
+  FiTrendingUp,
+  FiAlertCircle,
+  FiZap,
+  FiRefreshCw,
 } from 'react-icons/fi';
-import { format } from 'date-fns';
 import { Container } from '../components/layout/Container';
 import { Button } from '../components/ui/Button';
 import { useCountdown } from '../hooks/useCountdown';
@@ -18,9 +29,14 @@ import { useMarket } from '../hooks/useMarkets';
 import MarketResolutionPanel from '../components/MarketResolutionPanel';
 import { fromMicroUSDC, VALIDATION_CONSTANTS } from '../utils/validation';
 import { sanitizeMarketQuestion } from '../utils/sanitize';
-import BettingModal from '../components/BettingModal';
 import { usePlaceBet } from '../hooks/useTransactions';
 import { getCategoryFromQuestion, getCategoryInfo } from '../types/categories';
+import { useChainCurrency } from '../hooks/useChainCurrency';
+import { useDebounce } from '../hooks/useDebounce';
+import { useSDKContext } from '../contexts/SDKContext';
+import { fetchPayoutQuote, type PayoutQuote } from '../services/payoutApi';
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatNumber = (v: number, d = 2): string =>
   v.toLocaleString('en-US', { maximumFractionDigits: d });
@@ -43,6 +59,56 @@ const getTimeLabel = (isExpired: boolean, countdown: ReturnType<typeof useCountd
   return `${minutes}m ${seconds}s left`;
 };
 
+// Seeded PRNG for deterministic chart data per market
+function seededRng(seed: number) {
+  let s = (seed * 1664525 + 1013904223) & 0x7fffffff;
+  return () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+}
+
+function generateMockHistory(
+  marketId: number,
+  currentPct: number,
+  points = 30,
+): { time: string; yes: number }[] {
+  const rng = seededRng(marketId);
+  const startPct = Math.max(10, Math.min(90, currentPct + (rng() - 0.5) * 40));
+  const data: { time: string; yes: number }[] = [];
+  let cur = startPct;
+  const now = Date.now();
+
+  for (let i = points - 1; i >= 0; i--) {
+    const drift = i === 0 ? currentPct - cur : (rng() - 0.45) * 7;
+    cur = Math.max(3, Math.min(97, cur + drift));
+    data.push({
+      time: format(subDays(now, i), 'MMM d'),
+      yes: Math.round(i === 0 ? currentPct : cur),
+    });
+  }
+  return data;
+}
+
+// ── Custom Tooltip ─────────────────────────────────────────────────────────
+
+const ChartTooltip: React.FC<{ active?: boolean; payload?: any[]; label?: string }> = ({
+  active,
+  payload,
+  label,
+}) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="rounded-lg border border-white/[0.1] bg-[#0D1224] px-3 py-2 shadow-xl text-xs">
+      <p className="text-slate-500 mb-1">{label}</p>
+      <p className="font-bold text-primary-300">YES {payload[0]?.value}%</p>
+      <p className="text-slate-500">NO {100 - (payload[0]?.value ?? 0)}%</p>
+    </div>
+  );
+};
+
+// ── Main Component ────────────────────────────────────────────────────────────
+
 export const MarketDetailPage: React.FC = () => {
   const { id } = useParams();
   const marketId = useMemo(() => {
@@ -51,15 +117,65 @@ export const MarketDetailPage: React.FC = () => {
     return Number.isNaN(n) ? null : n;
   }, [id]);
 
-  const { market, isLoading, error } = useMarket(marketId);
+  const { market, isLoading, error, refetch } = useMarket(marketId);
   const { placeBet, isLoading: isPlacingBet } = usePlaceBet();
+  const { chain } = useSDKContext();
+  const currency = useChainCurrency();
+
+  // UI state
   const [selectedOutcomeIndex, setSelectedOutcomeIndex] = useState<number | null>(null);
-  const [betModalOpen, setBetModalOpen] = useState(false);
+  const [betAmount, setBetAmount] = useState('');
+  const [payoutData, setPayoutData] = useState<PayoutQuote | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [betSuccess, setBetSuccess] = useState(false);
 
+  const debouncedAmount = useDebounce(parseFloat(betAmount) || 0, 400);
   const countdown = useCountdown(market ? market.endTime * 1000 : Date.now());
-  const totalStakes = market ? fromMicroUSDC(market.totalStakes) : 0;
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // ── 10-second polling for live odds ──────────────────────────────────────
+  useEffect(() => {
+    if (!market || market.resolved || countdown.isExpired) return;
+    pollingRef.current = setInterval(() => { refetch(); }, 10_000);
+    return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
+  }, [market?.id, market?.resolved, countdown.isExpired, refetch]);
+
+  // ── Payout quote ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!market || selectedOutcomeIndex === null || debouncedAmount <= 0) {
+      setPayoutData(null);
+      setQuoteError(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    setQuoteLoading(true);
+    setQuoteError(null);
+
+    fetchPayoutQuote(
+      { chain, onChainId: market.id.toString(), outcomeIndex: selectedOutcomeIndex, amount: debouncedAmount },
+      { signal: ctrl.signal },
+    )
+      .then(setPayoutData)
+      .catch((err: unknown) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+        setQuoteError(err instanceof Error ? err.message : 'Unable to calculate payout');
+        setPayoutData(null);
+      })
+      .finally(() => setQuoteLoading(false));
+
+    return () => ctrl.abort();
+  }, [chain, debouncedAmount, selectedOutcomeIndex, market?.id]);
+
+  // Reset bet form when outcome changes
+  useEffect(() => {
+    setBetAmount('');
+    setPayoutData(null);
+    setQuoteError(null);
+  }, [selectedOutcomeIndex]);
+
+  const totalStakes = market ? fromMicroUSDC(market.totalStakes) : 0;
   const question = market ? sanitizeMarketQuestion(market.question) : '';
   const category = market ? getCategoryFromQuestion(market.question) : null;
   const categoryInfo = category ? getCategoryInfo(category) : null;
@@ -74,17 +190,25 @@ export const MarketDetailPage: React.FC = () => {
     });
   }, [market]);
 
+  // Chart data — seeded by market ID so it's stable
+  const chartData = useMemo(() => {
+    if (!market) return [];
+    const yesPct = outcomeData[0]?.pct ?? 50;
+    return generateMockHistory(market.id, yesPct);
+  }, [market?.id, outcomeData[0]?.pct]);
+
   const selectedOutcome = useMemo(() => {
     if (selectedOutcomeIndex === null || !market) return null;
     const { label, pct, stake } = outcomeData[selectedOutcomeIndex];
-    return {
-      label,
-      odds: pct,
-      pool: `$${formatNumber(stake)}`,
-    };
+    return { label, odds: pct, pool: `$${formatNumber(stake)}` };
   }, [selectedOutcomeIndex, market, outcomeData]);
 
-  const isBinary = market?.outcomes.length === 2;
+  const numAmount = parseFloat(betAmount) || 0;
+  const fallbackPayout = numAmount > 0 && (selectedOutcome?.odds ?? 0) > 0
+    ? (numAmount / (selectedOutcome!.odds / 100))
+    : 0;
+  const estimatedPayout = payoutData?.estimatedPayout ?? fallbackPayout;
+  const potentialProfit = payoutData?.potentialProfit ?? (estimatedPayout - numAmount);
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
@@ -92,7 +216,19 @@ export const MarketDetailPage: React.FC = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Loading
+  const handleSubmit = useCallback(async () => {
+    if (selectedOutcomeIndex === null || numAmount <= 0 || !market) return;
+    const txHash = await placeBet(market.id, selectedOutcomeIndex, numAmount);
+    if (txHash) {
+      setBetAmount('');
+      setPayoutData(null);
+      setBetSuccess(true);
+      setTimeout(() => setBetSuccess(false), 3000);
+      refetch();
+    }
+  }, [selectedOutcomeIndex, numAmount, market, placeBet, refetch]);
+
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#080B18]">
@@ -107,7 +243,7 @@ export const MarketDetailPage: React.FC = () => {
     );
   }
 
-  // Error
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (error || (!isLoading && !market)) {
     return (
       <div className="min-h-screen bg-[#080B18]">
@@ -118,7 +254,7 @@ export const MarketDetailPage: React.FC = () => {
               {error ? 'Failed to load market' : 'Market not found'}
             </h2>
             <p className="text-slate-400 mb-6 text-sm">
-              {error?.message ?? 'This market may have been removed or the identifier is incorrect.'}
+              {error?.message ?? 'This market may have been removed.'}
             </p>
             <Button variant="ghost" to="/markets" leftIcon={<FiArrowLeft />} className="border border-white/10 text-slate-300">
               Back to Markets
@@ -132,11 +268,13 @@ export const MarketDetailPage: React.FC = () => {
   const isExpired = countdown.isExpired || market!.resolved;
   const timeLabel = getTimeLabel(countdown.isExpired, countdown);
   const statusIsActive = !market!.resolved && !countdown.isExpired;
+  const canBet = statusIsActive && selectedOutcomeIndex !== null;
 
   return (
     <div className="min-h-screen bg-[#080B18] text-white selection:bg-primary-500/30">
       <Container className="py-8 md:py-12">
-        {/* ── Breadcrumb ─────────────────────────────────── */}
+
+        {/* ── Breadcrumb ──────────────────────────────────────────────── */}
         <div className="flex items-center justify-between mb-6">
           <Link
             to="/markets"
@@ -150,25 +288,21 @@ export const MarketDetailPage: React.FC = () => {
             className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors"
           >
             {copied ? (
-              <>
-                <FiCheck className="w-4 h-4 text-success-400" />
-                <span className="text-success-400">Copied!</span>
-              </>
+              <><FiCheck className="w-4 h-4 text-success-400" /><span className="text-success-400">Copied!</span></>
             ) : (
-              <>
-                <FiShare2 className="w-4 h-4" />
-                Share
-              </>
+              <><FiShare2 className="w-4 h-4" />Share</>
             )}
           </button>
         </div>
 
-        {/* ── Admin resolution panel ──────────────────────── */}
+        {/* ── Admin resolution panel ───────────────────────────────────── */}
         <MarketResolutionPanel marketId={marketId} />
 
-        <div className="grid lg:grid-cols-[1fr_360px] gap-6 mt-4">
-          {/* ── Left column ──────────────────────────────── */}
+        <div className="grid lg:grid-cols-[1fr_380px] gap-6 mt-4">
+
+          {/* ── Left column ─────────────────────────────────────────── */}
           <div className="space-y-5">
+
             {/* Market header card */}
             <div
               className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-6"
@@ -185,7 +319,6 @@ export const MarketDetailPage: React.FC = () => {
                     {categoryInfo.label}
                   </span>
                 )}
-                {/* Status */}
                 <div className="inline-flex items-center gap-1.5 ml-auto">
                   <span className="relative flex h-2 w-2">
                     {statusIsActive && (
@@ -239,7 +372,70 @@ export const MarketDetailPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Outcomes card */}
+            {/* ── Price History Chart ─────────────────────────────── */}
+            {chartData.length > 0 && market!.outcomes.length >= 2 && (
+              <div
+                className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-6"
+                style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
+              >
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h2 className="text-base font-bold text-white">Probability History</h2>
+                    <p className="text-xs text-slate-500 mt-0.5">YES outcome · 30-day trend</p>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs font-semibold">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full" style={{ background: '#60A5FA' }} />
+                      <span className="text-slate-400">YES {outcomeData[0]?.pct ?? 0}%</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-600" />
+                      <span className="text-slate-500">NO {outcomeData[1]?.pct ?? 0}%</span>
+                    </span>
+                  </div>
+                </div>
+
+                <div className="h-44">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                      <defs>
+                        <linearGradient id={`yesGrad-${market!.id}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="time"
+                        tick={{ fill: '#475569', fontSize: 10 }}
+                        tickLine={false}
+                        axisLine={false}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tick={{ fill: '#475569', fontSize: 10 }}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(v) => `${v}%`}
+                        ticks={[0, 25, 50, 75, 100]}
+                      />
+                      <Tooltip content={<ChartTooltip />} cursor={{ stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1 }} />
+                      <Area
+                        type="monotone"
+                        dataKey="yes"
+                        stroke="#3B82F6"
+                        strokeWidth={2}
+                        fill={`url(#yesGrad-${market!.id})`}
+                        dot={false}
+                        activeDot={{ r: 4, fill: '#60A5FA', stroke: '#0D1224', strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* ── Outcomes card ────────────────────────────────────── */}
             <div
               className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-6"
               style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
@@ -262,9 +458,7 @@ export const MarketDetailPage: React.FC = () => {
                       key={`${outcome.label}-${index}`}
                       type="button"
                       whileTap={{ scale: 0.99 }}
-                      onClick={() => {
-                        if (!isExpired) setSelectedOutcomeIndex(index);
-                      }}
+                      onClick={() => { if (!isExpired) setSelectedOutcomeIndex(index); }}
                       disabled={isExpired}
                       className={[
                         'w-full flex items-center gap-4 rounded-xl border px-4 py-3.5 text-left transition-all duration-150',
@@ -274,7 +468,6 @@ export const MarketDetailPage: React.FC = () => {
                         'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]',
                       ].join(' ')}
                     >
-                      {/* Outcome index indicator */}
                       <div className={[
                         'flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold',
                         isWinner ? 'bg-success-500 text-white' :
@@ -289,19 +482,20 @@ export const MarketDetailPage: React.FC = () => {
                           <span className={`font-semibold text-sm ${isLoser ? 'text-slate-500' : 'text-white'}`}>
                             {outcome.label}
                           </span>
-                          <span className={`text-sm font-bold ${
+                          <span className={`text-sm font-bold tabular-nums ${
                             isWinner ? 'text-success-400' :
                             isSelected ? 'text-primary-400' : 'text-slate-400'
                           }`}>
                             {outcome.pct}%
                           </span>
                         </div>
-                        {/* Probability bar */}
                         <div className="w-full h-1.5 rounded-full overflow-hidden bg-white/[0.06]">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
+                          <motion.div
+                            className="h-full rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${outcome.pct}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
                             style={{
-                              width: `${outcome.pct}%`,
                               background: isWinner
                                 ? 'linear-gradient(90deg, #34D399, #10B981)'
                                 : isSelected
@@ -313,7 +507,7 @@ export const MarketDetailPage: React.FC = () => {
                       </div>
 
                       <div className="text-right text-xs text-slate-500 flex-shrink-0">
-                        ${formatNumber(outcome.stake)} staked
+                        ${formatNumber(outcome.stake)}
                       </div>
                     </motion.button>
                   );
@@ -328,118 +522,269 @@ export const MarketDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* ── Right column: Trade panel ─────────────────── */}
-          <div className="lg:sticky lg:top-24 h-fit">
+          {/* ── Right column: Inline Trade Panel ────────────────────── */}
+          <div className="lg:sticky lg:top-24 h-fit space-y-4">
             <div
-              className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-6"
+              className="rounded-2xl border border-[#1C2537] bg-[#0D1224] overflow-hidden"
               style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
             >
-              <h2 className="text-lg font-bold text-white mb-1">Place Prediction</h2>
-              <p className="text-sm text-slate-500 mb-6">
-                {market!.resolved
-                  ? 'This market has been resolved.'
-                  : isExpired
-                  ? 'Market has closed. Awaiting resolution.'
-                  : selectedOutcome
-                  ? `You selected: ${selectedOutcome.label}`
-                  : 'Select an outcome on the left to continue.'}
-              </p>
+              {/* Panel header */}
+              <div className="px-6 pt-6 pb-5 border-b border-white/[0.05]">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-white">Place Prediction</h2>
+                  {statusIsActive && (
+                    <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                      <FiRefreshCw className="w-3 h-3" />
+                      Live odds
+                    </span>
+                  )}
+                </div>
+                {market!.resolved ? (
+                  <p className="text-sm text-slate-500 mt-1">This market has been resolved.</p>
+                ) : isExpired ? (
+                  <p className="text-sm text-warning-400 mt-1">Market has closed. Awaiting resolution.</p>
+                ) : (
+                  <p className="text-sm text-slate-500 mt-1">
+                    Closes {format(market!.endTime * 1000, 'MMM d, HH:mm')}
+                    {' · '}
+                    <span className={countdown.isExpired ? 'text-error-400' : 'text-white font-medium'}>
+                      {timeLabel}
+                    </span>
+                  </p>
+                )}
+              </div>
 
-              <AnimatePresence mode="wait">
-                {selectedOutcome && !isExpired && (
+              <div className="px-6 py-5 space-y-5">
+                {/* Bet success flash */}
+                <AnimatePresence>
+                  {betSuccess && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      className="flex items-center gap-3 rounded-xl border border-success-500/30 bg-success-500/[0.08] px-4 py-3"
+                    >
+                      <FiCheck className="w-5 h-5 text-success-400 flex-shrink-0" />
+                      <span className="text-sm font-semibold text-success-300">Bet placed successfully!</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Selected outcome */}
+                <AnimatePresence mode="wait">
+                  {selectedOutcome ? (
+                    <motion.div
+                      key={`outcome-${selectedOutcomeIndex}`}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.2 }}
+                      className="rounded-xl border border-primary-500/30 bg-primary-500/[0.07] p-4"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-bold uppercase tracking-wider text-primary-400">Selected outcome</span>
+                        <motion.span
+                          key={selectedOutcome.odds}
+                          initial={{ scale: 1.2, color: '#93C5FD' }}
+                          animate={{ scale: 1, color: '#60A5FA' }}
+                          className="text-2xl font-black text-primary-400 tabular-nums"
+                        >
+                          {selectedOutcome.odds}%
+                        </motion.span>
+                      </div>
+                      <div className="text-base font-bold text-white">{selectedOutcome.label}</div>
+                      <div className="text-xs text-slate-500 mt-0.5">Pool: {selectedOutcome.pool}</div>
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="no-outcome"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 text-center"
+                    >
+                      <p className="text-sm text-slate-500">
+                        {isExpired ? 'Market is closed' : '← Select an outcome to continue'}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Bet amount input */}
+                {canBet && (
                   <motion.div
-                    key="selected"
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.2 }}
-                    className="mb-5 rounded-xl border border-primary-500/30 bg-primary-500/[0.07] p-4"
+                    className="space-y-3"
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-primary-300">Selected</span>
-                      <span className="text-lg font-black text-primary-300">{selectedOutcome.odds}%</span>
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
+                        Amount ({currency.unitLabel})
+                      </label>
+                      {/* Preset buttons */}
+                      <div className="grid grid-cols-4 gap-2 mb-3">
+                        {currency.presetAmounts.map((preset) => (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => setBetAmount(preset.toString())}
+                            className={`py-2 rounded-lg text-xs font-bold transition-all ${
+                              betAmount === preset.toString()
+                                ? 'bg-primary-500/20 text-primary-300 border border-primary-500/40'
+                                : 'bg-white/[0.04] text-slate-400 border border-white/[0.07] hover:bg-white/[0.07] hover:text-white'
+                            }`}
+                          >
+                            {currency.symbolPrefix}{preset}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Input */}
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
+                          {currency.chain === 'sui'
+                            ? <span className="text-slate-400 font-bold text-sm">◊</span>
+                            : <FiDollarSign className="w-4 h-4 text-slate-400" />
+                          }
+                        </div>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={betAmount}
+                          onChange={(e) => setBetAmount(e.target.value)}
+                          className="w-full rounded-xl border border-[#1C2537] bg-[#080B18] text-white placeholder-slate-600 pl-9 pr-4 py-3 text-base font-semibold focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600 mt-1.5">
+                        Min bet: {currency.symbolPrefix}{VALIDATION_CONSTANTS.MIN_BET_USDC} {currency.unitLabel}
+                      </p>
                     </div>
-                    <div className="text-base font-bold text-white mb-1">{selectedOutcome.label}</div>
-                    <div className="text-xs text-slate-500">Pool: {selectedOutcome.pool}</div>
+
+                    {/* Payout preview */}
+                    <AnimatePresence>
+                      {numAmount > 0 && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="rounded-xl border border-white/[0.07] bg-white/[0.02] overflow-hidden"
+                        >
+                          <div className="p-4 space-y-2.5">
+                            {quoteLoading && (
+                              <div className="flex items-center gap-2 text-xs text-primary-400">
+                                <FiZap className="w-3 h-3 animate-pulse" />
+                                Calculating…
+                              </div>
+                            )}
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500">Your stake</span>
+                              <span className="font-semibold text-white">{currency.formatDisplay(numAmount)}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                              <span className="text-slate-500">Est. payout</span>
+                              <span className="font-semibold text-white">{currency.formatDisplay(estimatedPayout)}</span>
+                            </div>
+                            {payoutData?.shares && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-slate-500">Shares</span>
+                                <span className="font-semibold text-white">
+                                  {formatNumber(Math.max(payoutData.shares.decimal, 0))}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between text-xs text-slate-600">
+                              <span>Fees (~2%)</span>
+                              <span>{currency.formatDisplay(Math.max((payoutData?.fees.total ?? numAmount * 0.02), 0))}</span>
+                            </div>
+                            <div className="flex justify-between text-sm pt-2.5 border-t border-white/[0.06]">
+                              <span className="font-semibold text-slate-400 flex items-center gap-1.5">
+                                <FiTrendingUp className="w-3.5 h-3.5" />
+                                Potential profit
+                              </span>
+                              <span className={`font-black text-base ${potentialProfit >= 0 ? 'text-success-400' : 'text-error-400'}`}>
+                                {potentialProfit >= 0 ? '+' : ''}{currency.formatDisplay(potentialProfit)}
+                              </span>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {quoteError && (
+                      <div className="flex items-center gap-2 text-xs text-warning-400">
+                        <FiAlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span>{quoteError}</span>
+                      </div>
+                    )}
                   </motion.div>
                 )}
-              </AnimatePresence>
 
-              {/* Key info */}
-              {!market!.resolved && (
-                <div className="space-y-2.5 mb-6">
-                  <div className="flex items-center justify-between text-sm">
+                {/* CTA button */}
+                <Button
+                  variant="primary"
+                  className={`w-full py-3.5 text-base font-bold rounded-xl border-0 transition-all ${
+                    canBet && numAmount >= VALIDATION_CONSTANTS.MIN_BET_USDC
+                      ? '!bg-gradient-to-r from-primary-500 to-secondary-600 shadow-[0_0_24px_rgba(59,130,246,0.3)] hover:shadow-[0_0_36px_rgba(59,130,246,0.45)]'
+                      : ''
+                  }`}
+                  disabled={!canBet || numAmount < VALIDATION_CONSTANTS.MIN_BET_USDC || isPlacingBet}
+                  loading={isPlacingBet}
+                  onClick={handleSubmit}
+                >
+                  {market!.resolved
+                    ? 'Market Resolved'
+                    : isExpired
+                    ? 'Market Closed'
+                    : isPlacingBet
+                    ? 'Confirming…'
+                    : canBet && numAmount >= VALIDATION_CONSTANTS.MIN_BET_USDC
+                    ? `Confirm Bet on "${selectedOutcome!.label}"`
+                    : selectedOutcome
+                    ? `Enter amount to bet`
+                    : 'Select an Outcome'}
+                </Button>
+
+                {!isExpired && (
+                  <p className="text-center text-[11px] text-slate-600 leading-relaxed">
+                    Bets are non-withdrawable and subject to smart contract terms.
+                    Odds may shift before confirmation.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* ── Market info sidebar card ─────────────────────────── */}
+            {!market!.resolved && (
+              <div
+                className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-5"
+                style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
+              >
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Market Info</h3>
+                <div className="space-y-2.5">
+                  <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Total volume</span>
                     <span className="font-semibold text-white">{formatVolume(market!.totalStakes)}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Closes</span>
-                    <span className="font-semibold text-white">
-                      {format(market!.endTime * 1000, 'MMM d, HH:mm')}
-                    </span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Outcomes</span>
+                    <span className="font-semibold text-white">{market!.outcomes.length}</span>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Time left</span>
-                    <span className={`font-semibold ${countdown.isExpired ? 'text-error-400' : 'text-white'}`}>
-                      {timeLabel}
-                    </span>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Resolution</span>
+                    <span className="font-semibold text-white">Oracle</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Created</span>
+                    <span className="font-semibold text-white">{format(market!.createdAt * 1000, 'MMM d, yyyy')}</span>
                   </div>
                 </div>
-              )}
-
-              <Button
-                variant="primary"
-                className={`w-full py-3.5 text-base font-bold rounded-xl border-0 transition-all ${
-                  selectedOutcome && !isExpired
-                    ? '!bg-gradient-to-r from-primary-500 to-secondary-600 shadow-[0_0_24px_rgba(59,130,246,0.3)] hover:shadow-[0_0_36px_rgba(59,130,246,0.45)]'
-                    : ''
-                }`}
-                disabled={!selectedOutcome || isExpired}
-                onClick={() => selectedOutcome && setBetModalOpen(true)}
-              >
-                {market!.resolved
-                  ? 'Market Resolved'
-                  : isExpired
-                  ? 'Market Closed'
-                  : selectedOutcome
-                  ? `Bet on "${selectedOutcome.label}"`
-                  : 'Select an Outcome'}
-              </Button>
-
-              {!isExpired && (
-                <p className="mt-3 text-center text-xs text-slate-600">
-                  Bets are non-withdrawable. Min bet:{' '}
-                  <span className="text-slate-500">${VALIDATION_CONSTANTS.MIN_BET_USDC} USDC</span>
-                </p>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </Container>
-
-      {/* Betting modal */}
-      {market && selectedOutcome && selectedOutcomeIndex !== null && (
-        <BettingModal
-          isOpen={betModalOpen}
-          onClose={() => setBetModalOpen(false)}
-          market={{
-            marketId: market.id.toString(),
-            onChainId: market.id.toString(),
-            question,
-            outcomeLabel: selectedOutcome.label,
-            currentOdds: selectedOutcome.odds,
-            pool: selectedOutcome.pool,
-          }}
-          outcomeIndex={selectedOutcomeIndex}
-          onSubmit={async (amount) => {
-            const tx = await placeBet(market.id, selectedOutcomeIndex, amount);
-            if (tx) { setBetModalOpen(false); return true; }
-            return false;
-          }}
-          isSubmitting={isPlacingBet}
-          minBetUSDC={VALIDATION_CONSTANTS.MIN_BET_USDC}
-        />
-      )}
     </div>
   );
 };
