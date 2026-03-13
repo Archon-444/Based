@@ -33,7 +33,7 @@ Move Market remains a work-in-progress. The foundational pieces for both Aptos a
 | Aptos contracts | ~60% | ~35% | Betting lifecycle works locally; safety gaps + USDC missing. |
 | Sui contracts | ~45% | ~25% | Shared-object pools in place; requires USDC path, queue validation, full QA. |
 | Backend (Express/Prisma) | ~55% | ~30% | REST endpoints exist; chain-aware logic & RBAC incomplete. |
-| Frontend (React/Vite) | ~60% | ~35% | Markets, betting modal, wallet UX function; create/resolve & payouts incomplete. |
+| Frontend (React/Vite) | ~70% | ~50% | Deployed to Vercel! Markets, betting modal, wallet UX function; create/resolve & payouts need backend parity. |
 | Ops/Security | ~30% | ~15% | Draft runbooks and monitoring manifests; nothing deployed or tested. |
 
 ---
@@ -55,7 +55,7 @@ See [`docs/DUAL_CHAIN_GAP_CHECKLIST.md`](docs/DUAL_CHAIN_GAP_CHECKLIST.md) for a
 
 - **Contracts:** `contracts/` (Aptos) and `contracts-sui/` (Sui) contain market manager, collateral vault, oracle, and RBAC modules. Safety checks + USDC upgrades required.
 - **Backend:** `backend/` Express service with Prisma, rate limiting stubs, and chain-aware controllers. Needs payout parity, Sui object hydration, and monitoring.
-- **Frontend:** `dapp/` React app with wallet adapters, market views, and betting UI. Requires create/resolve completion, payout alerts, and admin gating.
+- **Frontend:** `dapp/` React app deployed to Vercel with wallet adapters, market views, and betting UI. Requires create/resolve completion, payout alerts, and admin gating.
 - **Docs & Ops:** Architecture notes, audit report (Oct 2025), runbooks, and monitoring manifests drafted—must be validated via real exercises.
 
 ---
