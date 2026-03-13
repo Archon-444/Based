@@ -8,15 +8,18 @@
   body {
     @apply bg-gray-50 text-gray-900 font-sans antialiased transition-colors duration-200;
     font-feature-settings: 'rlig' 1, 'calt' 1;
-  }
-
-  .dark body {
     background-color: #0A0E27;
     color: #E5E7EB;
   }
 
+  /* Force dark mode by default for premium feel */
+  html {
+    color-scheme: dark;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -63,21 +66,22 @@
 
   /* Card Styles */
   .card {
-    @apply bg-white rounded-xl shadow-card border border-gray-200;
-    @apply transition-all duration-200;
-  }
-
-  .dark .card {
-    background-color: #141B3D;
-    border-color: #1F2847;
+    @apply rounded-xl shadow-card border transition-all duration-300;
+    background: rgba(20, 27, 61, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-color: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   }
 
   .card-hover {
-    @apply card hover:shadow-card-hover hover:border-primary-200;
+    @apply card;
   }
 
-  .dark .card-hover:hover {
-    border-color: #00D4FF;
+  .card-hover:hover {
+    border-color: rgba(0, 212, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px 0 rgba(0, 212, 255, 0.1);
   }
 
   /* Input Styles */

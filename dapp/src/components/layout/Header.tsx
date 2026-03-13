@@ -106,6 +106,7 @@ export const Header: React.FC = () => {
 
   const navItems = [
     { label: 'Markets', href: '/markets' },
+    { label: 'Oracle', href: '/oracle' },
     { label: 'Leaderboard', href: '/leaderboard' },
     { label: 'Create', href: '/create' },
     { label: 'My Bets', href: '/dashboard' },
@@ -122,26 +123,25 @@ export const Header: React.FC = () => {
       return (
         <button
           onClick={() => setWalletModalOpen(true)}
-          className={`group inline-flex items-center gap-3 rounded-full border border-gray-200/70 dark:border-gray-700/70 bg-white/90 dark:bg-gray-800/80 px-4 py-2 transition-all hover:border-primary-400/70 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900 ${
-            context === 'mobile' ? 'w-full justify-between' : ''
-          }`}
+          className={`group inline-flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-4 py-2 transition-all hover:bg-white/10 hover:shadow-[0_0_15px_rgba(0,212,255,0.2)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 ${context === 'mobile' ? 'w-full justify-between' : ''
+            }`}
         >
           <div className="flex items-center gap-3">
             <div className="flex flex-col text-left leading-tight">
-              <span className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+              <span className="text-[11px] uppercase tracking-wide text-gray-400">
                 {currency.unitLabel}
               </span>
-              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+              <span className="text-sm font-bold text-white">
                 {balanceLoading ? '...' : formatted}
               </span>
             </div>
             {account?.address && (
-              <span className="rounded-full bg-gray-100 dark:bg-gray-700 px-2 py-1 text-[11px] font-mono text-gray-600 dark:text-gray-300">
+              <span className="rounded-lg bg-black/30 px-2 py-1 text-[11px] font-mono text-gray-300 border border-white/5">
                 {account.address.slice(0, 6)}…{account.address.slice(-4)}
               </span>
             )}
           </div>
-          <span className="hidden items-center text-xs font-medium text-primary-500 group-hover:translate-x-0.5 transition md:inline-flex">
+          <span className="hidden items-center text-xs font-medium text-primary-400 group-hover:text-primary-300 transition md:inline-flex">
             Manage
             <FiMenu className="ml-1 h-3.5 w-3.5" />
           </span>
@@ -175,21 +175,21 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-30 bg-white/95 dark:bg-gray-950/90 backdrop-blur-xl border-b border-gray-200/70 dark:border-gray-800/70 transition-colors">
+      <header className="sticky top-0 z-30 bg-[#0A0E27]/80 backdrop-blur-xl border-b border-white/5 transition-colors">
         <Container>
           <div className="flex flex-col gap-4 py-4">
             {wusdcWarning.shouldShow && (
-              <div className="flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50/90 px-4 py-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-100">
+              <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
                 <FiAlertCircle className="mt-1 h-4 w-4 flex-shrink-0" aria-hidden="true" />
                 <div className="space-y-1">
                   <p className="font-semibold">
                     Bridged wUSDC detected. Native Circle USDC is required on Sui.
                   </p>
-                  <p>
+                  <p className="opacity-80">
                     You currently hold approximately {wusdcWarning.balanceFormatted} wUSDC. Please migrate to native USDC using Circle&rsquo;s guide before trading.
                   </p>
                   <a
-                    className="inline-flex items-center gap-1 font-medium text-amber-900 underline decoration-amber-500 hover:opacity-90 dark:text-amber-100"
+                    className="inline-flex items-center gap-1 font-medium text-amber-300 hover:text-amber-200 transition-colors"
                     href={wusdcWarning.migrationUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -203,25 +203,24 @@ export const Header: React.FC = () => {
             <div className="flex items-center justify-between gap-3">
               {/* Logo */}
               <Link to="/" className="flex items-center gap-3 group">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/20 transition-transform group-hover:-translate-y-0.5">
+                <div className="w-10 h-10 bg-gradient-to-br from-[#00D4FF] to-[#6B4CE6] rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(0,212,255,0.3)] transition-all group-hover:shadow-[0_0_25px_rgba(0,212,255,0.5)] group-hover:-translate-y-0.5">
                   <FiTrendingUp className="w-6 h-6 text-white" />
                 </div>
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-lg font-display font-bold text-gray-900 dark:text-white">
-                    Move Market
+                  <span className="text-xl font-display font-bold text-white tracking-tight">
+                    MoveMarket
                   </span>
-                  <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Multi-chain prediction markets
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#00D4FF]">
+                    Prediction Protocol
                   </span>
                 </div>
               </Link>
 
               <div className="flex items-center gap-2">
                 <ChainSwitcher />
-                <ThemeToggle />
                 <div className="hidden md:flex items-center gap-2">
                   {connected && (
-                    <Button variant="ghost" size="sm" onClick={handleDisconnect} className="text-sm">
+                    <Button variant="ghost" size="sm" onClick={handleDisconnect} className="text-sm text-gray-400 hover:text-white">
                       Disconnect
                     </Button>
                   )}
@@ -229,37 +228,37 @@ export const Header: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden inline-flex items-center justify-center rounded-full border border-gray-200 dark:border-gray-700 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-900"
+                  className="md:hidden inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 p-2 hover:bg-white/10 transition-colors focus:outline-none"
                   aria-label="Toggle menu"
                   aria-expanded={mobileMenuOpen}
                   aria-controls="mobile-navigation"
                 >
                   {mobileMenuOpen ? (
-                    <FiX className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <FiX className="w-5 h-5 text-white" />
                   ) : (
-                    <FiMenu className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                    <FiMenu className="w-5 h-5 text-white" />
                   )}
                 </button>
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-between gap-4 rounded-2xl border border-gray-200/80 dark:border-gray-800/80 bg-gray-50/70 dark:bg-gray-800/40 px-5 py-3">
-              <nav className="flex items-center gap-4">
+            <div className="hidden md:flex items-center justify-between gap-4 rounded-xl border border-white/5 bg-[#141B3D]/50 px-5 py-3 backdrop-blur-md">
+              <nav className="flex items-center gap-1">
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
                     to={item.href}
-                    className="rounded-full px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 transition-colors hover:text-primary-500 dark:hover:text-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-100 dark:focus-visible:ring-offset-gray-900"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-gray-300 transition-all hover:text-white hover:bg-white/5"
                   >
                     {item.label}
                   </Link>
                 ))}
               </nav>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" to="/leaderboard">
-                  View Leaderboard
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" to="/leaderboard" className="border-white/10 text-gray-300 hover:bg-white/10">
+                  Leaderboard
                 </Button>
-                <Button variant="primary" size="sm" to="/create">
+                <Button variant="primary" size="sm" to="/create" className="bg-gradient-to-r from-[#00D4FF] to-[#6B4CE6] border-none shadow-[0_0_15px_rgba(0,212,255,0.3)] hover:shadow-[0_0_25px_rgba(0,212,255,0.5)]">
                   Create Market
                 </Button>
               </div>

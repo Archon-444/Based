@@ -43,6 +43,7 @@ const ColorTestPage = lazy(() => import('./pages/ColorTestPage'));
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const TikiDemo = lazy(() => import('./pages/TikiDemo'));
+const OracleDashboardPage = lazy(() => import('./pages/OracleDashboardPage'));
 
 // Loading fallback component
 function LoadingFallback() {
@@ -87,157 +88,165 @@ function App() {
                     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0A0E27] transition-colors pb-16 md:pb-0">
                       <Header />
                       <main className="flex-1">
-                      <Suspense fallback={<LoadingFallback />}>
-                        <AnimatePresence mode="wait">
-                          <Routes>
-                        <Route
-                          path="/"
-                          element={
-                            <PageTransition>
-                              <LandingPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/markets"
-                          element={
-                            <PageTransition>
-                              <MarketsPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/market/:id"
-                          element={
-                            <PageTransition>
-                              <MarketDetailPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/create"
-                          element={
-                            <PageTransition>
-                              <CreateMarketPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/admin/suggestions"
-                          element={
-                            <PageTransition>
-                              <AdminSuggestionsPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/admin/roles"
-                          element={
-                            <PageTransition>
-                              <AdminRolesPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/admin/resolver"
-                          element={
-                            <PageTransition>
-                              <AdminResolverPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/dao"
-                          element={
-                            <PageTransition>
-                              <DaoOverviewPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/color-test"
-                          element={
-                            <PageTransition>
-                              <ColorTestPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/tiki-demo"
-                          element={
-                            <PageTransition>
-                              <TikiDemo />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/dashboard"
-                          element={
-                            <PageTransition>
-                              <DashboardPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/leaderboard"
-                          element={
-                            <PageTransition>
-                              <LeaderboardPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/how-it-works"
-                          element={
-                            <PageTransition>
-                              <HowItWorksPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/docs/developer"
-                          element={
-                            <PageTransition>
-                              <DeveloperDocsPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/faq"
-                          element={
-                            <PageTransition>
-                              <FAQPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/privacy"
-                          element={
-                            <PageTransition>
-                              <PrivacyPolicyPage />
-                            </PageTransition>
-                          }
-                        />
-                        <Route
-                          path="/terms"
-                          element={
-                            <PageTransition>
-                              <TermsOfServicePage />
-                            </PageTransition>
-                          }
-                        />
-                          </Routes>
-                        </AnimatePresence>
+                        <Suspense fallback={<LoadingFallback />}>
+                          <AnimatePresence mode="wait">
+                            <Routes>
+                              <Route
+                                path="/"
+                                element={
+                                  <PageTransition>
+                                    <LandingPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/markets"
+                                element={
+                                  <PageTransition>
+                                    <MarketsPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/market/:id"
+                                element={
+                                  <PageTransition>
+                                    <MarketDetailPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/create"
+                                element={
+                                  <PageTransition>
+                                    <CreateMarketPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/admin/suggestions"
+                                element={
+                                  <PageTransition>
+                                    <AdminSuggestionsPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/admin/roles"
+                                element={
+                                  <PageTransition>
+                                    <AdminRolesPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/admin/resolver"
+                                element={
+                                  <PageTransition>
+                                    <AdminResolverPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/dao"
+                                element={
+                                  <PageTransition>
+                                    <DaoOverviewPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/color-test"
+                                element={
+                                  <PageTransition>
+                                    <ColorTestPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/tiki-demo"
+                                element={
+                                  <PageTransition>
+                                    <TikiDemo />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/dashboard"
+                                element={
+                                  <PageTransition>
+                                    <DashboardPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/leaderboard"
+                                element={
+                                  <PageTransition>
+                                    <LeaderboardPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/how-it-works"
+                                element={
+                                  <PageTransition>
+                                    <HowItWorksPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/docs/developer"
+                                element={
+                                  <PageTransition>
+                                    <DeveloperDocsPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/faq"
+                                element={
+                                  <PageTransition>
+                                    <FAQPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/privacy"
+                                element={
+                                  <PageTransition>
+                                    <PrivacyPolicyPage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/terms"
+                                element={
+                                  <PageTransition>
+                                    <TermsOfServicePage />
+                                  </PageTransition>
+                                }
+                              />
+                              <Route
+                                path="/oracle"
+                                element={
+                                  <PageTransition>
+                                    <OracleDashboardPage />
+                                  </PageTransition>
+                                }
+                              />
+                            </Routes>
+                          </AnimatePresence>
+                        </Suspense>
+                      </main>
+                      <Footer />
+                      <MobileBottomNav />
+                      <Suspense fallback={null}>
+                        <PWAInstallPrompt />
+                        <NotificationPrompt />
+                        <BiometricPrompt />
                       </Suspense>
-                    </main>
-                    <Footer />
-                    <MobileBottomNav />
-                    <Suspense fallback={null}>
-                      <PWAInstallPrompt />
-                      <NotificationPrompt />
-                      <BiometricPrompt />
-                    </Suspense>
-                  </div>
+                    </div>
                   </Router>
                 </SDKProvider>
               </SuiWalletProvider>

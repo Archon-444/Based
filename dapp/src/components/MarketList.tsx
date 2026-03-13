@@ -24,7 +24,7 @@ const MarketList: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Get market count
       const moduleAddress = env.aptosModuleAddress;
       const aptos = await getClient();
@@ -71,7 +71,7 @@ const MarketList: React.FC = () => {
           })
         );
       }
-      
+
       const marketData = await Promise.all(marketPromises);
       setMarkets(marketData);
     } catch (err) {
@@ -94,18 +94,19 @@ const MarketList: React.FC = () => {
   const getTimeRemaining = (endTime: number) => {
     const now = Math.floor(Date.now() / 1000);
     const remaining = endTime - now;
-    
+
     if (remaining <= 0) return 'Expired';
-    
+
     const hours = Math.floor(remaining / 3600);
     const minutes = Math.floor((remaining % 3600) / 60);
-    
+
     return `${hours}h ${minutes}m`;
   };
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
+      <div className="flex flex-col items-center justify-center p-12 text-gray-400">
+        <div className="w-8 h-8 rounded-full border-t-2 border-r-2 border-[#00D4FF] animate-spin mb-4"></div>
         <p>Loading markets...</p>
       </div>
     );
@@ -113,19 +114,11 @@ const MarketList: React.FC = () => {
 
   if (error) {
     return (
-      <div style={{ textAlign: 'center', padding: '2rem' }}>
-        <p style={{ color: '#dc3545' }}>{error}</p>
-        <button 
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-error-500/10 border border-error-500/20 rounded-2xl">
+        <p className="text-error-400 mb-4">{error}</p>
+        <button
           onClick={loadMarkets}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: 'pointer',
-            marginTop: '1rem'
-          }}
+          className="px-4 py-2 bg-error-500/20 text-error-400 border border-error-500/30 rounded-lg hover:bg-error-500/30 transition-colors"
         >
           Retry
         </button>
@@ -135,115 +128,85 @@ const MarketList: React.FC = () => {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h2 style={{ fontSize: '1.5rem', margin: 0 }}>Prediction Markets</h2>
-        <button 
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-display font-bold text-white">Prediction Markets</h2>
+        <button
           onClick={loadMarkets}
-          style={{
-            padding: '0.5rem 1rem',
-            backgroundColor: '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '0.375rem',
-            cursor: 'pointer'
-          }}
+          className="px-4 py-2 bg-white/5 border border-white/10 text-gray-300 rounded-lg hover:bg-white/10 hover:text-white transition-all shadow-sm"
         >
           Refresh
         </button>
       </div>
 
       {markets.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+        <div className="text-center p-12 text-gray-500 bg-white/5 border border-white/10 rounded-2xl">
           <p>No markets found. Create the first market!</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1.5rem' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {markets.map((market) => (
             <div
               key={market.id}
-              style={{
-                border: '1px solid #e0e0e0',
-                borderRadius: '0.5rem',
-                padding: '1.5rem',
-                backgroundColor: '#fff',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-              }}
+              className="card-hover relative overflow-hidden bg-[#141B3D]/70 p-6 flex flex-col justify-between h-full"
             >
-              <div style={{ marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.25rem', margin: '0 0 0.5rem 0' }}>
+              {/* Optional: Cyberpunk accent line */}
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#00D4FF] to-[#6B4CE6] opacity-50"></div>
+
+              <div className="mb-4">
+                <div className="flex justify-between items-start mb-3">
+                  <span className="text-xs font-mono text-gray-400 bg-black/30 px-2 py-0.5 rounded border border-white/5">
+                    ID: {market.id}
+                  </span>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${market.resolved ? 'bg-success-500/20 text-success-400' : 'bg-primary-500/20 text-primary-400'}`}>
+                    {market.resolved ? 'Resolved' : getTimeRemaining(market.endTime)}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white leading-snug mb-2">
                   {market.question}
                 </h3>
-                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.875rem', color: '#666' }}>
-                  <span>ID: {market.id}</span>
-                  <span>Ends: {formatTime(market.endTime)}</span>
-                  <span>Status: {market.resolved ? 'Resolved' : getTimeRemaining(market.endTime)}</span>
+                <div className="text-sm text-gray-500">
+                  Ends: {formatTime(market.endTime)}
                 </div>
               </div>
 
-              <div style={{ marginBottom: '1rem' }}>
-                <h4 style={{ fontSize: '1rem', margin: '0 0 0.5rem 0' }}>Outcomes:</h4>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                  {market.outcomes.map((outcome, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        padding: '0.5rem 1rem',
-                        backgroundColor: market.resolved && market.winningOutcome === index 
-                          ? '#d4edda' 
-                          : '#f8f9fa',
-                        border: market.resolved && market.winningOutcome === index 
-                          ? '1px solid #c3e6cb' 
-                          : '1px solid #dee2e6',
-                        borderRadius: '0.25rem',
-                        fontSize: '0.875rem'
-                      }}
-                    >
-                      {outcome} ({market.outcomeStakes[index]} APT)
-                    </div>
-                  ))}
+              <div className="mb-6 mt-4">
+                <div className="flex flex-col gap-2">
+                  {market.outcomes.map((outcome, index) => {
+                    const isWinner = market.resolved && market.winningOutcome === index;
+                    return (
+                      <div
+                        key={index}
+                        className={`flex justify-between items-center rounded-lg px-3 py-2 text-sm border transition-colors ${isWinner
+                            ? 'bg-success-500/20 border-success-500/50 text-success-300'
+                            : 'bg-black/20 border-white/5 text-gray-300'
+                          }`}
+                      >
+                        <span className="font-medium">{outcome}</span>
+                        <span className={`font-mono ${isWinner ? 'text-success-400' : 'text-gray-400'}`}>
+                          {market.outcomeStakes[index]} APT
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div className="flex gap-2 mt-auto pt-4 border-t border-white/10">
                 <button
-                  style={{
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#007bff',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '0.25rem',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem'
-                  }}
+                  className="flex-1 py-2 px-4 rounded-lg bg-white/5 border border-white/10 text-gray-300 text-sm font-medium hover:bg-white/10 hover:text-white transition-all text-center"
                 >
-                  View Details
+                  Details
                 </button>
                 {!market.resolved && (
                   <button
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#28a745',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem'
-                    }}
+                    className="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-[#00D4FF] to-[#6B4CE6] border-none text-white text-sm font-medium hover:shadow-[0_0_15px_rgba(0,212,255,0.4)] transition-all text-center"
                   >
-                    Place Bet
+                    Bet Now
                   </button>
                 )}
                 {market.resolved && (
                   <button
-                    style={{
-                      padding: '0.5rem 1rem',
-                      backgroundColor: '#ffc107',
-                      color: 'black',
-                      border: 'none',
-                      borderRadius: '0.25rem',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem'
-                    }}
+                    className="flex-1 py-2 px-4 rounded-lg bg-gradient-to-r from-success-500 to-success-600 border-none text-white text-sm font-medium hover:shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all text-center"
                   >
                     Redeem
                   </button>
