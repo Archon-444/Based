@@ -27,11 +27,7 @@ export const SDKProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const usdcAddress = normalizeAddress(env.aptosUsdcAddress) ?? moduleAddress;
 
     if (moduleAddress === '0x1') {
-      const warning = '[SDKProvider] Invalid Aptos module address (fallback 0x1). Set VITE_APTOS_MODULE_ADDRESS.';
-      if (env.isProduction) {
-        throw new Error(`${warning} Production builds require valid configuration.`);
-      }
-      console.warn(warning);
+      console.warn('[SDKProvider] VITE_APTOS_MODULE_ADDRESS is not set — using placeholder 0x1. Contract calls will fail until this is configured in Vercel environment variables.');
     }
 
     return new AptosAdapter(network, moduleAddress, usdcAddress);
