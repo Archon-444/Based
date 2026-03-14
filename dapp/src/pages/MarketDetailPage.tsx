@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { FiTwitter } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AreaChart,
@@ -9,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import {
   FiArrowLeft,
   FiCheck,
@@ -35,6 +36,7 @@ import { useChainCurrency } from '../hooks/useChainCurrency';
 import { useDebounce } from '../hooks/useDebounce';
 import { useSDKContext } from '../contexts/SDKContext';
 import { fetchPayoutQuote, type PayoutQuote } from '../services/payoutApi';
+import { usePriceHistory } from '../hooks/usePriceHistory';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -59,36 +61,6 @@ const getTimeLabel = (isExpired: boolean, countdown: ReturnType<typeof useCountd
   return `${minutes}m ${seconds}s left`;
 };
 
-// Seeded PRNG for deterministic chart data per market
-function seededRng(seed: number) {
-  let s = (seed * 1664525 + 1013904223) & 0x7fffffff;
-  return () => {
-    s = (s * 1664525 + 1013904223) & 0x7fffffff;
-    return s / 0x7fffffff;
-  };
-}
-
-function generateMockHistory(
-  marketId: number,
-  currentPct: number,
-  points = 30,
-): { time: string; yes: number }[] {
-  const rng = seededRng(marketId);
-  const startPct = Math.max(10, Math.min(90, currentPct + (rng() - 0.5) * 40));
-  const data: { time: string; yes: number }[] = [];
-  let cur = startPct;
-  const now = Date.now();
-
-  for (let i = points - 1; i >= 0; i--) {
-    const drift = i === 0 ? currentPct - cur : (rng() - 0.45) * 7;
-    cur = Math.max(3, Math.min(97, cur + drift));
-    data.push({
-      time: format(subDays(now, i), 'MMM d'),
-      yes: Math.round(i === 0 ? currentPct : cur),
-    });
-  }
-  return data;
-}
 
 // ── Custom Tooltip ─────────────────────────────────────────────────────────
 
@@ -189,12 +161,16 @@ export const MarketDetailPage: React.FC = () => {
     });
   }, [market]);
 
-  // Chart data — seeded by market ID so it's stable
-  const chartData = useMemo(() => {
-    if (!market) return [];
-    const yesPct = outcomeData[0]?.pct ?? 50;
-    return generateMockHistory(market.id, yesPct);
-  }, [market?.id, outcomeData[0]?.pct]);
+  const { data: priceHistory, isLive: priceIsLive } = usePriceHistory(
+    market?.id ?? null,
+    outcomeData[0]?.pct ?? 50,
+    chain,
+  );
+  // Map hook output shape to recharts dataKey
+  const chartData = useMemo(
+    () => priceHistory.map((p) => ({ time: p.time, yes: p.pct })),
+    [priceHistory],
+  );
 
   const selectedOutcome = useMemo(() => {
     if (selectedOutcomeIndex === null || !market) return null;
@@ -209,10 +185,40 @@ export const MarketDetailPage: React.FC = () => {
   const estimatedPayout = payoutData?.estimatedPayout ?? fallbackPayout;
   const potentialProfit = payoutData?.potentialProfit ?? (estimatedPayout - numAmount);
 
+  // OG meta tags — update per market
+  useEffect(() => {
+    if (!market) return;
+    const title = `${question} | Prophecy`;
+    const desc = `Predict the outcome on Prophecy. ${outcomeData.map((o) => `${o.label} ${o.pct}%`).join(' · ')}`;
+    document.title = title;
+    const setMeta = (prop: string, val: string, attr = 'property') => {
+      let el = document.querySelector(`meta[${attr}="${prop}"]`) as HTMLMetaElement | null;
+      if (!el) { el = document.createElement('meta'); el.setAttribute(attr, prop); document.head.appendChild(el); }
+      el.setAttribute('content', val);
+    };
+    setMeta('og:title', title);
+    setMeta('og:description', desc);
+    setMeta('og:url', window.location.href);
+    setMeta('twitter:title', title);
+    setMeta('twitter:description', desc);
+    setMeta('twitter:card', 'summary', 'name');
+    return () => { document.title = 'Prophecy — Prediction Markets'; };
+  }, [market, question, outcomeData]);
+
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href).catch(() => {});
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShareTwitter = () => {
+    if (!market) return;
+    const topOutcome = outcomeData[0];
+    const text = encodeURIComponent(
+      `I'm predicting on Prophecy: "${question}"\n${topOutcome ? `${topOutcome.label} is at ${topOutcome.pct}%` : ''}\n\nWhat do you think?`
+    );
+    const url = encodeURIComponent(window.location.href);
+    window.open(`https://x.com/intent/post?text=${text}&url=${url}`, '_blank', 'noopener');
   };
 
   const handleSubmit = useCallback(async () => {
@@ -282,16 +288,26 @@ export const MarketDetailPage: React.FC = () => {
             <FiArrowLeft className="w-4 h-4" />
             All Markets
           </Link>
-          <button
-            onClick={handleShare}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors"
-          >
-            {copied ? (
-              <><FiCheck className="w-4 h-4 text-success-400" /><span className="text-success-400">Copied!</span></>
-            ) : (
-              <><FiShare2 className="w-4 h-4" />Share</>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              {copied ? (
+                <><FiCheck className="w-4 h-4 text-success-400" /><span className="text-success-400">Copied!</span></>
+              ) : (
+                <><FiShare2 className="w-4 h-4" />Copy link</>
+              )}
+            </button>
+            <button
+              onClick={handleShareTwitter}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-200 transition-colors"
+              aria-label="Share on X"
+            >
+              <FiTwitter className="w-4 h-4" />
+              <span className="hidden sm:inline">Post</span>
+            </button>
+          </div>
         </div>
 
         {/* ── Admin resolution panel ───────────────────────────────────── */}
@@ -380,7 +396,12 @@ export const MarketDetailPage: React.FC = () => {
                 <div className="flex items-center justify-between mb-5">
                   <div>
                     <h2 className="text-base font-bold text-white">Probability History</h2>
-                    <p className="text-xs text-slate-500 mt-0.5">YES outcome · 30-day trend</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      {outcomeData[0]?.label ?? 'YES'} · 30-day trend
+                      {priceIsLive && (
+                        <span className="ml-1.5 text-success-400 font-semibold">· live</span>
+                      )}
+                    </p>
                   </div>
                   <div className="flex items-center gap-4 text-xs font-semibold">
                     <span className="flex items-center gap-1.5">

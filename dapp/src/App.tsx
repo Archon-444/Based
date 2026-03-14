@@ -10,6 +10,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
+import { OnboardingModal } from './components/OnboardingModal';
 import { ToastProvider } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerServiceWorker } from './utils/registerServiceWorker';
@@ -87,6 +88,7 @@ function App() {
                       <SessionTimeoutWarning />
                     </Suspense>
                     <div className="min-h-screen flex flex-col bg-[#080B18] pb-16 md:pb-0">
+                      <OnboardingModal />
                       <Header />
                       <main className="flex-1">
                         <Suspense fallback={<LoadingFallback />}>

@@ -6,26 +6,60 @@ export default defineConfig({
   server: {
     port: 3001,
   },
-  // Don't define process.env - Vite handles environment variables via import.meta.env
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React and core dependencies
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+        // Function form catches transitive deps correctly
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
 
-          // Animation libraries
-          'vendor-animation': ['framer-motion'],
+          // Aptos ecosystem (largest SDKs)
+          if (
+            id.includes('@aptos-labs') ||
+            id.includes('petra-plugin') ||
+            id.includes('@martianwallet') ||
+            id.includes('@nightlylabs/aptos')
+          ) return 'vendor-aptos';
 
-          // UI utilities
-          'vendor-ui': ['react-icons'],
+          // Sui ecosystem
+          if (
+            id.includes('@mysten') ||
+            id.includes('@suiet') ||
+            id.includes('@nightlylabs/sui')
+          ) return 'vendor-sui';
+
+          // WalletConnect / Web3
+          if (
+            id.includes('@walletconnect') ||
+            id.includes('@web3modal') ||
+            id.includes('eventemitter')
+          ) return 'vendor-web3';
+
+          // Charts (recharts + d3 deps)
+          if (id.includes('recharts') || id.includes('d3-') || id.includes('victory'))
+            return 'vendor-charts';
+
+          // Date utilities
+          if (id.includes('date-fns')) return 'vendor-dates';
+
+          // Animation
+          if (id.includes('framer-motion')) return 'vendor-animation';
+
+          // React core
+          if (
+            id.includes('react-dom') ||
+            id.includes('react-router') ||
+            id.includes('scheduler')
+          ) return 'vendor-react';
+
+          if (id.includes('/react/') || id.includes('react-is'))
+            return 'vendor-react';
         },
       },
     },
-    chunkSizeWarningLimit: 1000, // Increase warning limit to 1MB
-    sourcemap: false, // Disable sourcemaps in production for smaller builds
+    chunkSizeWarningLimit: 600,
+    sourcemap: false,
     commonjsOptions: {
-      // Handle eventemitter3 default export
       transformMixedEsModules: true,
     },
   },

@@ -10,6 +10,7 @@ import {
 } from 'react-icons/fi';
 
 export enum SortOption {
+  TRENDING = 'trending',
   NEWEST = 'newest',
   ENDING_SOON = 'ending_soon',
   HIGHEST_VOLUME = 'highest_volume',
@@ -34,6 +35,7 @@ interface AdvancedFiltersProps {
 }
 
 const SORT_OPTIONS = [
+  { value: SortOption.TRENDING, label: 'Trending 🔥', icon: FiTrendingUp },
   { value: SortOption.NEWEST, label: 'Newest', icon: FiClock },
   { value: SortOption.ENDING_SOON, label: 'Ending Soon', icon: FiClock },
   { value: SortOption.HIGHEST_VOLUME, label: 'Highest Volume', icon: FiDollarSign },

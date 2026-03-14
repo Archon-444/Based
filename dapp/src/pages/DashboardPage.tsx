@@ -6,7 +6,6 @@ import {
   FiTrendingUp,
   FiDollarSign,
   FiCheckCircle,
-  FiClock,
   FiArrowRight,
   FiInbox,
   FiCheck,
@@ -97,18 +96,26 @@ const DashboardPage: React.FC = () => {
     let totalWon = 0;
     let activeCount = 0;
     let claimableCount = 0;
+    let resolvedCount = 0;
+    let winCount = 0;
 
     positionList.forEach((p) => {
       totalWagered += fromMicroUSDC(p.stake);
-      if (!p.resolved) activeCount++;
-      if (p.resolved && p.isWinner) {
-        if (!p.claimed) claimableCount++;
-        // Rough estimate: 1 share = $1 at resolution
-        totalWon += fromMicroUSDC(p.shares);
+      if (!p.resolved) {
+        activeCount++;
+      } else {
+        resolvedCount++;
+        if (p.isWinner) {
+          winCount++;
+          if (!p.claimed) claimableCount++;
+          totalWon += fromMicroUSDC(p.shares);
+        }
       }
     });
 
-    return { totalWagered, totalWon, activeCount, claimableCount };
+    const netPnl = totalWon - totalWagered;
+    const winRate = resolvedCount > 0 ? Math.round((winCount / resolvedCount) * 100) : null;
+    return { totalWagered, totalWon, netPnl, activeCount, claimableCount, winRate, resolvedCount };
   }, [positionList]);
 
   const isLoading = marketsLoading || positionsLoading;
@@ -165,59 +172,96 @@ const DashboardPage: React.FC = () => {
 
         {/* ── Stats strip ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
-          {[
-            {
-              icon: FiDollarSign,
-              iconColor: 'text-primary-400',
-              bg: 'bg-primary-500/10',
-              label: 'Total Wagered',
-              value: isLoading ? '…' : `$${stats.totalWagered.toFixed(2)}`,
-            },
-            {
-              icon: FiTrendingUp,
-              iconColor: 'text-success-400',
-              bg: 'bg-success-500/10',
-              label: 'Est. Winnings',
-              value: isLoading ? '…' : `$${stats.totalWon.toFixed(2)}`,
-            },
-            {
-              icon: FiClock,
-              iconColor: 'text-warning-400',
-              bg: 'bg-warning-500/10',
-              label: 'Active Bets',
-              value: isLoading ? '…' : stats.activeCount.toString(),
-            },
-            {
-              icon: FiCheckCircle,
-              iconColor: 'text-secondary-400',
-              bg: 'bg-secondary-500/10',
-              label: 'Claimable',
-              value: isLoading ? '…' : stats.claimableCount.toString(),
-              highlight: stats.claimableCount > 0,
-            },
-          ].map(({ icon: Icon, iconColor, bg, label, value, highlight }) => (
-            <motion.div
-              key={label}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`rounded-2xl border p-4 flex items-start gap-3 ${
-                highlight
-                  ? 'border-secondary-500/30 bg-secondary-500/[0.06]'
-                  : 'border-[#1C2537] bg-[#0D1224]'
-              }`}
-              style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
-            >
-              <div className={`flex-shrink-0 p-2.5 rounded-xl ${bg}`}>
-                <Icon className={`w-4 h-4 ${iconColor}`} />
+          {/* Total Wagered */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-4 flex items-start gap-3"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+          >
+            <div className="flex-shrink-0 p-2.5 rounded-xl bg-primary-500/10">
+              <FiDollarSign className="w-4 h-4 text-primary-400" />
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-500 font-medium mb-0.5 uppercase tracking-wider">Total Wagered</div>
+              <div className="text-xl font-black tabular-nums text-white">
+                {isLoading ? '…' : `$${stats.totalWagered.toFixed(2)}`}
               </div>
-              <div>
-                <div className="text-[11px] text-slate-500 font-medium mb-0.5 uppercase tracking-wider">{label}</div>
-                <div className={`text-xl font-black tabular-nums ${highlight ? 'text-secondary-300' : 'text-white'}`}>
-                  {value}
-                </div>
+            </div>
+          </motion.div>
+
+          {/* Net P&L */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className={`rounded-2xl border p-4 flex items-start gap-3 ${
+              !isLoading && stats.netPnl >= 0
+                ? 'border-success-500/25 bg-success-500/[0.05]'
+                : !isLoading && stats.netPnl < 0
+                ? 'border-error-500/25 bg-error-500/[0.04]'
+                : 'border-[#1C2537] bg-[#0D1224]'
+            }`}
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+          >
+            <div className={`flex-shrink-0 p-2.5 rounded-xl ${!isLoading && stats.netPnl >= 0 ? 'bg-success-500/10' : !isLoading && stats.netPnl < 0 ? 'bg-error-500/10' : 'bg-primary-500/10'}`}>
+              <FiTrendingUp className={`w-4 h-4 ${!isLoading && stats.netPnl >= 0 ? 'text-success-400' : !isLoading && stats.netPnl < 0 ? 'text-error-400' : 'text-primary-400'}`} />
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-500 font-medium mb-0.5 uppercase tracking-wider">Net P&L</div>
+              <div className={`text-xl font-black tabular-nums ${
+                isLoading ? 'text-white' :
+                stats.netPnl >= 0 ? 'text-success-400' : 'text-error-400'
+              }`}>
+                {isLoading ? '…' : `${stats.netPnl >= 0 ? '+' : ''}$${stats.netPnl.toFixed(2)}`}
               </div>
-            </motion.div>
-          ))}
+            </div>
+          </motion.div>
+
+          {/* Win Rate */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-4 flex items-start gap-3"
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+          >
+            <div className="flex-shrink-0 p-2.5 rounded-xl bg-warning-500/10">
+              <FiCheckCircle className="w-4 h-4 text-warning-400" />
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-500 font-medium mb-0.5 uppercase tracking-wider">Win Rate</div>
+              <div className="text-xl font-black tabular-nums text-white">
+                {isLoading ? '…' : stats.winRate !== null ? `${stats.winRate}%` : '—'}
+              </div>
+              {!isLoading && stats.resolvedCount > 0 && (
+                <div className="text-[10px] text-slate-600 mt-0.5">{stats.resolvedCount} resolved</div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Claimable */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className={`rounded-2xl border p-4 flex items-start gap-3 ${
+              stats.claimableCount > 0
+                ? 'border-secondary-500/30 bg-secondary-500/[0.06]'
+                : 'border-[#1C2537] bg-[#0D1224]'
+            }`}
+            style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.2)' }}
+          >
+            <div className="flex-shrink-0 p-2.5 rounded-xl bg-secondary-500/10">
+              <FiCheckCircle className="w-4 h-4 text-secondary-400" />
+            </div>
+            <div>
+              <div className="text-[11px] text-slate-500 font-medium mb-0.5 uppercase tracking-wider">Claimable</div>
+              <div className={`text-xl font-black tabular-nums ${stats.claimableCount > 0 ? 'text-secondary-300' : 'text-white'}`}>
+                {isLoading ? '…' : stats.claimableCount.toString()}
+              </div>
+            </div>
+          </motion.div>
         </div>
 
         {/* ── Positions list ───────────────────────────────────────────── */}

@@ -26,6 +26,7 @@ interface DisplayMarket {
   resolved: boolean;
   winningOutcome: number;
   status: 'active' | 'ending_soon' | 'closed';
+  isTrending: boolean;
 }
 
 const formatVolume = (micro: number): string => {
@@ -60,6 +61,7 @@ const MarketCard: React.FC<{ market: DisplayMarket; index: number }> = ({
   market,
   index,
 }) => {
+  const { isTrending } = market;
   const categoryInfo = getCategoryInfo(market.category);
   const { yesOdds, noOdds, hasOdds } = getOdds(market);
   const isBinary = market.outcomes.length === 2;
@@ -79,15 +81,26 @@ const MarketCard: React.FC<{ market: DisplayMarket; index: number }> = ({
       transition={{ duration: 0.28, delay: index * 0.035 }}
     >
       <Link to={`/market/${market.id}`} className="block h-full group">
-        <div className="relative h-full flex flex-col gap-4 rounded-2xl border border-[#1C2537] bg-[#0D1224] p-5 transition-all duration-200 group-hover:border-primary-500/30 group-hover:-translate-y-0.5 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_0_1px_rgba(59,130,246,0.12)]"
+        <div className={`relative h-full flex flex-col gap-4 rounded-2xl border bg-[#0D1224] p-5 transition-all duration-200 group-hover:-translate-y-0.5 ${
+            isTrending
+              ? 'border-warning-500/30 group-hover:border-warning-500/50 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_0_1px_rgba(245,158,11,0.15)]'
+              : 'border-[#1C2537] group-hover:border-primary-500/30 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_0_1px_rgba(59,130,246,0.12)]'
+          }`}
           style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
         >
           {/* Top row: category + status */}
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.07]">
-              <span className="text-sm">{categoryInfo.icon}</span>
-              {categoryInfo.label}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-white/[0.05] px-2.5 py-1 rounded-full border border-white/[0.07]">
+                <span className="text-sm">{categoryInfo.icon}</span>
+                {categoryInfo.label}
+              </span>
+              {isTrending && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-warning-300 bg-warning-500/10 px-2 py-1 rounded-full border border-warning-500/25">
+                  🔥 Hot
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <span className={`relative flex h-1.5 w-1.5`}>
                 {market.status === 'active' && (
@@ -221,7 +234,7 @@ export const MarketsPage: React.FC = () => {
   });
 
   const displayMarkets: DisplayMarket[] = useMemo(() => {
-    return markets.map((market) => {
+    const mapped = markets.map((market) => {
       const category = getCategoryFromQuestion(market.question);
       const diff = market.endTime * 1000 - Date.now();
       let status: DisplayMarket['status'] = 'active';
@@ -241,8 +254,18 @@ export const MarketsPage: React.FC = () => {
         resolved: market.resolved,
         winningOutcome: market.winningOutcome ?? 0,
         status,
+        isTrending: false,
       };
     });
+
+    // Mark top-3 active markets by volume as trending
+    const activeByVolume = [...mapped]
+      .filter((m) => m.status === 'active' && m.totalStakes > 0)
+      .sort((a, b) => b.totalStakes - a.totalStakes)
+      .slice(0, 3)
+      .map((m) => m.id);
+
+    return mapped.map((m) => ({ ...m, isTrending: activeByVolume.includes(m.id) }));
   }, [markets]);
 
   const filteredMarkets = useMemo(() => {
@@ -259,6 +282,10 @@ export const MarketsPage: React.FC = () => {
 
     return [...filtered].sort((a, b) => {
       switch (sortBy) {
+        case SortOption.TRENDING:
+          // Trending: active + hot first, then by volume
+          if (a.isTrending !== b.isTrending) return a.isTrending ? -1 : 1;
+          return b.totalStakes - a.totalStakes;
         case SortOption.NEWEST: return b.id - a.id;
         case SortOption.ENDING_SOON: return a.endTime - b.endTime;
         case SortOption.HIGHEST_VOLUME:
