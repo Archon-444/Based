@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { collectDefaultMetrics, Counter, Histogram, Registry } from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom-client';
 
 import { env } from '../config/env.js';
 
@@ -67,6 +67,88 @@ const suiEventsProcessedCounter = new Counter({
   labelNames: ['event'],
   registers: [registry],
 });
+
+// ==================== Base Chain Metrics ====================
+
+const baseIndexerBlockGauge = new Gauge({
+  name: 'movemarket_base_indexer_last_block',
+  help: 'Last processed block number for Base indexer',
+  labelNames: ['contract'] as const,
+  registers: [registry],
+});
+
+const baseEventsProcessedCounter = new Counter({
+  name: 'movemarket_base_events_processed_total',
+  help: 'EVM events processed by the Base indexer',
+  labelNames: ['event'] as const,
+  registers: [registry],
+});
+
+const keeperExecutionCounter = new Counter({
+  name: 'movemarket_keeper_executions_total',
+  help: 'Keeper job execution attempts',
+  labelNames: ['job', 'result'] as const,
+  registers: [registry],
+});
+
+const baseTransactionCounter = new Counter({
+  name: 'movemarket_base_transactions_total',
+  help: 'On-chain transactions sent by the backend',
+  labelNames: ['wallet', 'method', 'result'] as const,
+  registers: [registry],
+});
+
+const wsConnectionsGauge = new Gauge({
+  name: 'movemarket_ws_connections',
+  help: 'Active WebSocket connections',
+  registers: [registry],
+});
+
+export const recordBaseIndexerBlock = (contract: string, block: number) => {
+  baseIndexerBlockGauge.set({ contract }, block);
+};
+
+export const recordBaseEvent = (event: string, count: number = 1) => {
+  baseEventsProcessedCounter.inc({ event }, count);
+};
+
+export const recordKeeperExecution = (job: string, result: 'success' | 'failure') => {
+  keeperExecutionCounter.inc({ job, result });
+};
+
+export const recordBaseTransaction = (wallet: string, method: string, result: string) => {
+  baseTransactionCounter.inc({ wallet, method, result });
+};
+
+export const setWsConnections = (count: number) => {
+  wsConnectionsGauge.set(count);
+};
+
+// ==================== Agent Metrics ====================
+
+const agentCallCounter = new Counter({
+  name: 'movemarket_agent_calls_total',
+  help: 'Agent LLM call attempts',
+  labelNames: ['agent', 'result'] as const,
+  registers: [registry],
+});
+
+const agentCostGauge = new Gauge({
+  name: 'movemarket_agent_cost_usd',
+  help: 'Cumulative agent API cost in USD',
+  labelNames: ['agent'] as const,
+  registers: [registry],
+});
+
+export const recordAgentCall = (agent: string, result: 'success' | 'failure') => {
+  agentCallCounter.inc({ agent, result });
+};
+
+export const setAgentCost = (agent: string, cost: number) => {
+  agentCostGauge.set({ agent }, cost);
+};
+
+// ==================== Path Normalization ====================
 
 const normalizePath = (path: string): string => {
   if (!path) {

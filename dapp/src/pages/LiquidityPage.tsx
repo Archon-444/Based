@@ -84,11 +84,11 @@ const LiquidityPage: React.FC = () => {
   const { markets, isLoading } = useMarkets();
 
   const totalTVL = React.useMemo(() => {
-    return markets.reduce((sum, m) => sum + fromMicroUSDC(m.totalStakes), 0);
+    return markets.reduce((sum, m) => sum + fromMicroUSDC(parseFloat(m.totalVolume) || 0), 0);
   }, [markets]);
 
-  const activeMarkets = markets.filter((m) => !m.resolved).length;
-  const resolvedMarkets = markets.filter((m) => m.resolved).length;
+  const activeMarkets = markets.filter((m) => m.status !== 'resolved' && m.resolvedAt == null).length;
+  const resolvedMarkets = markets.filter((m) => m.status === 'resolved' || m.resolvedAt != null).length;
 
   return (
     <div className="min-h-screen bg-[#080B18] text-white selection:bg-primary-500/30">

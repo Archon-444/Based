@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWalletFacade } from '../components/WalletFacade';
+// WalletFacade removed — using wagmi/RainbowKit natively
+const useWalletFacade = () => ({ loadWallet: () => {} });
 import { motion } from 'framer-motion';
 import {
   FiArrowRight,

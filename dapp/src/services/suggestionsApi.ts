@@ -26,7 +26,7 @@ export interface MarketSuggestion {
   approvedAt?: string | null;
   publishedMarketId?: string | null;
   publishedBy?: string | null;
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   txHash?: string | null;
 }
 
@@ -40,7 +40,7 @@ export interface SuggestionEvent {
 }
 
 export interface CreateMarketSuggestionInput extends Omit<CreateSuggestionInput, 'chain'> {
-  chain?: 'aptos' | 'sui' | 'movement';
+  chain?: 'aptos' | 'sui' | 'movement' | 'base';
 }
 
 export interface ReviewSuggestionInput {
@@ -48,7 +48,7 @@ export interface ReviewSuggestionInput {
   reason?: string;
   publishOnChain?: boolean;
   txHash?: string;
-  chain?: 'aptos' | 'sui' | 'movement';
+  chain?: 'aptos' | 'sui' | 'movement' | 'base';
 }
 
 export const mapSuggestionToMarketSuggestion = (suggestion: Suggestion): MarketSuggestion => ({
@@ -106,7 +106,7 @@ export const submitMarketSuggestion = async (
 
 export const fetchMarketSuggestions = async (
   status?: MarketSuggestionStatus | 'all',
-  chain?: 'aptos' | 'sui' | 'movement'
+  chain?: string
 ): Promise<MarketSuggestion[]> => {
   const suggestions = await apiClient.suggestions.list({
     status: status && status !== 'all' ? status : undefined,
@@ -149,7 +149,7 @@ export const voteOnSuggestion = async (
   auth: WalletAuthContext,
   id: string,
   delta: number,
-  chain?: 'aptos' | 'sui' | 'movement'
+  chain?: string
 ): Promise<MarketSuggestion> => {
   if (!auth.address) {
     throw new Error('Wallet address is required to vote on suggestions');
@@ -170,7 +170,7 @@ export const voteOnSuggestion = async (
 export const fetchSuggestionEvents = async (
   auth: WalletAuthContext | undefined,
   suggestionId?: string,
-  chain?: 'aptos' | 'sui' | 'movement'
+  chain?: string
 ): Promise<SuggestionEvent[]> => {
   if (!auth?.address) {
     return [];

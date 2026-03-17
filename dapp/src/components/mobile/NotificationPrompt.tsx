@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiBell, FiX } from 'react-icons/fi';
-import { useWallet } from '@aptos-labs/wallet-adapter-react';
+import { useAccount } from 'wagmi';
 import {
   isPushSupported,
   getPermissionStatus,
@@ -13,7 +13,8 @@ import { hapticFeedback } from '../../utils/hapticFeedback';
 import { VAPID_PUBLIC_KEY, isPushConfigured } from '../../config/push';
 
 export const NotificationPrompt: React.FC = () => {
-  const { account } = useWallet();
+  const { address: accountAddress } = useAccount();
+  const account = accountAddress ? { address: accountAddress } : null;
   const [showPrompt, setShowPrompt] = useState(false);
   const [isEnabling, setIsEnabling] = useState(false);
 

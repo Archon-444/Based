@@ -88,7 +88,23 @@ model Market {
   suiMarketObjectId    String?
   suiShardObjectIds    String[]  @default([])
   suiQueueObjectId     String?
-  events          BlockchainEvent[]
+  // Base chain fields
+  conditionId          String?            // Gnosis CTF condition ID (bytes32 hex)
+  questionId           String?            // bytes32 hex
+  txHash               String?            // creation tx hash
+  blockNumber          Int?
+  chainId              Int?               @default(8453)
+  ammAddress           String?
+  feeRate              Int?               // basis points from PoolInitialized
+  resolutionType       String?            // "uma" | "pyth" | "manual"
+  pythFeedId           String?
+  strikePrice          String?            // stored as string for precision
+  events               BlockchainEvent[]
+  trades               Trade[]
+  liquidityEvents      LiquidityEvent[]
+  umaAssertions        UmaAssertion[]
+  agentActions         AgentAction[]
+  agentCommentary      AgentCommentary[]
 
   @@unique([onChainId, chain])
   @@index([status])
@@ -136,14 +152,16 @@ model BlockchainEvent {
 }
 
 model IndexerState {
-  id              String    @id @default(uuid())
-  chain           Chain     @unique
-  lastProcessedVersion BigInt @default(0)
+  id                    String    @id @default(uuid())
+  chain                 Chain
+  contractAddress       String?
+  lastProcessedVersion  BigInt    @default(0)
   lastProcessedTimestamp DateTime?
-  isRunning       Boolean   @default(false)
-  lastError       String?
-  updatedAt       DateTime  @updatedAt
+  isRunning             Boolean   @default(false)
+  lastError             String?
+  updatedAt             DateTime  @updatedAt
 
+  @@unique([chain, contractAddress])
   @@index([chain])
 }
 
@@ -166,6 +184,7 @@ enum Chain {
   aptos
   sui
   movement
+  base
 }
 
 enum LeaderboardMetric {
@@ -187,7 +206,121 @@ enum RoleAction {
 
 enum MarketStatus {
   active
+  resolving
   resolved
   disputed
   cancelled
+}
+
+model Trade {
+  id            String    @id @default(uuid())
+  marketId      String
+  market        Market    @relation(fields: [marketId], references: [id])
+  trader        String
+  outcomeIndex  Int
+  tradeType     TradeType
+  amount        BigInt
+  outcomeTokens BigInt
+  fee           BigInt
+  txHash        String
+  blockNumber   Int
+  logIndex      Int
+  timestamp     DateTime
+  createdAt     DateTime  @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([marketId, timestamp])
+  @@index([trader, timestamp])
+  @@index([blockNumber])
+}
+
+enum TradeType {
+  BUY
+  SELL
+}
+
+model LiquidityEvent {
+  id          String        @id @default(uuid())
+  marketId    String
+  market      Market        @relation(fields: [marketId], references: [id])
+  provider    String
+  eventType   LiquidityType
+  amount      BigInt
+  shares      BigInt
+  txHash      String
+  blockNumber Int
+  logIndex    Int
+  timestamp   DateTime
+  createdAt   DateTime      @default(now())
+
+  @@unique([txHash, logIndex])
+  @@index([marketId, timestamp])
+  @@index([provider])
+}
+
+enum LiquidityType {
+  ADD
+  REMOVE
+}
+
+model UmaAssertion {
+  id              String          @id @default(uuid())
+  assertionId     String          @unique
+  marketId        String
+  market          Market          @relation(fields: [marketId], references: [id])
+  proposedOutcome Int
+  asserter        String
+  bond            BigInt
+  liveness        Int
+  assertedAt      DateTime
+  status          AssertionStatus @default(PENDING)
+  disputeCount    Int             @default(0)
+  resolvedAt      DateTime?
+  txHash          String
+  blockNumber     Int
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([marketId])
+  @@index([status])
+}
+
+enum AssertionStatus {
+  PENDING
+  SETTLED
+  DISPUTED
+}
+
+model AgentAction {
+  id            String    @id @default(uuid())
+  agent         String
+  marketId      String?
+  market        Market?   @relation(fields: [marketId], references: [id])
+  action        String
+  confidence    Int?
+  reasoning     String?
+  sources       String[]
+  inputTokens   Int       @default(0)
+  outputTokens  Int       @default(0)
+  costUsd       Float     @default(0)
+  txHash        String?
+  success       Boolean   @default(true)
+  error         String?
+  createdAt     DateTime  @default(now())
+
+  @@index([agent, createdAt])
+  @@index([marketId])
+}
+
+model AgentCommentary {
+  id          String    @id @default(uuid())
+  marketId    String
+  market      Market    @relation(fields: [marketId], references: [id])
+  headline    String
+  body        String
+  sentiment   String
+  keyFactors  String[]
+  createdAt   DateTime  @default(now())
+
+  @@index([marketId, createdAt])
 }

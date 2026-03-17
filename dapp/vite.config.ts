@@ -1,9 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
 
 export default defineConfig({
-  plugins: [react(), nodePolyfills()],
+  plugins: [react()],
   resolve: {
     dedupe: ['react', 'react-dom', 'react/jsx-runtime'],
   },
@@ -13,32 +12,15 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Function form catches transitive deps correctly
         manualChunks(id) {
           if (!id.includes('node_modules')) return;
 
-          // Ant Design + Radix UI (via wallet-adapter-ant-design) — must share chunk with React
+          // EVM stack (wagmi + viem + RainbowKit)
           if (
-            id.includes('@aptos-labs/wallet-adapter-ant-design') ||
-            id.includes('@ant-design') ||
-            id.includes('@radix-ui') ||
-            id.includes('/antd/') ||
-            id.includes('/rc-')
-          ) return 'vendor-react';
-
-          // Sui ecosystem
-          if (
-            id.includes('@mysten') ||
-            id.includes('@suiet') ||
-            id.includes('@nightlylabs/sui')
-          ) return 'vendor-sui';
-
-          // WalletConnect / Web3
-          if (
-            id.includes('@walletconnect') ||
-            id.includes('@web3modal') ||
-            id.includes('eventemitter')
-          ) return 'vendor-web3';
+            id.includes('wagmi') ||
+            id.includes('viem') ||
+            id.includes('@rainbow-me')
+          ) return 'vendor-evm';
 
           // Charts (recharts + d3 deps)
           if (id.includes('recharts') || id.includes('d3-') || id.includes('victory'))
@@ -74,11 +56,6 @@ export default defineConfig({
       'react-dom',
       'react-router-dom',
       'framer-motion',
-      '@aptos-labs/wallet-adapter-react',
-      '@aptos-labs/wallet-adapter-core',
-      '@aptos-labs/ts-sdk',
-      'petra-plugin-wallet-adapter',
-      '@martianwallet/aptos-wallet-adapter',
     ],
   },
 })

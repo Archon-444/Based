@@ -1,90 +1,54 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSDK } from '../contexts/SDKContext';
-import { UserPosition } from '../services/MoveMarketSDK';
+import { usePortfolio } from './usePortfolio';
+
+export interface UserPosition {
+  outcome: number;
+  stake: number;
+  shares: number;
+  claimed: boolean;
+}
 
 export const useUserPosition = (
   userAddress: string | undefined,
-  marketId: number | null
+  _marketId: string | number | null
 ) => {
-  const sdk = useSDK();
-  const [position, setPosition] = useState<UserPosition | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  // Delegate to portfolio API — position data comes from backend indexer
+  const { data, isLoading, error } = usePortfolio(userAddress);
+  const marketId = _marketId !== null ? String(_marketId) : null;
 
-  const fetchPosition = useCallback(async () => {
-    if (!userAddress || marketId === null || marketId < 0) {
-      setPosition(null);
-      setIsLoading(false);
-      return;
-    }
+  const position: UserPosition | null = (() => {
+    if (!data?.positions || !marketId) return null;
+    const pos = data.positions.find((p) => p.onChainId === marketId || p.marketId === marketId);
+    if (!pos || pos.holdings.length === 0) return null;
+    const h = pos.holdings[0];
+    return {
+      outcome: h.outcomeIndex,
+      stake: Number(h.invested) / 1e6,
+      shares: Number(h.tokens) / 1e18,
+      claimed: false,
+    };
+  })();
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const fetchedPosition = await sdk.getUserPosition(marketId, userAddress);
-      setPosition(fetchedPosition);
-    } catch (err: any) {
-      setError(err);
-      console.error('Error fetching user position:', err);
-      setPosition(null);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sdk, userAddress, marketId]);
-
-  useEffect(() => {
-    fetchPosition();
-  }, [fetchPosition]);
-
-  return { position, isLoading, error, refetch: fetchPosition };
+  return { position, isLoading, error, refetch: () => {} };
 };
 
-export const useUserPositions = (userAddress: string | undefined, marketCount: number) => {
-  const sdk = useSDK();
-  const [positions, setPositions] = useState<Map<number, UserPosition>>(new Map());
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+export const useUserPositions = (userAddress: string | undefined, _marketCount: number) => {
+  const { data, isLoading, error } = usePortfolio(userAddress);
 
-  const fetchPositions = useCallback(async () => {
-    if (!userAddress || marketCount === 0) {
-      setPositions(new Map());
-      setIsLoading(false);
-      return;
-    }
+  const positions = new Map<number, UserPosition>();
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const positionPromises = [];
-      for (let i = 0; i < marketCount; i++) {
-        positionPromises.push(
-          sdk.getUserPosition(i, userAddress).then((position) => ({ marketId: i, position }))
-        );
+  if (data?.positions) {
+    data.positions.forEach((pos, idx) => {
+      if (pos.holdings.length > 0) {
+        const h = pos.holdings[0];
+        positions.set(idx, {
+          outcome: h.outcomeIndex,
+          stake: Number(h.invested) / 1e6,
+          shares: Number(h.tokens) / 1e18,
+          claimed: false,
+        });
       }
+    });
+  }
 
-      const results = await Promise.all(positionPromises);
-      const positionMap = new Map<number, UserPosition>();
-
-      results.forEach(({ marketId, position }) => {
-        if (position) {
-          positionMap.set(marketId, position);
-        }
-      });
-
-      setPositions(positionMap);
-    } catch (err: any) {
-      setError(err);
-      console.error('Error fetching user positions:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sdk, userAddress, marketCount]);
-
-  useEffect(() => {
-    fetchPositions();
-  }, [fetchPositions]);
-
-  return { positions, isLoading, error, refetch: fetchPositions };
+  return { positions, isLoading, error, refetch: () => {} };
 };

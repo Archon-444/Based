@@ -30,9 +30,9 @@ export function TransactionConfirmation({
 }: TransactionConfirmationProps) {
   const [understood, setUnderstood] = useState(false);
   const currency = useChainCurrency();
-  const gasTicker = currency.chain === 'sui' ? 'SUI' : 'APT';
+  const gasTicker = 'ETH';
   const formatAmount = (value?: number) =>
-    typeof value === 'number' ? currency.formatDisplay(value) : 'N/A';
+    typeof value === 'number' ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'N/A';
 
   const getTransactionTitle = () => {
     switch (details.type) {

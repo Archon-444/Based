@@ -11,9 +11,12 @@
     "test": "vitest",
     "loadtest:suggestions": "tsx loadtests/suggestions.loadtest.ts",
     "loadtest:ratelimit": "tsx loadtests/ratelimit.loadtest.ts",
-    "loadtest:all": "npm run loadtest:suggestions && npm run loadtest:ratelimit"
+    "loadtest:all": "npm run loadtest:suggestions && npm run loadtest:ratelimit",
+    "agent:create": "tsx src/agents/cli/createMarket.ts",
+    "agent:costs": "tsx src/agents/cli/costReport.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@aptos-labs/ts-sdk": "^1.32.0",
     "@circle-fin/smart-contract-platform": "^9.1.0",
     "@mysten/sui": "^1.16.0",
@@ -21,6 +24,7 @@
     "@pythnetwork/price-service-client": "^1.9.0",
     "@pythnetwork/pyth-aptos-js": "^1.4.2",
     "@sindresorhus/is": "^6.3.1",
+    "async-mutex": "^0.5.0",
     "autocannon": "^7.14.0",
     "axios": "^1.7.7",
     "chalk": "^5.3.0",
@@ -30,6 +34,7 @@
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "morgan": "^1.10.0",
+    "node-cron": "^4.2.1",
     "ora": "^8.1.0",
     "pino": "^9.2.0",
     "pino-http": "^11.0.0",
@@ -37,6 +42,8 @@
     "prom-client": "^15.1.2",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
+    "viem": "^2.47.4",
+    "ws": "^8.19.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -46,9 +53,11 @@
     "@types/helmet": "^4.0.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.11.30",
+    "@types/node-cron": "^3.0.11",
     "@types/supertest": "^2.0.16",
     "@types/swagger-jsdoc": "^6.0.3",
     "@types/swagger-ui-express": "^4.1.6",
+    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^7.5.0",
     "@typescript-eslint/parser": "^7.5.0",
     "eslint": "^8.57.0",

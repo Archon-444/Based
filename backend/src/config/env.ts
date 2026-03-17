@@ -44,6 +44,38 @@ const envSchema = z.object({
     ),
   MOVEMENT_EXPECTED_CHAIN_ID: z.string().optional(),
 
+  // Base Configuration (Optional — only required if using Base chain)
+  BASE_RPC_URL: z.string().optional(),
+  BASE_WS_URL: z.string().optional(),
+  BASE_CHAIN_ID: z.string().optional().default('8453'),
+  MARKET_FACTORY_ADDRESS: z.string().optional(),
+  AMM_ADDRESS: z.string().optional(),
+  UMA_ADAPTER_ADDRESS: z.string().optional(),
+  PYTH_ADAPTER_ADDRESS: z.string().optional(),
+  PYTH_CONTRACT_ADDRESS: z.string().optional(),
+  CONDITIONAL_TOKENS_ADDRESS: z.string().optional(),
+  USDC_ADDRESS: z.string().optional(),
+  ADMIN_PRIVATE_KEY: z.string().optional(),
+  KEEPER_PRIVATE_KEY: z.string().optional(),
+  RESOLVER_PRIVATE_KEY: z.string().optional(),
+
+  // Agent Configuration (Phase 5)
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AGENT_ENABLED: z.string().optional().default('false'),
+  AGENT_AUTO_RESOLVE: z.string().optional().default('false'),
+  AGENT_AUTO_DISPUTE: z.string().optional().default('false'),
+  AGENT_COMMENTARY_ENABLED: z.string().optional().default('false'),
+  AGENT_CONFIDENCE_THRESHOLD: z
+    .string()
+    .optional()
+    .default('80')
+    .transform((v) => parseInt(v, 10)),
+  AGENT_DISPUTE_CONFIDENCE_THRESHOLD: z
+    .string()
+    .optional()
+    .default('90')
+    .transform((v) => parseInt(v, 10)),
+
   // Application Configuration
   ACTIVE_CHAINS: z.string().default('aptos'),
   LOG_LEVEL: z.string().default('info'),
@@ -66,6 +98,6 @@ export const env = envSchema.parse(process.env);
 
 const normalizedActiveChains = env.ACTIVE_CHAINS.split(',').map((chain) => chain.trim().toLowerCase());
 
-export function isChainActive(chain: 'aptos' | 'sui' | 'movement'): boolean {
+export function isChainActive(chain: 'aptos' | 'sui' | 'movement' | 'base'): boolean {
   return normalizedActiveChains.includes(chain.toLowerCase());
 }

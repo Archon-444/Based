@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Market } from '../services/MoveMarketSDK';
+import type { Market } from './useMarkets';
 
 /**
  * Hook to validate if a market is active and accepting bets
@@ -17,8 +17,9 @@ export const useMarketStatus = (market: Market | null) => {
     }
 
     const now = Date.now();
-    const isExpired = market.resolutionTime <= now;
-    const isResolved = market.resolved;
+    const endTimestamp = market.endDate ? new Date(market.endDate).getTime() : 0;
+    const isExpired = endTimestamp > 0 && endTimestamp <= now;
+    const isResolved = market.status === 'resolved' || market.resolvedAt != null;
 
     // Can only bet if market is not expired and not resolved
     const canBet = !isExpired && !isResolved;
@@ -31,8 +32,8 @@ export const useMarketStatus = (market: Market | null) => {
       message = 'Market has been resolved';
     } else if (isExpired) {
       message = 'Market has expired';
-    } else {
-      const timeUntilExpiry = market.resolutionTime - now;
+    } else if (endTimestamp > 0) {
+      const timeUntilExpiry = endTimestamp - now;
       const hoursUntilExpiry = Math.floor(timeUntilExpiry / (1000 * 60 * 60));
       const minutesUntilExpiry = Math.floor((timeUntilExpiry % (1000 * 60 * 60)) / (1000 * 60));
 
@@ -52,7 +53,7 @@ export const useMarketStatus = (market: Market | null) => {
       isExpired,
       isResolved,
       message,
-      timeUntilExpiry: isExpired ? 0 : market.resolutionTime - now,
+      timeUntilExpiry: isExpired || endTimestamp === 0 ? 0 : endTimestamp - now,
     };
   }, [market]);
 

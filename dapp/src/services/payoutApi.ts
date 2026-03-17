@@ -1,6 +1,6 @@
 import env from '../config/env';
 
-export type ChainKey = 'aptos' | 'sui' | 'movement';
+export type ChainKey = 'aptos' | 'sui' | 'movement' | 'base';
 
 export interface PayoutQuote {
   estimatedPayout: number;

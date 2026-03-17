@@ -1,78 +1,28 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import {
-  WalletProvider as SuietWalletProvider,
-  ConnectButton,
-  useWallet,
-  useSuiClient,
-  SuiDevnetChain,
-  SuiTestnetChain,
-  SuiMainnetChain,
-} from '@suiet/wallet-kit';
-import type { SuiClient } from '@mysten/sui/client';
-import { env } from '../config/env';
+/**
+ * Sui Wallet Context — Compatibility shim (Base-only mode).
+ */
+import React, { createContext, useContext } from 'react';
 
-interface SuiWalletContextType {
-  account: { address: string } | null;
-  connected: boolean;
+interface SuiWalletState {
+  account: null;
+  connected: false;
   connect: () => void;
-  disconnect: () => Promise<void>;
-  getSuiClient: () => SuiClient;
+  disconnect: () => void;
 }
 
-const SuiWalletContext = createContext<SuiWalletContextType | null>(null);
+const SuiWalletContext = createContext<SuiWalletState>({
+  account: null,
+  connected: false,
+  connect: () => {},
+  disconnect: () => {},
+});
 
-export const useSuiWallet = (): SuiWalletContextType => {
-  const context = useContext(SuiWalletContext);
-  if (!context) {
-    throw new Error('useSuiWallet must be used within a SuiWalletProvider');
-  }
-  return context;
-};
+export const SuiWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <SuiWalletContext.Provider value={{ account: null, connected: false, connect: () => {}, disconnect: () => {} }}>
+    {children}
+  </SuiWalletContext.Provider>
+);
 
-const chainMap = {
-  devnet: SuiDevnetChain,
-  testnet: SuiTestnetChain,
-  mainnet: SuiMainnetChain,
-} as const;
+export const useSuiWallet = () => useContext(SuiWalletContext);
 
-const SuiWalletManager: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const wallet = useWallet();
-  const suiClient = useSuiClient();
-  const { account, connected, disconnect } = wallet;
-
-  const value = useMemo<SuiWalletContextType>(() => ({
-    account: account ? { address: account.address } : null,
-    connected,
-    connect: () => {
-      console.warn('[SuiWallet] Use the provided ConnectButton or ConnectModal to initiate a connection.');
-    },
-    disconnect,
-    getSuiClient: () => suiClient,
-  }), [account, connected, disconnect, suiClient]);
-
-  return (
-    <SuiWalletContext.Provider value={value}>
-      {children}
-    </SuiWalletContext.Provider>
-  );
-};
-
-export const SuiWalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const networkKey = env.suiNetwork?.toLowerCase() as keyof typeof chainMap | undefined;
-  const activeChain = chainMap[networkKey ?? 'devnet'] ?? SuiDevnetChain;
-
-  console.log('[SuiWalletProvider] Active Sui network:', {
-    configuredNetwork: env.suiNetwork,
-    resolvedChain: activeChain,
-  });
-
-  return (
-    <SuietWalletProvider chains={[activeChain]} autoConnect>
-          <SuiWalletManager>
-            {children}
-          </SuiWalletManager>
-    </SuietWalletProvider>
-  );
-};
-
-export { ConnectButton as SuiConnectButton };
+export default SuiWalletContext;

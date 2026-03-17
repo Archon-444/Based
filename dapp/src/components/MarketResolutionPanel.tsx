@@ -5,7 +5,7 @@ import { Badge, BadgeVariant } from './ui/Badge';
 import { useMarketResolution } from '../hooks/useMarketResolution';
 
 interface MarketResolutionPanelProps {
-  marketId: number | null;
+  marketId: string | number | null;
 }
 
 const SOURCE_LABELS: Record<number, { label: string; variant: BadgeVariant }> = {

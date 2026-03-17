@@ -1,5 +1,6 @@
 import { useMemo, useState, useCallback } from 'react';
-import type { Market, UserPosition } from '../services/IBlockchainAdapter';
+import type { Market } from './useMarkets';
+import type { UserPosition } from './useUserPosition';
 
 export type NotificationKind = 'win_claimable' | 'market_resolved_loss' | 'ending_soon';
 
@@ -44,34 +45,36 @@ export function useNotifications(
     const list: Omit<AppNotification, 'read'>[] = [];
 
     positions.forEach((pos, marketId) => {
-      const market = markets.find((m) => m.id === marketId);
+      const market = markets.find((m) => String(m.id) === String(marketId));
       if (!market) return;
 
       const outcomeLabel = market.outcomes[pos.outcome] ?? `Outcome ${pos.outcome}`;
+      const isResolved = market.status === 'resolved' || market.resolvedAt != null;
+      const endTimestamp = market.endDate ? new Date(market.endDate).getTime() : 0;
 
-      if (market.resolved && market.winningOutcome === pos.outcome && !pos.claimed) {
+      if (isResolved && market.resolvedOutcome === pos.outcome && !pos.claimed) {
         list.push({
           id: `win_claimable-${marketId}`,
           kind: 'win_claimable',
           marketId,
           question: market.question,
           outcomeLabel,
-          timestamp: market.endTime,
+          timestamp: endTimestamp,
           amount: pos.shares,
         });
-      } else if (market.resolved && market.winningOutcome !== pos.outcome) {
+      } else if (isResolved && market.resolvedOutcome !== pos.outcome) {
         list.push({
           id: `market_resolved_loss-${marketId}`,
           kind: 'market_resolved_loss',
           marketId,
           question: market.question,
           outcomeLabel,
-          timestamp: market.endTime,
+          timestamp: endTimestamp,
         });
       } else if (
-        !market.resolved &&
-        market.endTime > now &&
-        market.endTime - now < TWENTY_FOUR_HOURS
+        !isResolved &&
+        endTimestamp > now &&
+        endTimestamp - now < TWENTY_FOUR_HOURS
       ) {
         list.push({
           id: `ending_soon-${marketId}`,
@@ -79,7 +82,7 @@ export function useNotifications(
           marketId,
           question: market.question,
           outcomeLabel,
-          timestamp: market.endTime,
+          timestamp: endTimestamp,
         });
       }
     });

@@ -11,7 +11,7 @@ export interface Suggestion {
   reviewer?: string;
   reviewReason?: string;
   status: 'pending' | 'approved' | 'rejected' | 'published';
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   upvotes: number;
   publishedMarketId?: string;
   publishedBy?: string;
@@ -27,7 +27,7 @@ export interface CreateSuggestionInput {
   category?: string;
   durationHours: number;
   resolutionSource?: string;
-  chain?: 'aptos' | 'sui' | 'movement';
+  chain?: 'aptos' | 'sui' | 'movement' | 'base' | 'base';
 }
 
 export interface ApproveSuggestionInput {
@@ -57,7 +57,7 @@ export interface SuggestionEvent {
 export interface Market {
   id: string;
   onChainId: string;
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   question: string;
   category?: string;
   creatorWallet?: string;
@@ -80,7 +80,7 @@ export interface LeaderboardEntry {
   displayName?: string | null;
   metric: LeaderboardMetric;
   period: LeaderboardPeriod;
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   rank: number;
   value: string;
   totalProfit: string;

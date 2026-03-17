@@ -1,17 +1,12 @@
-import { useMemo } from 'react';
-import { useWallet as useAptosWallet } from '@aptos-labs/wallet-adapter-react';
-import { useSuiWallet } from '../contexts/SuiWalletContext';
-import { useChain } from '../contexts/ChainContext';
+import { useAccount, useDisconnect, useSignMessage } from 'wagmi';
 
 export interface UnifiedWallet {
   address: string | undefined;
   connected: boolean;
-  connecting: boolean;
-  connect: () => void;
   disconnect: () => void;
-  chain: 'aptos' | 'sui';
-  publicKey?: string;
-  signMessage?: (payload: {
+  chainId: number | undefined;
+  publicKey: string | undefined;
+  signMessage: ((payload: {
     message: string;
     nonce: string;
     address?: boolean;
@@ -21,43 +16,31 @@ export interface UnifiedWallet {
     signature?: string;
     publicKey?: string;
     fullMessage?: string;
-  }>;
+  }>) | undefined;
 }
 
-/**
- * Chain-aware wallet abstraction so components do not need to branch on the
- * active chain for basic wallet state.
- */
 export const useUnifiedWallet = (): UnifiedWallet => {
-  const { activeChain } = useChain();
-  const aptosWallet = useAptosWallet();
-  const suiWallet = useSuiWallet();
+  const { address, isConnected, chain } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
 
-  return useMemo<UnifiedWallet>(() => {
-    if (activeChain === 'sui') {
-      return {
-        address: suiWallet.account?.address as string | undefined,
-        connected: suiWallet.connected,
-        connecting: false,
-        connect: suiWallet.connect,
-        disconnect: suiWallet.disconnect,
-        chain: 'sui',
-        publicKey: undefined,
-        signMessage: undefined,
-      } as UnifiedWallet;
-    }
-
-    return {
-      address: aptosWallet.account?.address as unknown as string | undefined,
-      connected: aptosWallet.connected,
-      connecting: false, // aptosWallet.connecting not available
-      connect: () => {
-        console.log('[useUnifiedWallet] Open wallet modal to select an Aptos wallet');
-      },
-      disconnect: aptosWallet.disconnect,
-      chain: 'aptos',
-      publicKey: aptosWallet.account?.publicKey as string | undefined,
-      signMessage: aptosWallet.signMessage as UnifiedWallet['signMessage'],
-    } as UnifiedWallet;
-  }, [activeChain, aptosWallet, suiWallet]);
+  return {
+    address: address as string | undefined,
+    connected: isConnected,
+    disconnect,
+    chainId: chain?.id,
+    // On EVM, the address serves as the public identifier
+    publicKey: address as string | undefined,
+    // Adapt wagmi signMessage to the WalletAuthContext shape
+    signMessage: isConnected && signMessageAsync
+      ? async (payload) => {
+          const sig = await signMessageAsync({ message: payload.message } as any);
+          return {
+            signature: sig,
+            publicKey: address as string,
+            fullMessage: payload.message,
+          };
+        }
+      : undefined,
+  };
 };

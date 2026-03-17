@@ -55,14 +55,17 @@ const DashboardPage: React.FC = () => {
     }[] = [];
 
     positions.forEach((pos, marketId) => {
-      const market = markets.find((m) => m.id === marketId);
+      const market = markets.find((m) => String(m.id) === String(marketId));
       if (!market) return;
 
-      const total = market.totalStakes;
+      const total = parseFloat(market.totalVolume) || 0;
+      const pools = market.outcomePools.map((p) => parseFloat(p) || 0);
       const yesPct =
-        total > 0 ? Math.round(((market.outcomeStakes[0] ?? 0) / total) * 100) : 0;
+        total > 0 ? Math.round(((pools[0] ?? 0) / total) * 100) : 0;
 
       const cat = getCategoryFromQuestion(market.question);
+      const isResolved = market.status === 'resolved' || market.resolvedAt != null;
+      const endTimestamp = market.endDate ? Math.floor(new Date(market.endDate).getTime() / 1000) : 0;
 
       list.push({
         marketId,
@@ -73,10 +76,10 @@ const DashboardPage: React.FC = () => {
         stake: pos.stake,
         shares: pos.shares,
         claimed: pos.claimed,
-        resolved: market.resolved,
-        isWinner: market.resolved && market.winningOutcome === pos.outcome,
-        winningOutcome: market.winningOutcome,
-        endTime: market.endTime,
+        resolved: isResolved,
+        isWinner: isResolved && market.resolvedOutcome === pos.outcome,
+        winningOutcome: market.resolvedOutcome ?? 0,
+        endTime: endTimestamp,
         yesPct,
       });
     });
@@ -121,7 +124,13 @@ const DashboardPage: React.FC = () => {
   const isLoading = marketsLoading || positionsLoading;
 
   const handleClaim = async (marketId: number) => {
-    const tx = await claimWinnings(marketId);
+    // Find the market to get its conditionId
+    const market = markets.find((m) => String(m.id) === String(marketId));
+    if (!market?.conditionId) {
+      console.error('Market or conditionId not found for claim');
+      return;
+    }
+    const tx = await claimWinnings(market.conditionId, [1n]); // default index set
     if (tx) refetchPositions();
   };
 

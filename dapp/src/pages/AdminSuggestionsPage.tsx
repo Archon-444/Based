@@ -44,14 +44,15 @@ const STATUS_STYLES: Record<MarketSuggestionStatus, { pill: string; dot: string 
   published: { pill: 'bg-primary-500/15 text-primary-300 border-primary-500/25', dot: 'bg-primary-400' },
 };
 
-const CHAIN_STYLES: Record<'aptos' | 'sui' | 'movement', string> = {
+const CHAIN_STYLES: Record<string, string> = {
   aptos:    'bg-primary-500/15 text-primary-200 border-primary-500/20',
   sui:      'bg-secondary-500/15 text-secondary-200 border-secondary-500/20',
   movement: 'bg-white/[0.07] text-slate-300 border-white/10',
+  base:     'bg-blue-500/15 text-blue-200 border-blue-500/20',
 };
 
-const CHAIN_LABELS: Record<'aptos' | 'sui' | 'movement', string> = {
-  aptos: 'Aptos', sui: 'Sui', movement: 'Movement',
+const CHAIN_LABELS: Record<string, string> = {
+  aptos: 'Aptos', sui: 'Sui', movement: 'Movement', base: 'Base',
 };
 
 const explorerUrl = (chain: string, txHash: string): string =>

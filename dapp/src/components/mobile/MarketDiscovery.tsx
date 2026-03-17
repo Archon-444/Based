@@ -1,7 +1,17 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiTrendingUp, FiClock, FiDollarSign, FiX } from 'react-icons/fi';
-import { Market } from '../../services/MoveMarketSDK';
+// Legacy Move-based Market type for mobile components
+interface Market {
+  id: number;
+  question: string;
+  outcomes: string[];
+  endTime: number;
+  resolved: boolean;
+  winningOutcome: number;
+  totalStakes: number;
+  outcomeStakes: number[];
+}
 import { MobileMarketCard } from './MobileMarketCard';
 
 interface MarketDiscoveryProps {

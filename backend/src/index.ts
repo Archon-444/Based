@@ -6,12 +6,15 @@ import { logger } from './config/logger.js';
 import { startIndexer, stopIndexer } from './services/eventIndexer.js';
 import { getMarketResolverService } from './services/marketResolver.js';
 import { startSuiEventIndexer, stopSuiEventIndexer } from './services/suiEventIndexer.js';
+import { attachWebSocketServer } from './websocket/wsServer.js';
 
 const server = createServer(app);
 const port = env.PORT;
 
-// Store interval IDs for cleanup
+// Store interval IDs and service references for cleanup
 let resolverInterval: NodeJS.Timeout | null = null;
+let baseKeeperService: import('./services/keeperService.js').KeeperService | null = null;
+let baseAgentManager: import('./agents/index.js').AgentManager | null = null;
 
 server.listen(port, async () => {
   logger.info(`Backend listening on port ${port}`);
@@ -41,6 +44,42 @@ server.listen(port, async () => {
   } else {
     logger.info('Sui event indexer disabled via ACTIVE_CHAINS');
   }
+
+  // Start Base Event Indexer + Keeper
+  if (isChainActive('base')) {
+    try {
+      const { startBaseIndexer } = await import('./services/baseEventIndexer.js');
+      await startBaseIndexer();
+      logger.info('Base event indexer started successfully');
+    } catch (error) {
+      logger.error({ error }, 'Failed to start Base event indexer');
+    }
+
+    try {
+      const { KeeperService } = await import('./services/keeperService.js');
+      baseKeeperService = new KeeperService();
+      baseKeeperService.start();
+      logger.info('Base keeper service started');
+    } catch (error) {
+      logger.error({ error }, 'Failed to start Base keeper service');
+    }
+    // Start AI Agent Manager (Phase 5)
+    if (env.AGENT_ENABLED === 'true') {
+      try {
+        const { AgentManager } = await import('./agents/index.js');
+        baseAgentManager = new AgentManager();
+        await baseAgentManager.start();
+        logger.info('AI Agent Manager started');
+      } catch (error) {
+        logger.error({ error }, 'Failed to start AI Agent Manager (non-fatal)');
+      }
+    }
+  } else {
+    logger.info('Base services disabled via ACTIVE_CHAINS');
+  }
+
+  // Attach WebSocket server
+  attachWebSocketServer(server);
 
   // Start Market Resolver (M3)
   // Check for markets to resolve every 5 minutes
@@ -109,6 +148,27 @@ const shutdown = async (signal: string) => {
       logger.info('Sui event indexer stopped');
     } catch (error) {
       logger.error({ error }, 'Error stopping Sui event indexer');
+    }
+  }
+
+  // Stop Base services
+  if (isChainActive('base')) {
+    try {
+      const { stopBaseIndexer } = await import('./services/baseEventIndexer.js');
+      await stopBaseIndexer();
+      logger.info('Base event indexer stopped');
+    } catch (error) {
+      logger.error({ error }, 'Error stopping Base event indexer');
+    }
+
+    if (baseKeeperService) {
+      baseKeeperService.stop();
+      logger.info('Base keeper service stopped');
+    }
+
+    if (baseAgentManager) {
+      baseAgentManager.stop();
+      logger.info('AI Agent Manager stopped');
     }
   }
 

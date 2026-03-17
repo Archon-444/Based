@@ -2,7 +2,17 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FiCheck, FiTrendingUp, FiX } from 'react-icons/fi';
 import { usePlaceBet } from '../../hooks/useTransactions';
-import { Market } from '../../services/MoveMarketSDK';
+// Legacy Move-based Market type for mobile components
+interface Market {
+  id: string;
+  question: string;
+  outcomes: string[];
+  endTime: number;
+  resolved: boolean;
+  winningOutcome: number;
+  totalStakes: number;
+  outcomeStakes: number[];
+}
 import { useSwipeGesture } from '../../hooks/useSwipeGesture';
 import { hapticFeedback } from '../../utils/hapticFeedback';
 import { QuickBetWidget } from './QuickBetWidget';

@@ -1,105 +1,59 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useSDK } from '../contexts/SDKContext';
-import type { Market } from '../services/IBlockchainAdapter';
+import { useQuery } from '@tanstack/react-query';
+import { env } from '../config/env';
+
+export interface Market {
+  id: string;
+  onChainId: string;
+  chain: string;
+  question: string;
+  category: string | null;
+  outcomes: string[];
+  creatorWallet: string | null;
+  endDate: string | null;
+  status: string;
+  totalVolume: string;
+  liquidityParam: string | null;
+  outcomePools: string[];
+  resolvedOutcome: number | null;
+  createdAt: string;
+  resolvedAt: string | null;
+  conditionId: string | null;
+  questionId: string | null;
+  resolutionType: string | null;
+}
+
+const API_BASE = env.apiUrl;
+
+async function fetchMarkets(): Promise<Market[]> {
+  const res = await fetch(`${API_BASE}/markets?chain=base`);
+  if (!res.ok) throw new Error(`Failed to fetch markets: ${res.statusText}`);
+  const data = await res.json();
+  return Array.isArray(data) ? data : data.markets ?? [];
+}
+
+async function fetchMarket(onChainId: string): Promise<Market> {
+  const res = await fetch(`${API_BASE}/markets/base/${onChainId}`);
+  if (!res.ok) throw new Error(`Failed to fetch market: ${res.statusText}`);
+  return res.json();
+}
 
 export const useMarkets = () => {
-  const sdk = useSDK();
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const { data: markets = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['markets'],
+    queryFn: fetchMarkets,
+    refetchInterval: 30_000,
+  });
 
-  const fetchMarkets = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const count = await sdk.getMarketCount();
-      const marketPromises = [];
-
-      for (let i = 0; i < count; i++) {
-        marketPromises.push(sdk.getMarket(i));
-      }
-
-      const fetchedMarkets = await Promise.all(marketPromises);
-      setMarkets(fetchedMarkets);
-    } catch (err: any) {
-      setError(err);
-      console.error('Error fetching markets:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sdk]);
-
-  useEffect(() => {
-    fetchMarkets();
-  }, [fetchMarkets]);
-
-  return { markets, isLoading, error, refetch: fetchMarkets };
+  return { markets, isLoading, error, refetch };
 };
 
-export const useMarket = (marketId: number | null) => {
-  const sdk = useSDK();
-  const [market, setMarket] = useState<Market | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+export const useMarket = (marketId: string | null) => {
+  const { data: market = null, isLoading, error, refetch } = useQuery({
+    queryKey: ['market', marketId],
+    queryFn: () => fetchMarket(marketId!),
+    enabled: !!marketId,
+    refetchInterval: 15_000,
+  });
 
-  const fetchMarket = useCallback(async () => {
-    if (marketId === null || marketId < 0) {
-      setMarket(null);
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const fetchedMarket = await sdk.getMarket(marketId);
-      setMarket(fetchedMarket);
-    } catch (err: any) {
-      setError(err);
-      console.error(`Error fetching market ${marketId}:`, err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sdk, marketId]);
-
-  useEffect(() => {
-    fetchMarket();
-  }, [fetchMarket]);
-
-  return { market, isLoading, error, refetch: fetchMarket };
-};
-
-export const useMarketOdds = (marketId: number | null) => {
-  const sdk = useSDK();
-  const [odds, setOdds] = useState<number[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const fetchOdds = useCallback(async () => {
-    if (marketId === null || marketId < 0) {
-      setOdds([]);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const fetchedOdds = await sdk.getOdds(marketId);
-      setOdds(fetchedOdds);
-    } catch (err: any) {
-      setError(err);
-      console.error(`Error fetching odds for market ${marketId}:`, err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [sdk, marketId]);
-
-  useEffect(() => {
-    fetchOdds();
-  }, [fetchOdds]);
-
-  return { odds, isLoading, error, refetch: fetchOdds };
+  return { market, isLoading, error, refetch };
 };

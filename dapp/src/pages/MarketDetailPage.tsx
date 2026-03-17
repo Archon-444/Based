@@ -84,8 +84,7 @@ export const MarketDetailPage: React.FC = () => {
   const { id } = useParams();
   const marketId = useMemo(() => {
     if (!id) return null;
-    const n = Number(id);
-    return Number.isNaN(n) ? null : n;
+    return id;
   }, [id]);
 
   const { market, isLoading, error, refetch } = useMarket(marketId);
@@ -103,15 +102,16 @@ export const MarketDetailPage: React.FC = () => {
   const [betSuccess, setBetSuccess] = useState(false);
 
   const debouncedAmount = useDebounce(parseFloat(betAmount) || 0, 400);
-  const countdown = useCountdown(market ? market.endTime * 1000 : Date.now());
+  const countdown = useCountdown(market?.endDate ? new Date(market.endDate).getTime() : Date.now());
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // ── 10-second polling for live odds ──────────────────────────────────────
   useEffect(() => {
-    if (!market || market.resolved || countdown.isExpired) return;
+    const isResolved = market?.status === 'resolved' || market?.resolvedAt != null;
+    if (!market || isResolved || countdown.isExpired) return;
     pollingRef.current = setInterval(() => { refetch(); }, 10_000);
     return () => { if (pollingRef.current) clearInterval(pollingRef.current); };
-  }, [market?.id, market?.resolved, countdown.isExpired, refetch]);
+  }, [market?.id, market?.status, market?.resolvedAt, countdown.isExpired, refetch]);
 
   // ── Payout quote ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -125,7 +125,7 @@ export const MarketDetailPage: React.FC = () => {
     setQuoteError(null);
 
     fetchPayoutQuote(
-      { chain, onChainId: market.id.toString(), outcomeIndex: selectedOutcomeIndex, amount: debouncedAmount },
+      { chain: chain as any, onChainId: market.onChainId ?? market.id.toString(), outcomeIndex: selectedOutcomeIndex, amount: debouncedAmount },
       { signal: ctrl.signal },
     )
       .then(setPayoutData)
@@ -146,23 +146,26 @@ export const MarketDetailPage: React.FC = () => {
     setQuoteError(null);
   }, [selectedOutcomeIndex]);
 
-  const totalStakes = market ? fromMicroUSDC(market.totalStakes) : 0;
+  const totalVolume = market ? parseFloat(market.totalVolume) || 0 : 0;
+  const totalStakes = totalVolume;
   const question = market ? sanitizeMarketQuestion(market.question) : '';
   const category = market ? getCategoryFromQuestion(market.question) : null;
   const categoryInfo = category ? getCategoryInfo(category) : null;
 
   const outcomeData = useMemo(() => {
     if (!market) return [];
-    const total = market.totalStakes;
+    const pools = market.outcomePools.map((p) => parseFloat(p) || 0);
+    const total = pools.reduce((s, v) => s + v, 0) || totalVolume;
     return market.outcomes.map((label, index) => {
-      const stake = fromMicroUSDC(market.outcomeStakes[index] ?? 0);
-      const pct = total > 0 ? Math.round(((market.outcomeStakes[index] ?? 0) / total) * 100) : 0;
+      const stake = fromMicroUSDC(pools[index] ?? 0);
+      const pct = total > 0 ? Math.round(((pools[index] ?? 0) / total) * 100) : 0;
       return { label, stake, pct };
     });
-  }, [market]);
+  }, [market, totalVolume]);
 
+  const numericMarketId = market?.id ? parseInt(market.id, 10) || null : null;
   const { data: priceHistory, isLive: priceIsLive } = usePriceHistory(
-    market?.id ?? null,
+    numericMarketId,
     outcomeData[0]?.pct ?? 50,
     chain,
   );
@@ -223,7 +226,7 @@ export const MarketDetailPage: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (selectedOutcomeIndex === null || numAmount <= 0 || !market) return;
-    const txHash = await placeBet(market.id, selectedOutcomeIndex, numAmount);
+    const txHash = await placeBet(market.onChainId ?? market.id, selectedOutcomeIndex, numAmount);
     if (txHash) {
       setBetAmount('');
       setPayoutData(null);
@@ -270,9 +273,15 @@ export const MarketDetailPage: React.FC = () => {
     );
   }
 
-  const isExpired = countdown.isExpired || market!.resolved;
+  const isMarketResolved = market!.status === 'resolved' || market!.resolvedAt != null;
+  const marketEndTimestamp = market!.endDate ? Math.floor(new Date(market!.endDate).getTime() / 1000) : 0;
+  const marketWinningOutcome = market!.resolvedOutcome ?? -1;
+  const marketCreator = market!.creatorWallet ?? '';
+  const marketCreatedTimestamp = market!.createdAt ? new Date(market!.createdAt).getTime() : 0;
+
+  const isExpired = countdown.isExpired || isMarketResolved;
   const timeLabel = getTimeLabel(countdown.isExpired, countdown);
-  const statusIsActive = !market!.resolved && !countdown.isExpired;
+  const statusIsActive = !isMarketResolved && !countdown.isExpired;
   const canBet = statusIsActive && selectedOutcomeIndex !== null;
 
   return (
@@ -340,15 +349,15 @@ export const MarketDetailPage: React.FC = () => {
                       <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success-400 opacity-75" />
                     )}
                     <span className={`relative inline-flex h-2 w-2 rounded-full ${
-                      market!.resolved ? 'bg-slate-500' :
+                      isMarketResolved ? 'bg-slate-500' :
                       countdown.isExpired ? 'bg-warning-400' : 'bg-success-400'
                     }`} />
                   </span>
                   <span className={`text-sm font-semibold ${
-                    market!.resolved ? 'text-slate-400' :
+                    isMarketResolved ? 'text-slate-400' :
                     countdown.isExpired ? 'text-warning-400' : 'text-success-400'
                   }`}>
-                    {market!.resolved ? 'Resolved' : countdown.isExpired ? 'Pending Resolution' : 'Live'}
+                    {isMarketResolved ? 'Resolved' : countdown.isExpired ? 'Pending Resolution' : 'Live'}
                   </span>
                 </div>
               </div>
@@ -361,18 +370,18 @@ export const MarketDetailPage: React.FC = () => {
               {/* Creator + time */}
               <p className="text-sm text-slate-500 mb-6">
                 Created by{' '}
-                <span className="font-mono text-slate-400">{formatAddress(market!.creator)}</span>
+                <span className="font-mono text-slate-400">{formatAddress(marketCreator)}</span>
                 {' · '}
-                {format(market!.createdAt * 1000, 'MMM d, yyyy')}
+                {format(marketCreatedTimestamp, 'MMM d, yyyy')}
               </p>
 
               {/* Stats grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
-                  { icon: FiDollarSign, iconColor: 'text-primary-400', bg: 'bg-primary-500/10', label: 'Total Volume', value: formatVolume(market!.totalStakes) },
+                  { icon: FiDollarSign, iconColor: 'text-primary-400', bg: 'bg-primary-500/10', label: 'Total Volume', value: formatVolume(totalStakes) },
                   { icon: FiLayers, iconColor: 'text-secondary-400', bg: 'bg-secondary-500/10', label: 'Outcomes', value: market!.outcomes.length.toString() },
-                  { icon: FiClock, iconColor: 'text-warning-400', bg: 'bg-warning-500/10', label: market!.resolved ? 'Ended' : 'Time Left', value: market!.resolved ? format(market!.endTime * 1000, 'MMM d') : timeLabel },
-                  { icon: FiTrendingUp, iconColor: 'text-success-400', bg: 'bg-success-500/10', label: 'Status', value: market!.resolved ? `Winner: ${market!.outcomes[market!.winningOutcome] ?? '?'}` : statusIsActive ? 'Active' : 'Pending' },
+                  { icon: FiClock, iconColor: 'text-warning-400', bg: 'bg-warning-500/10', label: isMarketResolved ? 'Ended' : 'Time Left', value: isMarketResolved ? format(marketEndTimestamp * 1000, 'MMM d') : timeLabel },
+                  { icon: FiTrendingUp, iconColor: 'text-success-400', bg: 'bg-success-500/10', label: 'Status', value: isMarketResolved ? `Winner: ${market!.outcomes[marketWinningOutcome] ?? '?'}` : statusIsActive ? 'Active' : 'Pending' },
                 ].map(({ icon: Icon, iconColor, bg, label, value }) => (
                   <div key={label} className="flex items-start gap-3 rounded-xl bg-white/[0.025] border border-white/[0.05] p-3">
                     <div className={`flex-shrink-0 p-2 rounded-lg ${bg}`}>
@@ -462,7 +471,7 @@ export const MarketDetailPage: React.FC = () => {
             >
               <h2 className="text-lg font-bold text-white mb-1">Outcomes</h2>
               <p className="text-sm text-slate-500 mb-5">
-                {market!.resolved
+                {isMarketResolved
                   ? 'This market has been resolved.'
                   : 'Select an outcome to place your prediction.'}
               </p>
@@ -470,8 +479,8 @@ export const MarketDetailPage: React.FC = () => {
               <div className="space-y-3">
                 {outcomeData.map((outcome, index) => {
                   const isSelected = selectedOutcomeIndex === index;
-                  const isWinner = market!.resolved && market!.winningOutcome === index;
-                  const isLoser = market!.resolved && market!.winningOutcome !== index;
+                  const isWinner = isMarketResolved && marketWinningOutcome === index;
+                  const isLoser = isMarketResolved && marketWinningOutcome !== index;
 
                   return (
                     <motion.button
@@ -559,13 +568,13 @@ export const MarketDetailPage: React.FC = () => {
                     </span>
                   )}
                 </div>
-                {market!.resolved ? (
+                {isMarketResolved ? (
                   <p className="text-sm text-slate-500 mt-1">This market has been resolved.</p>
                 ) : isExpired ? (
                   <p className="text-sm text-warning-400 mt-1">Market has closed. Awaiting resolution.</p>
                 ) : (
                   <p className="text-sm text-slate-500 mt-1">
-                    Closes {format(market!.endTime * 1000, 'MMM d, HH:mm')}
+                    Closes {format(marketEndTimestamp * 1000, 'MMM d, HH:mm')}
                     {' · '}
                     <span className={countdown.isExpired ? 'text-error-400' : 'text-white font-medium'}>
                       {timeLabel}
@@ -661,7 +670,7 @@ export const MarketDetailPage: React.FC = () => {
                       {/* Input */}
                       <div className="relative">
                         <div className="absolute inset-y-0 left-3.5 flex items-center pointer-events-none">
-                          {currency.chain === 'sui'
+                          {(currency.chain as string) === 'sui'
                             ? <span className="text-slate-400 font-bold text-sm">◊</span>
                             : <FiDollarSign className="w-4 h-4 text-slate-400" />
                           }
@@ -753,7 +762,7 @@ export const MarketDetailPage: React.FC = () => {
                   loading={isPlacingBet}
                   onClick={handleSubmit}
                 >
-                  {market!.resolved
+                  {isMarketResolved
                     ? 'Market Resolved'
                     : isExpired
                     ? 'Market Closed'
@@ -776,7 +785,7 @@ export const MarketDetailPage: React.FC = () => {
             </div>
 
             {/* ── Market info sidebar card ─────────────────────────── */}
-            {!market!.resolved && (
+            {!isMarketResolved && (
               <div
                 className="rounded-2xl border border-[#1C2537] bg-[#0D1224] p-5"
                 style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)' }}
@@ -785,7 +794,7 @@ export const MarketDetailPage: React.FC = () => {
                 <div className="space-y-2.5">
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Total volume</span>
-                    <span className="font-semibold text-white">{formatVolume(market!.totalStakes)}</span>
+                    <span className="font-semibold text-white">{formatVolume(totalStakes)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Outcomes</span>
@@ -797,7 +806,7 @@ export const MarketDetailPage: React.FC = () => {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-slate-500">Created</span>
-                    <span className="font-semibold text-white">{format(market!.createdAt * 1000, 'MMM d, yyyy')}</span>
+                    <span className="font-semibold text-white">{format(marketCreatedTimestamp, 'MMM d, yyyy')}</span>
                   </div>
                 </div>
               </div>

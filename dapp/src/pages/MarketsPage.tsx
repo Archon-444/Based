@@ -16,7 +16,7 @@ import { sanitizeMarketQuestion } from '../utils/sanitize';
 import { useChain } from '../contexts/ChainContext';
 
 interface DisplayMarket {
-  id: number;
+  id: string;
   question: string;
   category: MarketCategory;
   totalStakes: number;
@@ -228,7 +228,7 @@ export const MarketsPage: React.FC = () => {
 
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { isRefreshing, pullDistance } = usePullToRefresh({
-    onRefresh: refetch,
+    onRefresh: () => refetch().then(() => {}),
     threshold: 80,
     enabled: true,
   });
@@ -236,9 +236,13 @@ export const MarketsPage: React.FC = () => {
   const displayMarkets: DisplayMarket[] = useMemo(() => {
     const mapped = markets.map((market) => {
       const category = getCategoryFromQuestion(market.question);
-      const diff = market.endTime * 1000 - Date.now();
+      const isResolved = market.status === 'resolved' || market.resolvedAt != null;
+      const endTimestamp = market.endDate ? Math.floor(new Date(market.endDate).getTime() / 1000) : 0;
+      const diff = endTimestamp * 1000 - Date.now();
+      const totalStakes = parseFloat(market.totalVolume) || 0;
+      const outcomeStakes = market.outcomePools.map((p) => parseFloat(p) || 0);
       let status: DisplayMarket['status'] = 'active';
-      if (market.resolved) {
+      if (isResolved) {
         status = 'closed';
       } else if (diff <= 0 || diff < 3 * 86_400_000) {
         status = 'ending_soon';
@@ -247,12 +251,12 @@ export const MarketsPage: React.FC = () => {
         id: market.id,
         question: sanitizeMarketQuestion(market.question),
         category,
-        totalStakes: market.totalStakes,
-        outcomeStakes: market.outcomeStakes ?? [],
+        totalStakes,
+        outcomeStakes,
         outcomes: market.outcomes ?? [],
-        endTime: market.endTime,
-        resolved: market.resolved,
-        winningOutcome: market.winningOutcome ?? 0,
+        endTime: endTimestamp,
+        resolved: isResolved,
+        winningOutcome: market.resolvedOutcome ?? 0,
         status,
         isTrending: false,
       };
@@ -286,7 +290,7 @@ export const MarketsPage: React.FC = () => {
           // Trending: active + hot first, then by volume
           if (a.isTrending !== b.isTrending) return a.isTrending ? -1 : 1;
           return b.totalStakes - a.totalStakes;
-        case SortOption.NEWEST: return b.id - a.id;
+        case SortOption.NEWEST: return b.id.localeCompare(a.id);
         case SortOption.ENDING_SOON: return a.endTime - b.endTime;
         case SortOption.HIGHEST_VOLUME:
         case SortOption.MOST_POPULAR:
@@ -329,7 +333,7 @@ export const MarketsPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary-400 mb-2">
-              {activeChain === 'aptos' ? 'Aptos' : 'Sui'} Network
+              {activeChain === 'base' ? 'Base' : activeChain === 'aptos' ? 'Aptos' : 'Sui'} Network
             </p>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
               Prediction Markets
@@ -423,7 +427,7 @@ export const MarketsPage: React.FC = () => {
               {debouncedSearch && ` matching "${debouncedSearch}"`}
             </span>
             <button
-              onClick={refetch}
+              onClick={() => refetch()}
               className="text-xs font-medium text-primary-400 hover:text-primary-300 transition-colors"
             >
               Refresh

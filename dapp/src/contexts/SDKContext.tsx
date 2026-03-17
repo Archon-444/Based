@@ -1,90 +1,58 @@
-import React, { createContext, useContext, useEffect, useMemo } from 'react';
-import { env } from '../config/env';
-import { AptosAdapter } from '../services/AptosAdapter';
-import type { IBlockchainAdapter } from '../services/IBlockchainAdapter';
-import { SuiPredictionMarketSDK } from '../services/SuiPredictionMarketSDK';
-import { useChain } from './ChainContext';
+/**
+ * SDK Context — Compatibility shim for Base-only mode.
+ * Pages that still reference useSDK/useSDKContext will get a minimal adapter.
+ */
+import React, { createContext, useContext } from 'react';
 
-interface SDKContextProps {
-  sdk: IBlockchainAdapter;
-  chain: 'aptos' | 'sui';
+interface MinimalSDK {
+  getMarketCount(): Promise<number>;
+  getMarket(id: number): Promise<any>;
+  getOdds(id: number): Promise<number[]>;
+  getBalance(address: string): Promise<number>;
+  getUserPosition(marketId: number, address: string): Promise<any>;
+  fromMicroUSDC(amount: number): number;
+  toMicroUSDC(amount: number): number;
+  formatUSDC(amount: number): string;
+  getNetwork(): string;
+  getModuleAddress(): string;
+  placeBet(marketId: number, outcome: number, amount: number): Promise<any>;
+  claimWinnings(marketId: number): Promise<any>;
 }
 
-const SDKContext = createContext<SDKContextProps | null>(null);
-
-const normalizeAddress = (value?: string): string | undefined => {
-  if (!value) return undefined;
-  const trimmed = value.trim();
-  return trimmed.length === 0 ? undefined : trimmed;
+const stubSDK: MinimalSDK = {
+  getMarketCount: async () => 0,
+  getMarket: async () => null,
+  getOdds: async () => [],
+  getBalance: async () => 0,
+  getUserPosition: async () => null,
+  fromMicroUSDC: (amount: number) => amount / 1_000_000,
+  toMicroUSDC: (amount: number) => Math.round(amount * 1_000_000),
+  formatUSDC: (amount: number) => `$${(amount / 1_000_000).toFixed(2)}`,
+  getNetwork: () => 'base',
+  getModuleAddress: () => '',
+  placeBet: async () => ({ hash: '', success: false }),
+  claimWinnings: async () => ({ hash: '', success: false }),
 };
+
+interface SDKContextType {
+  sdk: MinimalSDK;
+  chain: string;
+}
+
+const SDKContext = createContext<SDKContextType>({
+  sdk: stubSDK,
+  chain: 'base',
+});
 
 export const SDKProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { activeChain } = useChain();
-
-  const aptosAdapter = useMemo(() => {
-    const network = env.aptosNetwork;
-    const moduleAddress = normalizeAddress(env.aptosModuleAddress) ?? '0x1';
-    const usdcAddress = normalizeAddress(env.aptosUsdcAddress) ?? moduleAddress;
-
-    if (moduleAddress === '0x1') {
-      console.warn('[SDKProvider] VITE_APTOS_MODULE_ADDRESS is not set — using placeholder 0x1. Contract calls will fail until this is configured in Vercel environment variables.');
-    }
-
-    return new AptosAdapter(network, moduleAddress, usdcAddress);
-  }, []);
-
-  const suiAdapter = useMemo(() => {
-    const network = (env.suiNetwork ?? 'devnet') as 'devnet' | 'testnet' | 'mainnet';
-    const packageId = normalizeAddress(env.suiPackageId);
-
-    console.log('[SDKProvider] Sui configuration:', {
-      raw: env.suiPackageId,
-      normalized: packageId,
-      fallback: packageId ?? '0x0',
-      network
-    });
-
-    if (!packageId) {
-      console.warn('[SDKProvider] Sui package ID missing. Sui features will be limited until configured.');
-    }
-
-    return new SuiPredictionMarketSDK(network, packageId ?? '0x0');
-  }, []);
-
-  const sdk = useMemo<IBlockchainAdapter>(() => {
-    return activeChain === 'sui' ? suiAdapter : aptosAdapter;
-  }, [activeChain, aptosAdapter, suiAdapter]);
-
-  useEffect(() => {
-    console.log('[SDKProvider] Adapter switched', {
-      chain: activeChain,
-      moduleAddress: sdk.getModuleAddress(),
-      network: sdk.getNetwork(),
-    });
-  }, [sdk, activeChain]);
-
-  const value = useMemo<SDKContextProps>(() => ({
-    sdk,
-    chain: activeChain,
-  }), [sdk, activeChain]);
-
-  return <SDKContext.Provider value={value}>{children}</SDKContext.Provider>;
+  return (
+    <SDKContext.Provider value={{ sdk: stubSDK, chain: 'base' }}>
+      {children}
+    </SDKContext.Provider>
+  );
 };
 
-export const useSDK = (): IBlockchainAdapter => {
-  const context = useContext(SDKContext);
-  if (!context) {
-    throw new Error('useSDK must be used within an SDKProvider');
-  }
-  return context.sdk;
-};
+export const useSDK = () => useContext(SDKContext).sdk;
+export const useSDKContext = () => useContext(SDKContext);
 
-export const useSDKContext = (): SDKContextProps => {
-  const context = useContext(SDKContext);
-  if (!context) {
-    throw new Error('useSDKContext must be used within an SDKProvider');
-  }
-  return context;
-};
-
-export default SDKProvider;
+export default SDKContext;

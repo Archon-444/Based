@@ -1,83 +1,33 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useSDK } from '../contexts/SDKContext';
-import {
-  ResolutionMetadata,
-  PythPriceSnapshot,
-} from '../services/MoveMarketSDK';
+import { useState } from 'react';
 
-interface ResolutionState {
-  metadata: ResolutionMetadata | null;
-  price: PythPriceSnapshot | null;
-  isLoading: boolean;
-  error: Error | null;
+// Stub for Base chain — resolution data comes from backend API / market detail
+export interface ResolutionMetadata {
+  resolved: boolean;
+  winningOutcome: number;
+  source: number;
+  strategy: number;
 }
 
-const defaultSnapshot: PythPriceSnapshot = {
-  hasSnapshot: false,
-  price: 0n,
-  priceNegative: false,
-  confidence: 0n,
-  expo: 0,
-  expoNegative: false,
-  publishTime: 0,
-  receivedAt: 0,
-};
+export interface PythPriceSnapshot {
+  hasSnapshot: boolean;
+  price: bigint;
+  priceNegative: boolean;
+  confidence: bigint;
+  expo: number;
+  expoNegative: boolean;
+  publishTime: number;
+  receivedAt: number;
+}
 
-export const useMarketResolution = (marketId: number | null) => {
-  const sdk = useSDK();
-  const [state, setState] = useState<ResolutionState>({
-    metadata: null,
-    price: null,
+export const useMarketResolution = (_marketId: string | number | null) => {
+  // On Base, resolution data is available through the market detail API
+  // This hook is kept for compatibility with existing page components
+  const [state] = useState({
+    metadata: null as ResolutionMetadata | null,
+    price: null as PythPriceSnapshot | null,
     isLoading: false,
-    error: null,
+    error: null as Error | null,
   });
 
-  const fetchResolution = useCallback(async () => {
-    if (marketId === null || Number.isNaN(marketId) || marketId < 0) {
-      setState({
-        metadata: null,
-        price: null,
-        isLoading: false,
-        error: null,
-      });
-      return;
-    }
-
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      const [metadata, price] = await Promise.all([
-        (sdk as any).getResolutionMetadata?.(marketId),
-        (sdk as any).getPythPriceSnapshot?.(marketId),
-      ]);
-
-      setState({
-        metadata,
-        price,
-        isLoading: false,
-        error: null,
-      });
-    } catch (error: any) {
-      setState({
-        metadata: null,
-        price: defaultSnapshot,
-        isLoading: false,
-        error: error instanceof Error ? error : new Error(String(error)),
-      });
-    }
-  }, [sdk, marketId]);
-
-  useEffect(() => {
-    void fetchResolution();
-  }, [fetchResolution]);
-
-  return {
-    metadata: state.metadata,
-    price: state.price ?? defaultSnapshot,
-    isLoading: state.isLoading,
-    error: state.error,
-    refetch: fetchResolution,
-  };
+  return { ...state, refetch: () => {} };
 };
-
-export default useMarketResolution;
