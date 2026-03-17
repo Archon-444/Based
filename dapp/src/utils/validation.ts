@@ -1,4 +1,4 @@
-// Validation utilities for Move Market
+// Validation utilities for Prophecy
 
 /**
  * Validates an Aptos address format

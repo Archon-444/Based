@@ -52,11 +52,13 @@ const CHAIN_STYLES: Record<string, string> = {
 };
 
 const CHAIN_LABELS: Record<string, string> = {
-  aptos: 'Aptos', sui: 'Sui', movement: 'Movement', base: 'Base',
+  aptos: 'Aptos (legacy)', sui: 'Sui (legacy)', movement: 'Movement (legacy)', base: 'Base',
 };
 
 const explorerUrl = (chain: string, txHash: string): string =>
-  chain === 'sui'
+  chain === 'base'
+    ? `https://basescan.org/tx/${txHash}`
+    : chain === 'sui'
     ? `https://explorer.sui.io/txblock/${txHash}?network=testnet`
     : `https://explorer.aptoslabs.com/txn/${txHash}?network=devnet`;
 

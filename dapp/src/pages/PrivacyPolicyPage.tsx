@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
           {/* Introduction */}
           <Section icon={FiShield} title="1. Introduction">
             <p>
-              Welcome to PROPHECY (the "Platform"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our decentralized prediction market platform built on the Aptos blockchain.
+              Welcome to PROPHECY (the "Platform"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our decentralized prediction market platform built on the Base network.
             </p>
             <p className="mt-4">
               By using the Platform, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with our policies and practices, please do not use the Platform.
@@ -39,7 +39,7 @@ export default function PrivacyPolicyPage() {
           <Section icon={FiDatabase} title="2. Information We Collect">
             <h4 className="font-semibold text-white mb-3">2.1 Blockchain Information</h4>
             <p className="mb-4">
-              As a decentralized application (dApp), we interact with the Aptos blockchain. When you connect your wallet and use the Platform, the following blockchain data is publicly available:
+              As a decentralized application (dApp), we interact with the Base network. When you connect your wallet and use the Platform, the following blockchain data is publicly available:
             </p>
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li>Your wallet address</li>
@@ -49,7 +49,7 @@ export default function PrivacyPolicyPage() {
               <li>Timestamps of all on-chain activities</li>
             </ul>
             <p className="text-sm text-slate-400 italic">
-              Note: This information is stored on the Aptos blockchain and is publicly accessible. We do not control blockchain data.
+              Note: This information is stored on the Base network and is publicly accessible. We do not control blockchain data.
             </p>
 
             <h4 className="font-semibold text-white mt-6 mb-3">2.2 Technical Information</h4>
@@ -90,7 +90,7 @@ export default function PrivacyPolicyPage() {
           <Section icon={FiLock} title="4. Data Storage and Security">
             <h4 className="font-semibold text-white mb-3">4.1 Blockchain Data</h4>
             <p className="mb-4">
-              All betting and market data is stored on the Aptos blockchain, which is:
+              All betting and market data is stored on the Base network, which is:
             </p>
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li>Immutable and permanent</li>
@@ -112,7 +112,7 @@ export default function PrivacyPolicyPage() {
 
             <h4 className="font-semibold text-white mt-6 mb-3">4.3 Wallet Security</h4>
             <p>
-              <strong>IMPORTANT:</strong> We NEVER store, access, or request your private keys. Your wallet remains under your sole control. We only interact with your wallet through secure wallet provider APIs (Petra, Martian, Pontem).
+              <strong>IMPORTANT:</strong> We NEVER store, access, or request your private keys. Your wallet remains under your sole control. We only interact with your wallet through Coinbase Smart Wallet.
             </p>
           </Section>
 
@@ -155,7 +155,7 @@ export default function PrivacyPolicyPage() {
 
             <h4 className="font-semibold text-white mb-3">6.2 Data Deletion</h4>
             <p className="mb-4">
-              <strong>Important Limitation:</strong> Blockchain data (transactions, bets, markets) cannot be deleted or modified as it is permanently stored on the Aptos blockchain. However, you can request deletion of:
+              <strong>Important Limitation:</strong> Blockchain data (transactions, bets, markets) cannot be deleted or modified as it is permanently stored on the Base network. However, you can request deletion of:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Off-chain usage data and logs</li>
@@ -193,9 +193,9 @@ export default function PrivacyPolicyPage() {
           <Section icon={FiDatabase} title="8. Third-Party Services">
             <p className="mb-4">The Platform integrates with third-party services:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Wallet Providers:</strong> Petra, Martian, Pontem (see their privacy policies)</li>
+              <li><strong>Wallet Providers:</strong> Coinbase Smart Wallet (see their privacy policy)</li>
               <li><strong>Oracle Networks:</strong> Pyth, Chainlink, and other data providers</li>
-              <li><strong>Blockchain Infrastructure:</strong> Aptos Network</li>
+              <li><strong>Blockchain Infrastructure:</strong> Base Network</li>
               <li><strong>Analytics:</strong> Google Analytics, Mixpanel (if enabled)</li>
               <li><strong>Error Monitoring:</strong> Sentry (if enabled)</li>
             </ul>

@@ -22,7 +22,7 @@ const STEPS = [
     number: '01',
     Icon: FiCreditCard,
     title: 'Connect Wallet',
-    description: 'Connect your wallet of choice — Petra or Martian on Aptos, Suiet or Sui Wallet on Sui. No KYC required.',
+    description: 'Connect your Coinbase Smart Wallet to get started. No KYC required.',
     details: [
       'Install a compatible wallet extension for your selected chain',
       'Click "Connect Wallet" in the top right',
@@ -37,12 +37,12 @@ const STEPS = [
     number: '02',
     Icon: FiDollarSign,
     title: 'Get USDC',
-    description: 'Fund your wallet with USDC on your active chain. Prophecy supports stablecoin wagers on both Aptos and Sui.',
+    description: 'Fund your wallet with USDC on Base. Prophecy supports stablecoin wagers with near-zero gas fees.',
     details: [
       'Bridge USDC using LayerZero, Wormhole, or another supported bridge',
-      'Use a DEX to swap APT or SUI into USDC',
+      'Use a DEX to swap ETH into USDC on Base',
       'Minimum bet size is typically 1 USDC',
-      'Keep some APT or SUI for gas (typically < $0.01)',
+      'Keep some ETH for gas (typically < $0.01)',
     ],
     color: 'text-success-400',
     bg: 'bg-success-500/10',
@@ -136,7 +136,7 @@ const ODDS_CARDS = [
 
 const BENEFITS = [
   { Icon: FiShield, iconColor: 'text-primary-400', iconBg: 'bg-primary-500/10', title: 'Secure & Transparent', description: 'All bets are stored on-chain, ensuring complete transparency and immutability.' },
-  { Icon: FiDollarSign, iconColor: 'text-success-400', iconBg: 'bg-success-500/10', title: 'Low Fees', description: 'Aptos and Sui offer extremely low transaction fees, typically less than $0.01 per transaction.' },
+  { Icon: FiDollarSign, iconColor: 'text-success-400', iconBg: 'bg-success-500/10', title: 'Low Fees', description: 'Base offers near-zero transaction fees, typically less than $0.01 per transaction.' },
   { Icon: FiTrendingUp, iconColor: 'text-warning-400', iconBg: 'bg-warning-500/10', title: 'Instant Settlement', description: 'Fast block times mean your bets are confirmed in seconds, not minutes or hours.' },
   { Icon: FiCheckCircle, iconColor: 'text-secondary-400', iconBg: 'bg-secondary-500/10', title: 'Non-Custodial', description: 'Your funds remain in audited smart contracts. Winners can withdraw immediately after resolution.' },
 ];
@@ -147,7 +147,7 @@ const FAQS = [
   { q: 'What happens if I bet on the losing side?', a: 'If you bet on the losing outcome, your stake is distributed among winners proportionally. You will lose your initial bet amount.' },
   { q: 'Can I sell my position before the market ends?', a: 'Currently positions are locked until market resolution. Secondary market trading is on our roadmap.' },
   { q: 'What fees do you charge?', a: 'We charge a 2% platform fee on winning payouts. No fees to place bets — only standard network gas (typically < $0.01).' },
-  { q: 'Is my money safe?', a: 'All funds are held in audited smart contracts on Aptos and Sui. The platform cannot access user funds, and all transactions are transparent on-chain.' },
+  { q: 'Is my money safe?', a: 'All funds are held in audited smart contracts on Base. The platform cannot access user funds, and all transactions are transparent on-chain.' },
 ];
 
 export const HowItWorksPage: React.FC = () => {
@@ -161,7 +161,7 @@ export const HowItWorksPage: React.FC = () => {
             <p className="text-xs font-bold uppercase tracking-widest text-primary-400 mb-3">Learn</p>
             <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight mb-5">How It Works</h1>
             <p className="text-lg text-slate-400 leading-relaxed">
-              Discover how to participate in decentralized prediction markets on Aptos and Sui.
+              Discover how to participate in decentralized prediction markets on Base.
               From connecting your wallet to claiming winnings — every step, explained.
             </p>
           </motion.div>
@@ -249,7 +249,7 @@ export const HowItWorksPage: React.FC = () => {
         <section className="mb-24">
           <div className="text-center mb-12">
             <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Why Prophecy</h2>
-            <p className="text-slate-500">Built on Aptos and Sui for the best prediction market experience</p>
+            <p className="text-slate-500">Built on Base for the best prediction market experience</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">

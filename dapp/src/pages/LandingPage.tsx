@@ -16,8 +16,7 @@ import { Container } from '../components/layout/Container';
 import { Button } from '../components/ui/Button';
 import { useChain } from '../contexts/ChainContext';
 import {
-  APTOS_TRENDING_MARKETS,
-  SUI_TRENDING_MARKETS,
+  BASE_TRENDING_MARKETS,
   PLATFORM_STATS,
 } from '../data/mockMarkets';
 import { FeaturedMarketCard } from '../components/FeaturedMarketCard';
@@ -69,7 +68,7 @@ const TRUST_FEATURES = [
     iconColor: 'text-success-400',
     title: 'Sub-Second Settlement',
     description:
-      'Built on Aptos for near-instant finality. Bets confirm in milliseconds; claims process in the same block.',
+      'Built on Base for low-cost, fast transactions. Trades confirm in seconds with near-zero gas fees.',
   },
   {
     Icon: FiBarChart2,
@@ -118,8 +117,7 @@ export const LandingPage: React.FC = () => {
     navigate('/markets');
   };
 
-  const trendingMarkets =
-    activeChain === 'sui' ? SUI_TRENDING_MARKETS : APTOS_TRENDING_MARKETS;
+  const trendingMarkets = BASE_TRENDING_MARKETS;
 
   return (
     <div className="min-h-screen bg-[#080B18] text-white selection:bg-primary-500/30 overflow-x-hidden">
@@ -148,7 +146,7 @@ export const LandingPage: React.FC = () => {
               <span className="text-sm font-medium text-slate-300">
                 Live on{' '}
                 <span className="text-white font-semibold">
-                  {activeChain === 'sui' ? 'Sui Network' : 'Aptos Network'}
+                  {'Base Network'}
                 </span>
               </span>
             </motion.div>

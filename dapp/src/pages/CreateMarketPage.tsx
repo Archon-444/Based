@@ -72,7 +72,7 @@ export default function CreateMarketPage() {
   const [direction, setDirection] = useState(1);
 
   const chainLabel =
-    activeChain === 'aptos' ? 'Aptos' : activeChain === 'sui' ? 'Sui' : 'Movement';
+    'Base';
   const isCreatorMode =
     hasCreatorRole && !roleLoading && (creatorChains as readonly string[]).includes(activeChain);
 
@@ -150,7 +150,7 @@ export default function CreateMarketPage() {
 
     if (isCreatorMode) {
       if (!(creatorChains as readonly string[]).includes(activeChain)) {
-        toast.error('Direct on-chain publication is only available on Aptos or Sui');
+        toast.error('Direct on-chain publication is only available on Base');
         return;
       }
       const hash = await createMarket(question, filledOutcomes, durationHours);

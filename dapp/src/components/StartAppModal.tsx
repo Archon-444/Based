@@ -67,7 +67,7 @@ export const StartAppModal: React.FC<StartAppModalProps> = ({
                 </div>
 
                 <h2 className="text-2xl font-display font-bold text-white text-center mb-2">
-                  Welcome to Move Market!
+                  Welcome to Prophecy!
                 </h2>
                 <p className="text-primary-100 text-center text-sm">
                   Your decentralized prediction market
@@ -86,7 +86,7 @@ export const StartAppModal: React.FC<StartAppModalProps> = ({
                         Connect Your Wallet
                       </h3>
                       <p className="text-sm text-slate-400">
-                        Link your Aptos wallet to place bets and earn rewards
+                        Link your wallet to place bets and earn rewards
                       </p>
                     </div>
                   </div>
@@ -100,7 +100,7 @@ export const StartAppModal: React.FC<StartAppModalProps> = ({
                         100% Secure & Transparent
                       </h3>
                       <p className="text-sm text-slate-400">
-                        All transactions on Aptos blockchain, fully auditable
+                        All transactions on Base, fully auditable
                       </p>
                     </div>
                   </div>

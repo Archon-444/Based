@@ -27,7 +27,7 @@ export function ShareButton({
   const getShareText = (platform: 'twitter' | 'copy') => {
     if (winAmount) {
       // Sharing a win
-      return `🎉 Just won $${winAmount.toFixed(2)} on Move Market!\n\nMarket: "${marketTitle}"\n\n${platform === 'twitter' ? 'Try your luck 👇' : ''}`;
+      return `🎉 Just won $${winAmount.toFixed(2)} on Prophecy!\n\nMarket: "${marketTitle}"\n\n${platform === 'twitter' ? 'Try your luck 👇' : ''}`;
     } else if (prediction && odds) {
       // Sharing a prediction
       return `🔮 I predict ${prediction} at ${odds}%!\n\n"${marketTitle}"\n\n${platform === 'twitter' ? 'What do you think? 👇' : ''}`;
@@ -46,13 +46,13 @@ export function ShareButton({
         const twitterUrl = new URL('https://twitter.com/intent/tweet');
         twitterUrl.searchParams.set('text', text);
         twitterUrl.searchParams.set('url', marketUrl);
-        twitterUrl.searchParams.set('hashtags', 'Move Market,PredictionMarket,Crypto');
+        twitterUrl.searchParams.set('hashtags', 'Prophecy,PredictionMarket,Crypto');
 
         window.open(twitterUrl.toString(), '_blank', 'width=550,height=420');
       } else if (platform === 'native' && navigator.share) {
         // Native share API (mobile)
         await navigator.share({
-          title: 'Move Market',
+          title: 'Prophecy',
           text,
           url: marketUrl,
         });

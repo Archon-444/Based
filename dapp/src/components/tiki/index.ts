@@ -1,7 +1,7 @@
 /**
  * Tiki Component Library
  *
- * Move Market themed components for the tiki rebrand.
+ * Prophecy themed components for the tiki rebrand.
  * These components add personality and visual distinction while
  * maintaining the serious technical infrastructure underneath.
  */

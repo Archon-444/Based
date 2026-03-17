@@ -17,24 +17,24 @@ import { Container } from '../components/layout/Container';
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 const MOCK_ORACLE_STATS = {
     totalOracles: 12,
-    totalStaked: '1,240,000 APT',
+    totalStaked: '1,240,000 ETH',
     resolvedMarkets: 87,
     pendingMarkets: 4,
 };
 
 const MOCK_LEADERBOARD = [
-    { rank: 1, name: 'Oracle Prime', address: '0x1a2b3c4d', reputation: 980, accuracy: 98, stake: '100,000 APT', status: 'active' },
-    { rank: 2, name: 'Nexus Oracle', address: '0x5e6f7a8b', reputation: 950, accuracy: 96, stake: '85,000 APT', status: 'active' },
-    { rank: 3, name: 'DataSage', address: '0x9c0d1e2f', reputation: 920, accuracy: 95, stake: '72,000 APT', status: 'active' },
-    { rank: 4, name: 'TruthNode', address: '0x3a4b5c6d', reputation: 870, accuracy: 91, stake: '60,000 APT', status: 'active' },
-    { rank: 5, name: 'BlockOracle', address: '0x7e8f9a0b', reputation: 810, accuracy: 88, stake: '50,000 APT', status: 'suspended' },
+    { rank: 1, name: 'Oracle Prime', address: '0x1a2b3c4d', reputation: 980, accuracy: 98, stake: '100,000 ETH', status: 'active' },
+    { rank: 2, name: 'Nexus Oracle', address: '0x5e6f7a8b', reputation: 950, accuracy: 96, stake: '85,000 ETH', status: 'active' },
+    { rank: 3, name: 'DataSage', address: '0x9c0d1e2f', reputation: 920, accuracy: 95, stake: '72,000 ETH', status: 'active' },
+    { rank: 4, name: 'TruthNode', address: '0x3a4b5c6d', reputation: 870, accuracy: 91, stake: '60,000 ETH', status: 'active' },
+    { rank: 5, name: 'BlockOracle', address: '0x7e8f9a0b', reputation: 810, accuracy: 88, stake: '50,000 ETH', status: 'suspended' },
 ];
 
 const MOCK_PENDING_MARKETS = [
     { id: 42, question: 'Will BTC exceed $100k before Q3 2026?', deadline: '23h 14m', submissions: 2, required: 3 },
     { id: 38, question: 'Will Ethereum 2.0 staking yield exceed 8% APY?', deadline: '5h 02m', submissions: 1, required: 3 },
     { id: 35, question: 'Will the Fed cut rates in 2026 Q2?', deadline: '1h 45m', submissions: 3, required: 3 },
-    { id: 29, question: 'Will Aptos TVL surpass $5B?', deadline: '47m', submissions: 0, required: 3 },
+    { id: 29, question: 'Will Base TVL surpass $5B?', deadline: '47m', submissions: 0, required: 3 },
 ];
 
 // ─── Subcomponents ────────────────────────────────────────────────────────────
@@ -290,7 +290,7 @@ const OracleDashboardPage: React.FC = () => {
                                 <div className="flex items-start gap-3 p-4 rounded-xl bg-black/20 border border-white/5">
                                     <FiCheckCircle className="w-5 h-5 text-[#00D4FF] mt-0.5 shrink-0" />
                                     <div>
-                                        <div className="text-sm font-semibold text-white mb-0.5">Minimum Stake: 100 APT</div>
+                                        <div className="text-sm font-semibold text-white mb-0.5">Minimum Stake: 100 ETH</div>
                                         <div className="text-xs text-slate-400">Stake acts as collateral, slashed 20% for incorrect votes.</div>
                                     </div>
                                 </div>
@@ -312,16 +312,16 @@ const OracleDashboardPage: React.FC = () => {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-2">Stake Amount (APT)</label>
+                                    <label className="block text-sm text-slate-400 mb-2">Stake Amount (ETH)</label>
                                     <div className="relative">
                                         <input
                                             type="number"
                                             min="100"
                                             defaultValue="100"
-                                            placeholder="Min. 100 APT"
+                                            placeholder="Min. 100 ETH"
                                             className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-[#00D4FF]/50 focus:shadow-[0_0_10px_rgba(0,212,255,0.2)] transition-all"
                                         />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">APT</span>
+                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 text-sm">ETH</span>
                                     </div>
                                 </div>
                                 <div>

@@ -20,20 +20,21 @@ const PERIOD_OPTIONS: { id: LeaderboardPeriod; label: string }[] = [
 
 const CHAIN_OPTIONS = [
   { id: 'all', label: 'All' },
-  { id: 'aptos', label: 'Aptos' },
-  { id: 'sui', label: 'Sui' },
+  { id: 'base', label: 'Base' },
 ];
 
-const CHAIN_COLORS: Record<'aptos' | 'sui' | 'movement', { bg: string; text: string }> = {
+const CHAIN_COLORS: Record<'aptos' | 'sui' | 'movement' | 'base', { bg: string; text: string }> = {
   aptos: { bg: 'bg-primary-500/15', text: 'text-primary-300' },
   sui: { bg: 'bg-secondary-500/15', text: 'text-secondary-300' },
   movement: { bg: 'bg-white/[0.07]', text: 'text-slate-400' },
+  base: { bg: 'bg-blue-500/15', text: 'text-blue-300' },
 };
 
-const CHAIN_LABELS: Record<'aptos' | 'sui' | 'movement', string> = {
-  aptos: 'Aptos',
-  sui: 'Sui',
-  movement: 'Movement',
+const CHAIN_LABELS: Record<'aptos' | 'sui' | 'movement' | 'base', string> = {
+  aptos: 'Aptos (legacy)',
+  sui: 'Sui (legacy)',
+  movement: 'Movement (legacy)',
+  base: 'Base',
 };
 
 const MEDAL_STYLES = [

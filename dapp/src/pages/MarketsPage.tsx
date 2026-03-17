@@ -333,7 +333,7 @@ export const MarketsPage: React.FC = () => {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-primary-400 mb-2">
-              {activeChain === 'base' ? 'Base' : activeChain === 'aptos' ? 'Aptos' : 'Sui'} Network
+              Base Network
             </p>
             <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
               Prediction Markets

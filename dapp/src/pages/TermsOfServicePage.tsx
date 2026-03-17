@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
           <Section icon={FiShield} title="3. Platform Description">
             <h4 className="font-semibold text-white mb-3">3.1 Decentralized Application</h4>
             <p className="mb-4">
-              PROPHECY is a decentralized prediction market platform built on the Aptos blockchain. The Platform allows users to:
+              PROPHECY is a decentralized prediction market platform built on the Base network. The Platform allows users to:
             </p>
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li>Create prediction markets on future events</li>
@@ -70,7 +70,7 @@ export default function TermsOfServicePage() {
 
             <h4 className="font-semibold text-white mb-3">3.2 Smart Contract Interaction</h4>
             <p>
-              The Platform operates through smart contracts deployed on the Aptos blockchain. By using the Platform, you interact directly with these smart contracts. We do not control the Aptos blockchain or guarantee the security or functionality of smart contracts.
+              The Platform operates through smart contracts deployed on the Base network. By using the Platform, you interact directly with these smart contracts. We do not control the Base network or guarantee the security or functionality of smart contracts.
             </p>
 
             <h4 className="font-semibold text-white mt-6 mb-3">3.3 Non-Custodial Service</h4>
@@ -187,7 +187,7 @@ export default function TermsOfServicePage() {
 
             <h4 className="font-semibold text-white mb-3">7.2 Gas Fees</h4>
             <p>
-              All blockchain transactions require gas fees (paid in APT). Gas fees are set by the Aptos network and are subject to change based on network congestion. We do not control or profit from gas fees.
+              All blockchain transactions require gas fees (paid in ETH). Gas fees are set by the Base network and are subject to change based on network congestion. We do not control or profit from gas fees.
             </p>
 
             <h4 className="font-semibold text-white mt-6 mb-3">7.3 Fee Changes</h4>

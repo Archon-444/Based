@@ -138,7 +138,7 @@ const LiquidityPage: React.FC = () => {
             />
             <StatCard
               label="Active Chain"
-              value={chain === 'sui' ? 'Sui' : 'Aptos'}
+              value="Base"
               sub="USDC-denominated pools"
               icon={<FiGlobe />}
               color="text-warning-400"

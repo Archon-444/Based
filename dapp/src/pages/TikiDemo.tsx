@@ -5,7 +5,7 @@ import type { MaskBroType, Sentiment } from '../components/tiki';
 /**
  * TikiDemo Page
  *
- * Showcases the tiki rebrand components for Move Market
+ * Showcases the tiki rebrand components for Prophecy
  * Used for testing and demonstrating the new visual identity
  */
 export default function TikiDemo() {
@@ -16,7 +16,7 @@ export default function TikiDemo() {
   const sampleMarkets = [
     { question: 'Will Bitcoin hit $100k by EOY 2025?', yesOdds: 67, volume: 5000 },
     { question: 'Will ETH flip BTC in market cap?', yesOdds: 23, volume: 2000 },
-    { question: 'Will Aptos reach 1M daily users?', yesOdds: 48, volume: 15000 },
+    { question: 'Will Base reach 1M daily users?', yesOdds: 48, volume: 15000 },
     { question: 'Will there be a crypto ETF approval?', yesOdds: 85, volume: 8000, volatility: 25 },
   ];
 
@@ -34,7 +34,7 @@ export default function TikiDemo() {
             <div className="flex items-center gap-3">
               <span className="text-5xl animate-bounce-slow">🗿</span>
               <div>
-                <h1 className="font-baloo text-4xl text-tiki-coconut font-bold">Move Market</h1>
+                <h1 className="font-baloo text-4xl text-tiki-coconut font-bold">Prophecy</h1>
                 <p className="text-tiki-coconut/70 text-sm">Tiki Rebrand Demo</p>
               </div>
             </div>
@@ -302,8 +302,8 @@ export default function TikiDemo() {
       <footer className="bg-tiki-deep-teal border-t-2 border-tiki-mango py-8">
         <div className="container mx-auto px-6 text-center text-tiki-coconut/60">
           <div className="text-4xl mb-4">🗿 😏 😔 🧙 🤪 😎</div>
-          <p className="mb-2">Move Market - Where degens bet on what's probably true</p>
-          <p className="text-sm">Built with ❤️ and tropical vibes on Aptos & Sui</p>
+          <p className="mb-2">Prophecy - Where degens bet on what's probably true</p>
+          <p className="text-sm">Built with ❤️ and tropical vibes on Base</p>
         </div>
       </footer>
     </div>

@@ -32,12 +32,12 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'What is Prophecy?',
         answer:
-          'Prophecy is a decentralized prediction market platform built on Aptos and Sui. It lets you trade on the outcomes of real-world events using USDC stablecoin. All transactions are transparent, non-custodial, and settled on-chain.',
+          'Prophecy is a decentralized prediction market platform built on Base. It lets you trade on the outcomes of real-world events using USDC stablecoin. All transactions are transparent, non-custodial, and settled on-chain.',
       },
       {
         question: 'How do I get started?',
         answer:
-          'Install a compatible wallet (Petra or Martian on Aptos, Suiet on Sui), connect it to Prophecy, get USDC using our testnet faucet, then browse markets and place your first prediction. The whole process takes under 5 minutes.',
+          'Connect your Coinbase Smart Wallet to Prophecy, get USDC using our testnet faucet, then browse markets and place your first prediction. The whole process takes under 5 minutes.',
       },
       {
         question: 'Do I need to create an account?',
@@ -47,7 +47,7 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'What wallets are supported?',
         answer:
-          'Prophecy supports major Aptos wallets (Petra, Martian, Pontem, OKX) and Sui wallets (Suiet, Sui Wallet, Nightly) via the official wallet adapter standards.',
+          'Prophecy supports Coinbase Smart Wallet for seamless onboarding on Base.',
       },
     ],
   },
@@ -96,7 +96,7 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'What fees does Prophecy charge?',
         answer:
-          'A 2% platform fee on winning payouts only. Losers pay nothing. Gas fees on Aptos/Sui are typically under $0.001. No deposit, withdrawal, or maintenance fees.',
+          'A 2% platform fee on winning payouts only. Losers pay nothing. Gas fees on Base are near-zero. No deposit, withdrawal, or maintenance fees.',
       },
       {
         question: 'How do I withdraw winnings?',

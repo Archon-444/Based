@@ -9,7 +9,7 @@ const STEPS = [
   {
     emoji: '🔮',
     title: 'Welcome to Prophecy',
-    body: 'Prophecy is a decentralized prediction market on Aptos and Sui. You bet USDC on the outcome of real-world events — and win a share of the pool if you\'re right.',
+    body: 'Prophecy is a decentralized prediction market on Base. You bet USDC on the outcome of real-world events — and win a share of the pool if you\'re right.',
     highlight: 'Powered by on-chain smart contracts. Non-custodial. Open to anyone.',
   },
   {
@@ -27,7 +27,7 @@ const STEPS = [
   {
     emoji: '🚀',
     title: 'Ready to Predict',
-    body: 'Connect your Petra or Sui wallet to get started. On testnet, use the faucet button in the header to receive free USDC for your first prediction.',
+    body: 'Connect your Coinbase Smart Wallet to get started. On testnet, use the faucet button in the header to receive free USDC for your first prediction.',
     highlight: 'No KYC. No minimums. Just your prediction and your edge.',
   },
 ];

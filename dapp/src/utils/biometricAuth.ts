@@ -50,7 +50,7 @@ export const isBiometricSupported = async (): Promise<boolean> => {
  */
 export const registerBiometric = async (
   userAddress: string,
-  displayName: string = 'Move Market User'
+  displayName: string = 'Prophecy User'
 ): Promise<BiometricAuthResult> => {
   try {
     // Check support
@@ -69,7 +69,7 @@ export const registerBiometric = async (
     const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
       challenge,
       rp: {
-        name: 'Move Market',
+        name: 'Prophecy',
         id: window.location.hostname,
       },
       user: {

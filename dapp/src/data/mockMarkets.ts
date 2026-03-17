@@ -1,4 +1,4 @@
-export const APTOS_TRENDING_MARKETS = [
+export const BASE_TRENDING_MARKETS = [
   {
     id: 1,
     question: 'Will Bitcoin break $150k before end of 2025?',
@@ -10,7 +10,7 @@ export const APTOS_TRENDING_MARKETS = [
   },
   {
     id: 2,
-    question: 'Will Aptos rank top-5 by market cap in 2025?',
+    question: 'Will Base TVL rank top-5 among L2s in 2025?',
     category: 'Crypto',
     volume: '$84.2K',
     odds: { yes: 38, no: 62 },
@@ -28,10 +28,10 @@ export const APTOS_TRENDING_MARKETS = [
   },
 ];
 
-export const SUI_TRENDING_MARKETS = [
+export const EXTRA_TRENDING_MARKETS = [
   {
     id: 101,
-    question: 'Will Sui reach $10 before end of 2025?',
+    question: 'Will Ethereum L2 fees drop below $0.001 avg by end of 2025?',
     category: 'Crypto',
     volume: '$95.1K',
     odds: { yes: 47, no: 53 },
@@ -40,7 +40,7 @@ export const SUI_TRENDING_MARKETS = [
   },
   {
     id: 102,
-    question: 'Will Sui TVL surpass $3B in 2025?',
+    question: 'Will Base TVL surpass $15B in 2025?',
     category: 'DeFi',
     volume: '$52.8K',
     odds: { yes: 61, no: 39 },
@@ -49,7 +49,7 @@ export const SUI_TRENDING_MARKETS = [
   },
   {
     id: 103,
-    question: 'Will a major US exchange list SUI by end of Q3 2025?',
+    question: 'Will Coinbase launch a new DeFi product on Base by Q3 2025?',
     category: 'Business',
     volume: '$41.3K',
     odds: { yes: 78, no: 22 },

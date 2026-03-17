@@ -235,7 +235,7 @@ const AdminRolesPage: React.FC = () => {
                 </h2>
                 <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 mb-3">
                   <span className="uppercase tracking-wide font-semibold">
-                    {activeChain === 'aptos' ? 'Aptos' : 'Sui'} network
+                    Base network
                   </span>
                   {lastSynced && (
                     <span>
