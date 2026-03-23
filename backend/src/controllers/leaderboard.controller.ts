@@ -6,7 +6,7 @@ import { leaderboardService } from '../services/leaderboard.service.js';
 const querySchema = z.object({
   metric: z.enum(['profit', 'volume']).default('profit'),
   period: z.enum(['daily', 'weekly', 'monthly', 'all_time']).default('weekly'),
-  chain: z.enum(['aptos', 'sui', 'movement', 'all']).optional(),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base', 'all']).optional(),
   limit: z.coerce.number().int().positive().max(200).optional(),
   offset: z.coerce.number().int().min(0).optional(),
 });

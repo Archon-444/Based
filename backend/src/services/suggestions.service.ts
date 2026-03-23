@@ -11,12 +11,12 @@ interface CreateSuggestionInput {
   durationHours: number;
   resolutionSource?: string;
   proposer: string;
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
 }
 
 interface ListSuggestionsInput {
   status?: 'pending' | 'approved' | 'rejected' | 'published';
-  chain?: 'aptos' | 'sui' | 'movement';
+  chain?: 'aptos' | 'sui' | 'movement' | 'base';
   limit?: number;
   offset?: number;
 }
@@ -63,7 +63,7 @@ export const suggestionService = {
     id: string;
     reviewer: string;
     publishOnChain: boolean;
-    reviewerChain?: 'aptos' | 'sui' | 'movement';
+    reviewerChain?: 'aptos' | 'sui' | 'movement' | 'base';
     txHash?: string | null;
   }) {
     let suggestion = await prisma.suggestion.update({
@@ -143,7 +143,7 @@ export const suggestionService = {
     id: string;
     reviewer: string;
     reason?: string;
-    reviewerChain?: 'aptos' | 'sui' | 'movement';
+    reviewerChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     const suggestion = await prisma.suggestion.update({
       where: { id: params.id },
@@ -173,7 +173,7 @@ export const suggestionService = {
     id: string;
     voter: string;
     delta: number;
-    voterChain?: 'aptos' | 'sui' | 'movement';
+    voterChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     const suggestion = await prisma.suggestion.update({
       where: { id: params.id },
@@ -208,7 +208,7 @@ export const suggestionService = {
   async publishSuggestion(params: {
     id: string;
     publisher: string;
-    publisherChain?: 'aptos' | 'sui' | 'movement';
+    publisherChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     // 1. Get suggestion (must be 'approved')
     const suggestion = await prisma.suggestion.findUnique({

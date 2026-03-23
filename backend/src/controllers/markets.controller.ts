@@ -6,21 +6,21 @@ import { marketsService } from '../services/markets.service.js';
 import { suiMarketLookupService } from '../services/sui-market-lookup.service.js';
 
 const listSchema = z.object({
-  chain: z.enum(['aptos', 'sui', 'movement']).optional(),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']).optional(),
   status: z.string().optional(),
   limit: z.coerce.number().int().positive().max(2000).optional(),
   offset: z.coerce.number().int().min(0).optional(),
 });
 
 const detailSchema = z.object({
-  chain: z.enum(['aptos', 'sui', 'movement']),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']),
   onChainId: z.string().min(1),
 });
 
 const calculatePayoutSchema = z
   .object({
     marketId: z.string().min(1).optional(),
-    chain: z.enum(['aptos', 'sui', 'movement']).optional(),
+    chain: z.enum(['aptos', 'sui', 'movement', 'base']).optional(),
     onChainId: z.string().min(1).optional(),
     outcomeIndex: z.coerce.number().int().min(0),
     amount: z.coerce.number().positive(),

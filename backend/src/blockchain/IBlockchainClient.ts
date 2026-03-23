@@ -43,7 +43,7 @@ export interface ResolveMarketOptions {
 }
 
 export interface IBlockchainClient {
-  readonly chain: 'aptos' | 'sui' | 'movement';
+  readonly chain: 'aptos' | 'sui' | 'movement' | 'base';
   createMarket(params: CreateMarketParams): Promise<string>;
   resolveMarket(
     marketId: string,

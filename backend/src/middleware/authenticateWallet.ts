@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 
 import { verifyWalletSignature } from '../utils/wallet.js';
 
-type SupportedChain = 'aptos' | 'sui' | 'movement';
+type SupportedChain = 'aptos' | 'sui' | 'movement' | 'base';
 
 export interface WalletContext {
   address: string;

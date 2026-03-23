@@ -45,7 +45,7 @@ export const rolesService = {
     role: string;
     actor: string;
     transactionHash?: string;
-    chain: 'aptos' | 'sui' | 'movement';
+    chain: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     const existing = await prisma.user.findUnique({
       where: { walletAddress: params.walletAddress },
@@ -92,7 +92,7 @@ export const rolesService = {
     role: string;
     actor: string;
     transactionHash?: string;
-    chain: 'aptos' | 'sui' | 'movement';
+    chain: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     await prisma.roleChange.create({
       data: {
@@ -130,7 +130,7 @@ export const rolesService = {
 
   async syncRoles(params: {
     walletAddress: string;
-    chain: 'aptos' | 'sui' | 'movement';
+    chain: 'aptos' | 'sui' | 'movement' | 'base';
     actor: string;
   }) {
     if (params.chain === 'movement') {

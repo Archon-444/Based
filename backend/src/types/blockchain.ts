@@ -126,7 +126,7 @@ export interface AptosEvent {
  * Processed event ready for database storage
  */
 export interface ProcessedEvent {
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   eventType: EventType;
   transactionHash: string;
   sequenceNumber: bigint;
@@ -140,7 +140,7 @@ export interface ProcessedEvent {
  * Indexer state for tracking sync progress
  */
 export interface IndexerState {
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   lastProcessedVersion: bigint;
   lastProcessedTimestamp?: Date;
   isRunning: boolean;
@@ -151,7 +151,7 @@ export interface IndexerState {
  * Indexer configuration
  */
 export interface IndexerConfig {
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
   moduleAddress: string;
   startVersion?: bigint;
   pollInterval: number; // milliseconds
