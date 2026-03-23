@@ -8,12 +8,11 @@ services:
   # Node.js Express Backend
   - type: web
     name: movemarket-api
-    env: node
+    env: docker
     plan: free # or starter
     region: oregon # adjust as needed
-    rootDir: backend
-    buildCommand: npm install && npx prisma generate && npm run build
-    startCommand: npx prisma migrate deploy && npm start
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     envVars:
       - key: DATABASE_URL
         fromDatabase:
