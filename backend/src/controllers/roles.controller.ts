@@ -7,12 +7,12 @@ const grantRoleSchema = z.object({
   walletAddress: z.string().min(2),
   role: z.string().min(2),
   transactionHash: z.string().optional(),
-  chain: z.enum(['aptos', 'sui', 'movement']).default('aptos'),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']).default('base'),
 });
 
 const syncRolesSchema = z.object({
   walletAddress: z.string().min(2),
-  chain: z.enum(['aptos', 'sui', 'movement']).default('aptos'),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']).default('base'),
 });
 
 const addressParamSchema = z.object({ address: z.string().min(2) });

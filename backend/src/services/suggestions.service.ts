@@ -1,8 +1,5 @@
-import { ChainRouter } from '../blockchain/chainRouter.js';
 import { logger } from '../config/logger.js';
 import { prisma } from '../database/prismaClient.js';
-
-const chainRouter = new ChainRouter();
 
 interface CreateSuggestionInput {
   question: string;
@@ -11,12 +8,12 @@ interface CreateSuggestionInput {
   durationHours: number;
   resolutionSource?: string;
   proposer: string;
-  chain: 'aptos' | 'sui' | 'movement';
+  chain: 'aptos' | 'sui' | 'movement' | 'base';
 }
 
 interface ListSuggestionsInput {
   status?: 'pending' | 'approved' | 'rejected' | 'published';
-  chain?: 'aptos' | 'sui' | 'movement';
+  chain?: 'aptos' | 'sui' | 'movement' | 'base';
   limit?: number;
   offset?: number;
 }
@@ -63,7 +60,7 @@ export const suggestionService = {
     id: string;
     reviewer: string;
     publishOnChain: boolean;
-    reviewerChain?: 'aptos' | 'sui' | 'movement';
+    reviewerChain?: 'aptos' | 'sui' | 'movement' | 'base';
     txHash?: string | null;
   }) {
     let suggestion = await prisma.suggestion.update({
@@ -98,14 +95,8 @@ export const suggestionService = {
         let txHash = params.txHash ?? undefined;
 
         if (!txHash) {
-          const client = chainRouter.getClient(suggestion.chain);
-          txHash = await client.createMarket({
-            question: suggestion.question,
-            outcomes: suggestion.outcomes,
-            durationHours: suggestion.durationHours,
-            resolutionSource: suggestion.resolutionSource ?? '',
-            proposer: suggestion.proposer,
-          });
+          // On Base, market creation requires a tx hash from the admin frontend
+          throw new Error('Transaction hash required for on-chain market publication on Base');
         }
 
         if (!txHash) {
@@ -143,7 +134,7 @@ export const suggestionService = {
     id: string;
     reviewer: string;
     reason?: string;
-    reviewerChain?: 'aptos' | 'sui' | 'movement';
+    reviewerChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     const suggestion = await prisma.suggestion.update({
       where: { id: params.id },
@@ -173,7 +164,7 @@ export const suggestionService = {
     id: string;
     voter: string;
     delta: number;
-    voterChain?: 'aptos' | 'sui' | 'movement';
+    voterChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
     const suggestion = await prisma.suggestion.update({
       where: { id: params.id },
@@ -208,7 +199,8 @@ export const suggestionService = {
   async publishSuggestion(params: {
     id: string;
     publisher: string;
-    publisherChain?: 'aptos' | 'sui' | 'movement';
+    publisherChain?: 'aptos' | 'sui' | 'movement' | 'base';
+    txHash?: string;
   }) {
     // 1. Get suggestion (must be 'approved')
     const suggestion = await prisma.suggestion.findUnique({
@@ -233,16 +225,12 @@ export const suggestionService = {
       );
     }
 
-    // 2. Create market on-chain
+    // 2. Create market on-chain (requires tx hash from admin frontend for Base)
     try {
-      const client = chainRouter.getClient(suggestion.chain);
-      const txHash = await client.createMarket({
-        question: suggestion.question,
-        outcomes: suggestion.outcomes,
-        durationHours: suggestion.durationHours,
-        resolutionSource: suggestion.resolutionSource ?? undefined,
-        proposer: suggestion.proposer,
-      });
+      if (!params.txHash) {
+        throw new Error('Transaction hash required for on-chain market publication on Base');
+      }
+      const txHash = params.txHash;
 
       // 3. Update suggestion
       const updatedSuggestion = await prisma.suggestion.update({

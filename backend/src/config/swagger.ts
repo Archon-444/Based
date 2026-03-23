@@ -58,7 +58,7 @@ const swaggerOptions: Options = {
             reviewer: { type: 'string', nullable: true },
             reviewReason: { type: 'string', nullable: true },
             status: { $ref: '#/components/schemas/SuggestionStatus' },
-            chain: { type: 'string', enum: ['aptos', 'sui', 'movement'] },
+            chain: { type: 'string', enum: ['aptos', 'sui', 'movement', 'base'] },
             upvotes: { type: 'integer' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },

@@ -13,12 +13,3 @@ marketsRouter.get('/:chain/:onChainId', publicApiLimiter, marketsController.getM
 
 // Calculate payout - authenticated endpoint (requires computation)
 marketsRouter.post('/calculate-payout', authenticatedApiLimiter, marketsController.calculatePayout);
-
-// Get Sui market objects - public endpoint with rate limiting
-marketsRouter.get(
-  '/sui/objects/:marketId',
-  publicApiLimiter,
-  marketsController.getSuiMarketObjects
-);
-
-marketsRouter.post('/sui/bootstrap', publicApiLimiter, marketsController.bootstrapSuiMarket);

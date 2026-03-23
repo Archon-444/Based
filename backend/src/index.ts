@@ -3,9 +3,7 @@ import { createServer } from 'http';
 import app from './app.js';
 import { env, isChainActive } from './config/env.js';
 import { logger } from './config/logger.js';
-import { startIndexer, stopIndexer } from './services/eventIndexer.js';
 import { getMarketResolverService } from './services/marketResolver.js';
-import { startSuiEventIndexer, stopSuiEventIndexer } from './services/suiEventIndexer.js';
 import { attachWebSocketServer } from './websocket/wsServer.js';
 
 const server = createServer(app);
@@ -18,32 +16,6 @@ let baseAgentManager: import('./agents/index.js').AgentManager | null = null;
 
 server.listen(port, async () => {
   logger.info(`Backend listening on port ${port}`);
-
-  // Start Event Indexers
-  if (isChainActive('aptos')) {
-    try {
-      await startIndexer();
-      logger.info('Aptos event indexer started successfully');
-    } catch (error) {
-      logger.error({ error }, 'Failed to start Aptos event indexer');
-    }
-  } else {
-    logger.info('Aptos event indexer disabled via ACTIVE_CHAINS');
-  }
-
-  const disableSuiIndexer = env.DISABLE_SUI_INDEXER === 'true';
-  if (isChainActive('sui') && !disableSuiIndexer) {
-    try {
-      await startSuiEventIndexer();
-      logger.info('Sui event indexer started successfully');
-    } catch (error) {
-      logger.error({ error }, 'Failed to start Sui event indexer');
-    }
-  } else if (disableSuiIndexer) {
-    logger.info('Sui event indexer disabled via DISABLE_SUI_INDEXER flag');
-  } else {
-    logger.info('Sui event indexer disabled via ACTIVE_CHAINS');
-  }
 
   // Start Base Event Indexer + Keeper
   if (isChainActive('base')) {
@@ -129,26 +101,6 @@ const shutdown = async (signal: string) => {
   if (resolverInterval) {
     clearInterval(resolverInterval);
     logger.info('Market resolver stopped');
-  }
-
-  // Stop event indexers
-  if (isChainActive('aptos')) {
-    try {
-      await stopIndexer();
-      logger.info('Aptos event indexer stopped');
-    } catch (error) {
-      logger.error({ error }, 'Error stopping Aptos event indexer');
-    }
-  }
-
-  const disableSuiIndexer = env.DISABLE_SUI_INDEXER === 'true';
-  if (isChainActive('sui') && !disableSuiIndexer) {
-    try {
-      await stopSuiEventIndexer();
-      logger.info('Sui event indexer stopped');
-    } catch (error) {
-      logger.error({ error }, 'Error stopping Sui event indexer');
-    }
   }
 
   // Stop Base services

@@ -6,7 +6,7 @@ type MarketStatusFilter = (typeof MARKET_STATUSES)[number];
 
 export const marketsService = {
   listMarkets(params: {
-    chain?: 'aptos' | 'sui' | 'movement';
+    chain?: 'aptos' | 'sui' | 'movement' | 'base';
     status?: string;
     limit?: number;
     offset?: number;
@@ -28,7 +28,7 @@ export const marketsService = {
     });
   },
 
-  getMarket(params: { chain: 'aptos' | 'sui' | 'movement'; onChainId: string }) {
+  getMarket(params: { chain: 'aptos' | 'sui' | 'movement' | 'base'; onChainId: string }) {
     return prisma.market.findFirst({
       where: {
         chain: params.chain,
@@ -39,7 +39,7 @@ export const marketsService = {
 
   async calculatePayout(params: {
     marketId?: string;
-    chain?: 'aptos' | 'sui' | 'movement';
+    chain?: 'aptos' | 'sui' | 'movement' | 'base';
     onChainId?: string;
     outcomeIndex: number;
     amount: number;

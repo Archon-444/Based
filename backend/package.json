@@ -18,13 +18,10 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
-    "@aptos-labs/ts-sdk": "^1.32.0",
     "@circle-fin/smart-contract-platform": "^9.1.0",
     "@coinbase/cdp-sdk": "^1.45.0",
-    "@mysten/sui": "^1.16.0",
     "@prisma/client": "^5.22.0",
     "@pythnetwork/price-service-client": "^1.9.0",
-    "@pythnetwork/pyth-aptos-js": "^1.4.2",
     "@sindresorhus/is": "^6.3.1",
     "async-mutex": "^0.5.0",
     "autocannon": "^7.14.0",

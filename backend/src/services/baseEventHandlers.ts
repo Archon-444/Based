@@ -7,6 +7,7 @@
 
 import type { Log } from 'viem';
 
+import { getPublicClient } from '../blockchain/base/viemClient.js';
 import { logger } from '../config/logger.js';
 import { prisma } from '../database/prismaClient.js';
 import { recordBaseEvent } from '../monitoring/metrics.js';
@@ -35,8 +36,16 @@ import { broadcast } from '../websocket/wsHandlers.js';
 
 // ---------- Helpers ----------
 
-function getTimestamp(log: Log): Date {
-  // Block timestamp is in seconds; fallback to now if unavailable
+async function getTimestamp(log: Log): Promise<Date> {
+  // Fetch block timestamp from chain; fallback to now if unavailable
+  if (log.blockNumber) {
+    try {
+      const block = await getPublicClient().getBlock({ blockNumber: log.blockNumber });
+      return new Date(Number(block.timestamp) * 1000);
+    } catch {
+      // Fall through to default
+    }
+  }
   return new Date();
 }
 
@@ -54,7 +63,7 @@ async function storeAuditEvent(
       sequenceNumber: BigInt(log.logIndex ?? 0),
       eventData: eventData as any,
       blockHeight: log.blockNumber ? BigInt(log.blockNumber) : null,
-      timestamp: getTimestamp(log),
+      timestamp: await getTimestamp(log),
       marketId: marketDbId,
     },
   });
@@ -209,7 +218,7 @@ export async function handleBuy(args: BuyEvent, log: Log): Promise<void> {
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
-      timestamp: getTimestamp(log),
+      timestamp: await getTimestamp(log),
     },
   });
 
@@ -253,7 +262,7 @@ export async function handleSell(args: SellEvent, log: Log): Promise<void> {
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
-      timestamp: getTimestamp(log),
+      timestamp: await getTimestamp(log),
     },
   });
 
@@ -290,7 +299,7 @@ export async function handleLiquidityAdded(args: LiquidityAddedEvent, log: Log):
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
-      timestamp: getTimestamp(log),
+      timestamp: await getTimestamp(log),
     },
   });
 
@@ -318,7 +327,7 @@ export async function handleLiquidityRemoved(args: LiquidityRemovedEvent, log: L
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
-      timestamp: getTimestamp(log),
+      timestamp: await getTimestamp(log),
     },
   });
 
@@ -362,7 +371,7 @@ export async function handleOutcomeAsserted(args: OutcomeAssertedEvent, log: Log
 
   // Get block timestamp for assertedAt
   const block = await prisma.blockchainEvent.findFirst(); // We'll use log timestamp
-  const assertedAt = getTimestamp(log);
+  const assertedAt = await getTimestamp(log);
 
   await prisma.umaAssertion.create({
     data: {

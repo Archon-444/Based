@@ -2,9 +2,6 @@ import 'dotenv/config';
 
 import { z } from 'zod';
 
-export const BRIDGED_WUSDC_COIN_TYPE =
-  '0x5d4b302506645c37ff133b98c4b50a5ae14841659738d6d733d59d0d217a93bf::coin::COIN';
-
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z
@@ -17,34 +14,7 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   REDIS_URL: z.string().optional(),
 
-  // Aptos Configuration (Optional — only required if ACTIVE_CHAINS includes aptos)
-  APTOS_NETWORK: z.string().default('testnet'),
-  APTOS_MODULE_ADDRESS: z.string().optional().default('0x0'),
-  APTOS_ADMIN_ACCOUNT: z.string().optional(),
-  APTOS_ADMIN_PRIVATE_KEY: z.string().optional(),
-  APTOS_EXPECTED_CHAIN_ID: z.string().optional(),
-
-  // Sui Configuration (Optional - only required if using Sui chain)
-  DISABLE_SUI_INDEXER: z.string().optional().default('false'),
-  SUI_RPC_URL: z.string().optional(),
-  SUI_PACKAGE_ID: z.string().optional(),
-  SUI_ADMIN_PRIVATE_KEY: z.string().optional(),
-  SUI_ADMIN_CAP_ID: z.string().optional(),
-  SUI_TREASURY_ID: z.string().optional(),
-  SUI_EXPECTED_CHAIN_ID: z.string().optional(),
-  SUI_RESOLVER_CAP_ID: z.string().optional(),
-  SUI_ROLE_REGISTRY_ID: z.string().optional(),
-  SUI_ORACLE_REGISTRY_ID: z.string().optional(),
-  SUI_USDC_COIN_TYPE: z
-    .string()
-    .optional()
-    .refine(
-      (value) => !value || value !== BRIDGED_WUSDC_COIN_TYPE,
-      'SUI_USDC_COIN_TYPE must be the native Circle USDC coin type (bridged wUSDC is unsupported)'
-    ),
-  MOVEMENT_EXPECTED_CHAIN_ID: z.string().optional(),
-
-  // Base Configuration (Optional — only required if using Base chain)
+  // Base Configuration
   BASE_RPC_URL: z.string().optional(),
   BASE_WS_URL: z.string().optional(),
   BASE_CHAIN_ID: z.string().optional().default('8453'),
@@ -77,7 +47,7 @@ const envSchema = z.object({
     .transform((v) => parseInt(v, 10)),
 
   // Application Configuration
-  ACTIVE_CHAINS: z.string().default('aptos'),
+  ACTIVE_CHAINS: z.string().default('base'),
   LOG_LEVEL: z.string().default('info'),
   SIGNATURE_TTL_MS: z
     .string()
@@ -98,6 +68,6 @@ export const env = envSchema.parse(process.env);
 
 const normalizedActiveChains = env.ACTIVE_CHAINS.split(',').map((chain) => chain.trim().toLowerCase());
 
-export function isChainActive(chain: 'aptos' | 'sui' | 'movement' | 'base'): boolean {
+export function isChainActive(chain: 'base' | 'movement'): boolean {
   return normalizedActiveChains.includes(chain.toLowerCase());
 }

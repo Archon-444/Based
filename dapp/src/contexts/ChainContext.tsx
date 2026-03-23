@@ -4,7 +4,7 @@
  */
 import React, { createContext, useContext } from 'react';
 
-export type Chain = 'aptos' | 'sui' | 'movement' | 'base';
+export type Chain = 'base';
 
 interface ChainContextType {
   activeChain: Chain;

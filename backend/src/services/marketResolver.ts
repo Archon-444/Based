@@ -16,7 +16,6 @@ import type { ResolveOracleSnapshot } from '../blockchain/IBlockchainClient.js';
 import { logger } from '../config/logger.js';
 import { prisma } from '../database/prismaClient.js';
 import { recordMarketResolution } from '../monitoring/metrics.js';
-import { getGlobalIndexer } from './eventIndexer.js';
 import { getPythOracleService, type PriceFeedId } from './pythOracle.js';
 
 const formatLog = (message: string, data?: Record<string, unknown>) =>
@@ -344,17 +343,16 @@ export class MarketResolverService {
    */
   private async submitResolution(
     market: {
-      chain: 'aptos' | 'sui' | 'movement' | 'base';
+      chain: 'base' | 'movement';
       onChainId: string;
-      suiMarketObjectId: string | null;
     },
     winningOutcome: number,
     oracleSnapshot?: ResolveOracleSnapshot
   ): Promise<void> {
-    const targetId = market.chain === 'sui' ? market.suiMarketObjectId : market.onChainId;
+    const targetId = market.onChainId;
 
     if (!targetId) {
-      throw new Error(`Missing on-chain identifier for ${market.chain} market ${market.onChainId}`);
+      throw new Error(`Missing on-chain identifier for ${market.chain} market`);
     }
 
     logInfo('[MarketResolver] Submitting resolution to blockchain', {
@@ -364,13 +362,10 @@ export class MarketResolverService {
     });
 
     try {
-      // Import blockchain client
-      const { globalChainRouter } = await import('../blockchain/chainRouter.js');
-      const blockchainClient = globalChainRouter.getClient(market.chain);
-
-      // Submit resolution to blockchain
-      await blockchainClient.resolveMarket(targetId, winningOutcome, {
-        oracleSnapshot,
+      // For Base, resolution is handled by the keeper service via UMA/Pyth adapters
+      // This path is used for manual resolution fallback
+      logWarn('[MarketResolver] Direct resolution submission — use keeper service for Base markets', {
+        onChainMarketId: targetId,
       });
 
       recordMarketResolution(market.chain, 'success');

@@ -1,7 +1,5 @@
 import type { Chain } from '@prisma/client';
 
-import { env } from './env.js';
-
 export interface ChainConfig {
   chain: Chain;
   feeStructure: {
@@ -26,47 +24,26 @@ export interface ChainConfig {
 
 const MICRO_USDC = 1_000_000n;
 
-const chainConfigs: Record<Chain, ChainConfig> = {
-  aptos: {
-    chain: 'aptos',
+const chainConfigs: Partial<Record<Chain, ChainConfig>> = {
+  base: {
+    chain: 'base',
     feeStructure: {
-      tradingFee: 1.5,
+      tradingFee: 2.0,
       withdrawalFee: 0,
-      creatorFee: 0.5,
-      protocolFee: 1.0,
+      creatorFee: 0,
+      protocolFee: 0,
     },
     lmsrParams: {
-      b: 100,
-      initialLiquidity: 100n * MICRO_USDC,
+      b: 0,
+      initialLiquidity: 0n,
     },
     limits: {
       minBet: 1n * MICRO_USDC,
-      maxBet: 10_000n * MICRO_USDC,
+      maxBet: 100_000n * MICRO_USDC,
       maxMarketDurationHours: 24 * 365,
     },
-    contractAddress: env.APTOS_MODULE_ADDRESS,
-    rpcEndpoint: env.APTOS_NETWORK,
-  },
-  sui: {
-    chain: 'sui',
-    feeStructure: {
-      tradingFee: 2.0,
-      withdrawalFee: 0.1,
-      creatorFee: 0.5,
-      protocolFee: 1.4,
-    },
-    lmsrParams: {
-      b: 150,
-      initialLiquidity: 200n * MICRO_USDC,
-    },
-    limits: {
-      minBet: 500_000n,
-      maxBet: 5_000_000_000n,
-      maxMarketDurationHours: 24 * 182,
-    },
-    contractAddress: env.SUI_PACKAGE_ID ?? '',
-    rpcEndpoint: env.SUI_RPC_URL ?? '',
-    usdcCoinType: env.SUI_USDC_COIN_TYPE,
+    contractAddress: process.env.MARKET_FACTORY_ADDRESS ?? '',
+    rpcEndpoint: process.env.BASE_RPC_URL ?? '',
   },
   movement: {
     chain: 'movement',
@@ -87,26 +64,6 @@ const chainConfigs: Record<Chain, ChainConfig> = {
     },
     contractAddress: process.env.MOVEMENT_MODULE_ADDRESS ?? '',
     rpcEndpoint: process.env.MOVEMENT_RPC_ENDPOINT ?? '',
-  },
-  base: {
-    chain: 'base',
-    feeStructure: {
-      tradingFee: 2.0,
-      withdrawalFee: 0,
-      creatorFee: 0,
-      protocolFee: 0,
-    },
-    lmsrParams: {
-      b: 0,
-      initialLiquidity: 0n,
-    },
-    limits: {
-      minBet: 1n * MICRO_USDC,
-      maxBet: 100_000n * MICRO_USDC,
-      maxMarketDurationHours: 24 * 365,
-    },
-    contractAddress: env.MARKET_FACTORY_ADDRESS ?? '',
-    rpcEndpoint: env.BASE_RPC_URL ?? '',
   },
 };
 

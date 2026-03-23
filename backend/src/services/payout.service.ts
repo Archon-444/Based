@@ -1,24 +1,12 @@
-import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import type { Chain } from '@prisma/client';
 
 import { getChainConfig } from '../config/chainConfig.js';
-import { BRIDGED_WUSDC_COIN_TYPE, env } from '../config/env.js';
 import { prisma } from '../database/prismaClient.js';
 
 const MICRO_USDC = 1_000_000;
 const MICRO_USDC_BIGINT = BigInt(MICRO_USDC);
 const FPMM_TRADING_FEE_BPS = 30n;
 const BPS_DENOMINATOR = 10_000n;
-
-let aptosClient: Aptos | null = null;
-
-function getAptosClient(): Aptos {
-  if (!aptosClient) {
-    const aptosConfig = new AptosConfig({ network: env.APTOS_NETWORK as Network });
-    aptosClient = new Aptos(aptosConfig);
-  }
-  return aptosClient;
-}
 
 type CalculatePayoutParams = {
   marketId?: string;
@@ -34,85 +22,6 @@ type ShareInfo = {
   isFPMM: boolean;
   calculationMethod: 'FPMM' | 'Parimutuel';
 };
-
-async function fetchOnChainMarket(params: {
-  chain: Chain;
-  onChainId: string;
-}): Promise<{ chain: Chain; outcomePools: bigint[] } | null> {
-  if (params.chain === 'aptos') {
-    const marketIndex = Number(params.onChainId);
-
-    if (!Number.isInteger(marketIndex) || marketIndex < 0) {
-      return null;
-    }
-
-    try {
-      const aptos = getAptosClient();
-      const moduleAddress = getChainConfig('aptos').contractAddress;
-
-      const result = await aptos.view({
-        payload: {
-          function: `${moduleAddress}::market_manager::get_market_full`,
-          functionArguments: [marketIndex],
-        },
-      });
-
-      const poolsRaw = Array.isArray(result[2]) ? (result[2] as Array<string | number | bigint>) : [];
-
-      const outcomePools = poolsRaw.map((value) => {
-        if (typeof value === 'bigint') return value;
-        if (typeof value === 'number') return BigInt(Math.trunc(value));
-        if (typeof value === 'string') return BigInt(value);
-        return 0n;
-      });
-
-      return {
-        chain: 'aptos',
-        outcomePools,
-      };
-    } catch (error) {
-      console.error('[payoutService] Failed to fetch Aptos market from chain:', error);
-      return null;
-    }
-  }
-
-  return null;
-}
-
-async function fetchOutcomeOdds(params: {
-  chain: Chain;
-  onChainId: string;
-  outcomeIndex: number;
-}): Promise<number | null> {
-  if (params.chain !== 'aptos') {
-    return null;
-  }
-
-  const marketIndex = Number(params.onChainId);
-  if (!Number.isInteger(marketIndex) || marketIndex < 0) {
-    return null;
-  }
-
-  try {
-    const aptos = getAptosClient();
-    const moduleAddress = getChainConfig('aptos').contractAddress;
-
-    const oddsResult = await aptos.view({
-      payload: {
-        function: `${moduleAddress}::betting::get_odds_for_outcome`,
-        functionArguments: [marketIndex, params.outcomeIndex],
-      },
-    });
-
-    if (Array.isArray(oddsResult) && oddsResult.length > 0) {
-      return Number(oddsResult[0]);
-    }
-  } catch (error) {
-    console.warn('[payoutService] Failed to fetch on-chain odds', error);
-  }
-
-  return null;
-}
 
 function coerceBigInt(value: unknown): bigint | null {
   if (typeof value === 'bigint') {
@@ -171,33 +80,14 @@ export const payoutService = {
       });
     }
 
-    let effectiveChain: Chain | null = market?.chain ?? null;
-    let outcomePools: bigint[] = market?.outcomePools ?? [];
-
-    if (!market && chain && onChainId) {
-      const fallback = await fetchOnChainMarket({ chain, onChainId });
-      if (!fallback) {
-        return null;
-      }
-      effectiveChain = fallback.chain;
-      outcomePools = fallback.outcomePools;
-    }
+    const effectiveChain: Chain | null = market?.chain ?? null;
+    const outcomePools: bigint[] = market?.outcomePools ?? [];
 
     if (!effectiveChain) {
       return null;
     }
 
     const config = getChainConfig(effectiveChain);
-
-    if (effectiveChain === 'sui') {
-      if (!config.usdcCoinType) {
-        throw new Error('SUI_USDC_COIN_TYPE must be configured for Sui payout calculations');
-      }
-      if (config.usdcCoinType === BRIDGED_WUSDC_COIN_TYPE) {
-        throw new Error('Sui payouts cannot be calculated with bridged wUSDC coin type');
-      }
-    }
-
     const pools = outcomePools ?? [];
 
     if (outcomeIndex < 0 || outcomeIndex >= pools.length) {
@@ -211,40 +101,9 @@ export const payoutService = {
     const totalPoolAfter = totalPool + betAmountMicro;
     const outcomePoolAfter = outcomePool + betAmountMicro;
 
-    let fpmmPreviewMicro: bigint | null = null;
-
-    if (effectiveChain === 'aptos') {
-      const resolvedOnChainId = onChainId ?? market?.onChainId ?? null;
-      const marketIndex = resolvedOnChainId !== null ? Number(resolvedOnChainId) : Number.NaN;
-      if (Number.isInteger(marketIndex) && marketIndex >= 0) {
-        try {
-          const aptos = getAptosClient();
-          const moduleAddress = config.contractAddress;
-          const result = await aptos.view({
-            payload: {
-              function: `${moduleAddress}::betting::calculate_payout`,
-              functionArguments: [marketIndex, Number(betAmountMicro), outcomeIndex],
-            },
-          });
-
-          if (Array.isArray(result) && result.length > 0) {
-            fpmmPreviewMicro = coerceBigInt(result[0]);
-          } else {
-            fpmmPreviewMicro = coerceBigInt(result);
-          }
-        } catch (error) {
-          console.warn('[payoutService] Failed to fetch fpmm preview via view function', error);
-        }
-      }
-    }
-
-    // Use FPMM preview if available, otherwise fall back to parimutuel
-    // FPMM uses constant product formula: x × y = k
-    const parimutuelPreviewMicro =
-      outcomePoolAfter > 0n ? (betAmountMicro * totalPoolAfter) / outcomePoolAfter : betAmountMicro;
-
+    // Parimutuel payout calculation
     const estimatedPayoutMicro =
-      fpmmPreviewMicro !== null && fpmmPreviewMicro > 0n ? fpmmPreviewMicro : parimutuelPreviewMicro;
+      outcomePoolAfter > 0n ? (betAmountMicro * totalPoolAfter) / outcomePoolAfter : betAmountMicro;
 
     const tradingFeeMicro = (betAmountMicro * FPMM_TRADING_FEE_BPS) / BPS_DENOMINATOR;
     const creatorFee = amount * (config.feeStructure.creatorFee / 100);
@@ -261,21 +120,7 @@ export const payoutService = {
     const priceImpact = Number(priceImpactMicro) / MICRO_USDC;
 
     let currentOddsBasisPoints = 5000;
-    if (effectiveChain === 'aptos') {
-      const resolvedOnChainId = onChainId ?? market?.onChainId ?? null;
-      if (resolvedOnChainId) {
-        const onChainOdds = await fetchOutcomeOdds({
-          chain: effectiveChain,
-          onChainId: resolvedOnChainId,
-          outcomeIndex,
-        });
-        if (typeof onChainOdds === 'number' && Number.isFinite(onChainOdds)) {
-          currentOddsBasisPoints = onChainOdds;
-        }
-      }
-    }
-
-    if (currentOddsBasisPoints === 5000 && totalPoolAfter > 0n) {
+    if (totalPoolAfter > 0n) {
       currentOddsBasisPoints = Number((outcomePoolAfter * 10000n) / totalPoolAfter);
     }
 
@@ -293,10 +138,8 @@ export const payoutService = {
       shares: {
         micro: estimatedPayoutMicro.toString(),
         decimal: estimatedPayout,
-        // FPMM-specific: shares represent the actual tokens received
-        // In FPMM, shares = reserve_out - new_reserve_out (from constant product formula)
-        isFPMM: fpmmPreviewMicro !== null && fpmmPreviewMicro > 0n,
-        calculationMethod: fpmmPreviewMicro !== null && fpmmPreviewMicro > 0n ? 'FPMM' : 'Parimutuel',
+        isFPMM: false,
+        calculationMethod: 'Parimutuel',
       },
       priceImpact,
     };

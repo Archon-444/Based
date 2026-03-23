@@ -1,3 +1,5 @@
+import { verifyMessage } from 'viem';
+
 import { env } from '../config/env.js';
 
 const SIGNING_PREFIX = 'MoveMarket::';
@@ -36,7 +38,7 @@ export const verifyWalletSignature = async ({
   publicKey,
 }: VerifyWalletSignatureParams) => {
   try {
-    if (!signature || !message || !address || !timestampHeader || !nonce || !publicKey) {
+    if (!signature || !message || !address || !timestampHeader || !nonce) {
       return false;
     }
 
@@ -65,29 +67,15 @@ export const verifyWalletSignature = async ({
       return false;
     }
 
-    // M1: Implement Aptos Ed25519 signature verification
-    const { Ed25519PublicKey, Ed25519Signature, AccountAddress } = await import('@aptos-labs/ts-sdk');
-
+    // EVM signature verification (EIP-191 personal_sign)
     try {
-      const normalizedSignature = signature.startsWith('0x') ? signature : `0x${signature}`;
-      const normalizedPublicKey = publicKey.startsWith('0x') ? publicKey : `0x${publicKey}`;
-      const messageBytes = new TextEncoder().encode(message);
+      const valid = await verifyMessage({
+        address: address as `0x${string}`,
+        message,
+        signature: signature as `0x${string}`,
+      });
 
-      const sig = new Ed25519Signature(normalizedSignature);
-      const pk = new Ed25519PublicKey(normalizedPublicKey);
-
-      const verified = pk.verifySignature({ message: messageBytes, signature: sig });
-      if (!verified) {
-        return false;
-      }
-
-      const derivedAddress = pk.authKey().derivedAddress().toString();
-      const normalizedAddress = AccountAddress.fromString(address).toString();
-      if (derivedAddress.toLowerCase() !== normalizedAddress.toLowerCase()) {
-        console.warn('[wallet.ts] Public key does not match provided address', {
-          derivedAddress,
-          normalizedAddress,
-        });
+      if (!valid) {
         return false;
       }
     } catch (error) {

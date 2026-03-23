@@ -9,12 +9,12 @@ const createSuggestionSchema = z.object({
   outcomes: z.array(z.string()).min(2),
   durationHours: z.number().int().positive().max(8760),
   resolutionSource: z.string().optional(),
-  chain: z.enum(['aptos', 'sui', 'movement']).default('aptos'),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']).default('base'),
 });
 
 const listSuggestionsSchema = z.object({
   status: z.enum(['pending', 'approved', 'rejected', 'published']).optional(),
-  chain: z.enum(['aptos', 'sui', 'movement']).optional(),
+  chain: z.enum(['aptos', 'sui', 'movement', 'base']).optional(),
   limit: z.coerce.number().int().positive().max(100).optional(),
   offset: z.coerce.number().int().min(0).optional(),
 });
