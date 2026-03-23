@@ -16,36 +16,51 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { registerServiceWorker } from './utils/registerServiceWorker';
 import PageTransition from './components/PageTransition';
 
+// Retry dynamic imports to handle stale chunk hashes after deployments.
+// On failure, reload the page once to fetch the latest asset manifest.
+function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType }>) {
+  return lazy(() =>
+    importFn().catch((error: unknown) => {
+      const key = 'chunk_reload_' + window.location.pathname;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+      }
+      throw error;
+    }),
+  );
+}
+
 // Lazy load mobile-specific components
-const PWAInstallPrompt = lazy(() => import('./components/mobile/PWAInstallPrompt'));
-const NotificationPrompt = lazy(() => import('./components/mobile/NotificationPrompt'));
-const BiometricPrompt = lazy(() => import('./components/mobile/BiometricPrompt'));
+const PWAInstallPrompt = lazyWithRetry(() => import('./components/mobile/PWAInstallPrompt'));
+const NotificationPrompt = lazyWithRetry(() => import('./components/mobile/NotificationPrompt'));
+const BiometricPrompt = lazyWithRetry(() => import('./components/mobile/BiometricPrompt'));
 
 // Lazy load utility components
-const ServiceWorkerUpdate = lazy(() => import('./components/ServiceWorkerUpdate'));
-const OfflineIndicator = lazy(() => import('./components/OfflineIndicator'));
-const SessionTimeoutWarning = lazy(() => import('./components/SessionTimeoutWarning'));
+const ServiceWorkerUpdate = lazyWithRetry(() => import('./components/ServiceWorkerUpdate'));
+const OfflineIndicator = lazyWithRetry(() => import('./components/OfflineIndicator'));
+const SessionTimeoutWarning = lazyWithRetry(() => import('./components/SessionTimeoutWarning'));
 
 // Lazy load pages
-const LandingPage = lazy(() => import('./pages/LandingPage'));
-const MarketsPage = lazy(() => import('./pages/MarketsPage'));
-const MarketDetailPage = lazy(() => import('./pages/MarketDetailPage'));
-const CreateMarketPage = lazy(() => import('./pages/CreateMarketPage'));
-const AdminSuggestionsPage = lazy(() => import('./pages/AdminSuggestionsPage'));
-const AdminRolesPage = lazy(() => import('./pages/AdminRolesPage'));
-const AdminResolverPage = lazy(() => import('./pages/AdminResolverPage'));
-const DaoOverviewPage = lazy(() => import('./pages/DaoOverviewPage'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage'));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage'));
-const HowItWorksPage = lazy(() => import('./pages/HowItWorksPage'));
-const DeveloperDocsPage = lazy(() => import('./pages/docs/DeveloperDocsPage'));
-const FAQPage = lazy(() => import('./pages/FAQPage'));
-const ColorTestPage = lazy(() => import('./pages/ColorTestPage'));
-const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
-const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
-const TikiDemo = lazy(() => import('./pages/TikiDemo'));
-const OracleDashboardPage = lazy(() => import('./pages/OracleDashboardPage'));
-const LiquidityPage = lazy(() => import('./pages/LiquidityPage'));
+const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'));
+const MarketsPage = lazyWithRetry(() => import('./pages/MarketsPage'));
+const MarketDetailPage = lazyWithRetry(() => import('./pages/MarketDetailPage'));
+const CreateMarketPage = lazyWithRetry(() => import('./pages/CreateMarketPage'));
+const AdminSuggestionsPage = lazyWithRetry(() => import('./pages/AdminSuggestionsPage'));
+const AdminRolesPage = lazyWithRetry(() => import('./pages/AdminRolesPage'));
+const AdminResolverPage = lazyWithRetry(() => import('./pages/AdminResolverPage'));
+const DaoOverviewPage = lazyWithRetry(() => import('./pages/DaoOverviewPage'));
+const DashboardPage = lazyWithRetry(() => import('./pages/DashboardPage'));
+const LeaderboardPage = lazyWithRetry(() => import('./pages/LeaderboardPage'));
+const HowItWorksPage = lazyWithRetry(() => import('./pages/HowItWorksPage'));
+const DeveloperDocsPage = lazyWithRetry(() => import('./pages/docs/DeveloperDocsPage'));
+const FAQPage = lazyWithRetry(() => import('./pages/FAQPage'));
+const ColorTestPage = lazyWithRetry(() => import('./pages/ColorTestPage'));
+const PrivacyPolicyPage = lazyWithRetry(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazyWithRetry(() => import('./pages/TermsOfServicePage'));
+const TikiDemo = lazyWithRetry(() => import('./pages/TikiDemo'));
+const OracleDashboardPage = lazyWithRetry(() => import('./pages/OracleDashboardPage'));
+const LiquidityPage = lazyWithRetry(() => import('./pages/LiquidityPage'));
 
 const queryClient = new QueryClient({
   defaultOptions: {

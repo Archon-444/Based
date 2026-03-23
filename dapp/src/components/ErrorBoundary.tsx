@@ -31,14 +31,26 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    // Auto-reload once on chunk load failures (stale deploys)
+    const isChunkError =
+      error.message.includes('Failed to fetch dynamically imported module') ||
+      error.message.includes('Loading chunk') ||
+      error.message.includes('Loading CSS chunk');
+
+    if (isChunkError) {
+      const key = 'chunk_reload_' + window.location.pathname;
+      if (!sessionStorage.getItem(key)) {
+        sessionStorage.setItem(key, '1');
+        window.location.reload();
+        return;
+      }
+    }
+
     console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({
       error,
       errorInfo,
     });
-
-    // You can also log the error to an error reporting service here
-    // Example: logErrorToService(error, errorInfo);
   }
 
   handleReset = (): void => {
