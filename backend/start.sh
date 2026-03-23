@@ -1,4 +1,4 @@
 #!/bin/sh
 set -e
-npx prisma db push --skip-generate
+npx prisma migrate deploy
 npm start
