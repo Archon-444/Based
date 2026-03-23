@@ -343,7 +343,7 @@ export class MarketResolverService {
    */
   private async submitResolution(
     market: {
-      chain: 'base' | 'movement';
+      chain: string;
       onChainId: string;
     },
     winningOutcome: number,
