@@ -26,4 +26,6 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/dist ./dist
 COPY package.json ./
 COPY prisma ./prisma
-ENTRYPOINT ["sh", "-c", "npx prisma db push --skip-generate && npm start"]
+COPY start.sh ./
+RUN chmod +x start.sh
+CMD ["./start.sh"]
