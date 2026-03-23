@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const packageJson = await import(path.join(__dirname, '../../package.json'), {
-  assert: { type: 'json' },
+  with: { type: 'json' },
 });
 
 const swaggerOptions: Options = {
