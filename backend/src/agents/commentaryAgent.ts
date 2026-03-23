@@ -10,7 +10,7 @@
  */
 
 import cron from 'node-cron';
-import type { Hex } from 'viem';
+import { type Abi, type Hex } from 'viem';
 
 import { contractAddresses, predictionMarketAmmAbi } from '../blockchain/base/abis/index.js';
 import { getPublicClient } from '../blockchain/base/viemClient.js';
@@ -217,7 +217,7 @@ async function getCurrentPrices(marketOnChainId: string): Promise<number[] | nul
     const publicClient = getPublicClient();
     const rawPrices = (await publicClient.readContract({
       address: contractAddresses.amm,
-      abi: predictionMarketAmmAbi as unknown as readonly unknown[],
+      abi: predictionMarketAmmAbi as Abi,
       functionName: 'getPrices',
       args: [marketOnChainId as Hex],
     })) as bigint[];
