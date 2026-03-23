@@ -7,9 +7,9 @@
 
 import { Mutex } from 'async-mutex';
 import {
-  encodeFunctionData,
   type Abi,
   type Address,
+  encodeFunctionData,
   type Hex,
   type PublicClient,
   type TransactionReceipt,
@@ -137,7 +137,11 @@ export async function sendTransaction(params: SendTransactionParams): Promise<Tr
       if (attempt === maxRetries) {
         recordBaseTransaction(walletLabel, methodLabel, 'failure');
         logger.error(
-          { error: error instanceof Error ? error.message : String(error), attempt, wallet: walletLabel },
+          {
+            error: error instanceof Error ? error.message : String(error),
+            attempt,
+            wallet: walletLabel,
+          },
           '[TxService] Transaction failed after all retries'
         );
         throw error;
@@ -167,5 +171,5 @@ export function encodeCall<TAbi extends Abi>(
     abi,
     functionName,
     args,
-  } as any);
+  } as Parameters<typeof encodeFunctionData>[0]);
 }

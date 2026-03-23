@@ -15,7 +15,6 @@
 
 import { PriceServiceConnection } from '@pythnetwork/price-service-client';
 
-import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 
 const formatLog = (message: string, data?: Record<string, unknown>) =>

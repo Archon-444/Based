@@ -7,8 +7,6 @@
  * Endpoint: https://hermes.pyth.network/v2/updates/price/latest
  */
 
-import { logger } from '../config/logger.js';
-
 const HERMES_BASE_URL = 'https://hermes.pyth.network';
 
 export interface HermesPrice {

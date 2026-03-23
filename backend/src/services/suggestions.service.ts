@@ -92,7 +92,7 @@ export const suggestionService = {
       }
 
       try {
-        let txHash = params.txHash ?? undefined;
+        const txHash = params.txHash ?? undefined;
 
         if (!txHash) {
           // On Base, market creation requires a tx hash from the admin frontend

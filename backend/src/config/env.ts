@@ -66,7 +66,9 @@ const envSchema = z.object({
 
 export const env = envSchema.parse(process.env);
 
-const normalizedActiveChains = env.ACTIVE_CHAINS.split(',').map((chain) => chain.trim().toLowerCase());
+const normalizedActiveChains = env.ACTIVE_CHAINS.split(',').map((chain) =>
+  chain.trim().toLowerCase()
+);
 
 export function isChainActive(chain: 'base' | 'movement'): boolean {
   return normalizedActiveChains.includes(chain.toLowerCase());

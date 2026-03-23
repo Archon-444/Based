@@ -14,7 +14,11 @@ import type { Address, Hex } from 'viem';
 
 import { contractAddresses, umaCtfAdapterAbi } from '../blockchain/base/abis/index.js';
 import { encodeCall, sendTransaction } from '../blockchain/base/transactionService.js';
-import { getKeeperWallet, getPublicClient, getResolverWallet } from '../blockchain/base/viemClient.js';
+import {
+  getKeeperWallet,
+  getPublicClient,
+  getResolverWallet,
+} from '../blockchain/base/viemClient.js';
 import { env } from '../config/env.js';
 import { prisma } from '../database/prismaClient.js';
 import { createAgentLogger } from './shared/agentLogger.js';
@@ -167,7 +171,16 @@ If the proposal appears correct or you're unsure, do NOT recommend dispute.
       : `Confidence ${assessment.confidence}% below dispute threshold ${env.AGENT_DISPUTE_CONFIDENCE_THRESHOLD}%`;
 
     log.info({ assertionId, reason }, '[Integrity] Not disputing');
-    await logAgentAction(dbMarket.id, 'skip', assessment, inputTokens, outputTokens, costUsd, true, reason);
+    await logAgentAction(
+      dbMarket.id,
+      'skip',
+      assessment,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      true,
+      reason
+    );
     return;
   }
 
@@ -179,9 +192,28 @@ If the proposal appears correct or you're unsure, do NOT recommend dispute.
       { assertionId, txHash, confidence: assessment.confidence },
       '[Integrity] Assertion disputed on-chain'
     );
-    await logAgentAction(dbMarket.id, 'dispute', assessment, inputTokens, outputTokens, costUsd, true, null, txHash);
+    await logAgentAction(
+      dbMarket.id,
+      'dispute',
+      assessment,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      true,
+      null,
+      txHash
+    );
   } else {
-    await logAgentAction(dbMarket.id, 'dispute', assessment, inputTokens, outputTokens, costUsd, false, 'On-chain dispute failed');
+    await logAgentAction(
+      dbMarket.id,
+      'dispute',
+      assessment,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      false,
+      'On-chain dispute failed'
+    );
   }
 }
 
@@ -198,7 +230,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     // Read OOV3 address from adapter
     const oov3Address = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as any,
+      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
       functionName: 'oov3',
     })) as Address;
 
@@ -218,7 +250,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     // Read bond from on-chain market data
     const marketData = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as any,
+      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
       functionName: 'getMarketData',
       args: [assertionData.market.onChainId as Hex],
     })) as { bond: bigint };
@@ -227,7 +259,10 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     log.info({ assertionId, bond: bond.toString() }, '[Integrity] Read bond for dispute');
 
     // Approve USDC to OOV3 for the dispute bond
-    const approveData = encodeCall(erc20ApproveAbi as any, 'approve', [oov3Address, bond]);
+    const approveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
+      oov3Address,
+      bond,
+    ]);
 
     await sendTransaction({
       walletClient: resolverWallet,
@@ -239,10 +274,11 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     });
 
     // Dispute the assertion via OOV3
-    const disputeData = encodeCall(oov3DisputeAbi as any, 'disputeAssertion', [
-      assertionId,
-      resolverWallet.account!.address,
-    ]);
+    const disputeData = encodeCall(
+      oov3DisputeAbi as unknown as readonly unknown[],
+      'disputeAssertion',
+      [assertionId, resolverWallet.account!.address]
+    );
 
     const receipt = await sendTransaction({
       walletClient: resolverWallet,

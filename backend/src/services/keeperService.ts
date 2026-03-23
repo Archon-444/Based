@@ -9,11 +9,19 @@
  */
 
 import cron from 'node-cron';
-import { type Address, encodeFunctionData } from 'viem';
+import type { Abi } from 'viem';
 
-import { contractAddresses, marketFactoryAbi, pythOracleAdapterAbi } from '../blockchain/base/abis/index.js';
+import {
+  contractAddresses,
+  marketFactoryAbi,
+  pythOracleAdapterAbi,
+} from '../blockchain/base/abis/index.js';
 import { encodeCall, sendTransaction } from '../blockchain/base/transactionService.js';
-import { getKeeperWallet, getPublicClient, getResolverWallet } from '../blockchain/base/viemClient.js';
+import {
+  getKeeperWallet,
+  getPublicClient,
+  getResolverWallet,
+} from '../blockchain/base/viemClient.js';
 import { env } from '../config/env.js';
 import { logger } from '../config/logger.js';
 import { prisma } from '../database/prismaClient.js';
@@ -133,7 +141,10 @@ export class KeeperService {
         }
       } catch (error) {
         logger.error(
-          { marketId: market.onChainId, error: error instanceof Error ? error.message : String(error) },
+          {
+            marketId: market.onChainId,
+            error: error instanceof Error ? error.message : String(error),
+          },
           '[Keeper] Failed to process expired market'
         );
       }
@@ -173,7 +184,15 @@ export class KeeperService {
         if (!contractAddresses.umaAdapter) continue;
 
         const data = encodeCall(
-          [{ name: 'settleAssertion', type: 'function', inputs: [{ name: 'assertionId', type: 'bytes32' }], outputs: [], stateMutability: 'nonpayable' }] as any,
+          [
+            {
+              name: 'settleAssertion',
+              type: 'function',
+              inputs: [{ name: 'assertionId', type: 'bytes32' }],
+              outputs: [],
+              stateMutability: 'nonpayable',
+            },
+          ] as unknown as Abi,
           'settleAssertion',
           [assertion.assertionId]
         );
@@ -190,7 +209,10 @@ export class KeeperService {
         logger.info({ assertionId: assertion.assertionId }, '[Keeper] Assertion settled');
       } catch (error) {
         logger.error(
-          { assertionId: assertion.assertionId, error: error instanceof Error ? error.message : String(error) },
+          {
+            assertionId: assertion.assertionId,
+            error: error instanceof Error ? error.message : String(error),
+          },
           '[Keeper] Failed to settle assertion'
         );
       }
@@ -219,7 +241,10 @@ export class KeeperService {
         logger.info({ marketId: market.onChainId }, '[Keeper] Pyth market resolved');
       } catch (error) {
         logger.error(
-          { marketId: market.onChainId, error: error instanceof Error ? error.message : String(error) },
+          {
+            marketId: market.onChainId,
+            error: error instanceof Error ? error.message : String(error),
+          },
           '[Keeper] Failed to resolve Pyth market'
         );
       }
@@ -238,19 +263,26 @@ export class KeeperService {
 
     // Estimate Pyth update fee
     const publicClient = getPublicClient();
-    const fee = await publicClient.readContract({
+    const fee = (await publicClient.readContract({
       address: contractAddresses.pyth!,
-      abi: [{ name: 'getUpdateFee', type: 'function', inputs: [{ name: 'updateData', type: 'bytes[]' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' }] as any,
+      abi: [
+        {
+          name: 'getUpdateFee',
+          type: 'function',
+          inputs: [{ name: 'updateData', type: 'bytes[]' }],
+          outputs: [{ type: 'uint256' }],
+          stateMutability: 'view',
+        },
+      ] as unknown as Abi,
       functionName: 'getUpdateFee',
       args: [updateData],
-    }) as bigint;
+    })) as bigint;
 
     // Call PythOracleAdapter.resolve(marketId, pythUpdateData) — payable
-    const data = encodeCall(
-      pythOracleAdapterAbi as any,
-      'resolve',
-      [onChainMarketId, updateData]
-    );
+    const data = encodeCall(pythOracleAdapterAbi as unknown as Abi, 'resolve', [
+      onChainMarketId,
+      updateData,
+    ]);
 
     const resolverWallet = getResolverWallet();
     await sendTransaction({
@@ -295,18 +327,21 @@ export class KeeperService {
     });
 
     if (missedDeadlines > 0) {
-      logger.warn({ count: missedDeadlines }, '[Keeper] Active markets past deadline not yet resolved');
+      logger.warn(
+        { count: missedDeadlines },
+        '[Keeper] Active markets past deadline not yet resolved'
+      );
     }
 
     // Compare on-chain vs DB market count
     if (contractAddresses.marketFactory) {
       try {
         const publicClient = getPublicClient();
-        const onChainCount = await publicClient.readContract({
+        const onChainCount = (await publicClient.readContract({
           address: contractAddresses.marketFactory,
-          abi: marketFactoryAbi as any,
+          abi: marketFactoryAbi as unknown as Abi,
           functionName: 'getMarketCount',
-        }) as bigint;
+        })) as bigint;
 
         const dbCount = await prisma.market.count({
           where: { chain: 'base' },
@@ -320,7 +355,10 @@ export class KeeperService {
         }
       } catch (error) {
         // getMarketCount might not exist — not critical
-        logger.debug({ error: error instanceof Error ? error.message : String(error) }, '[Keeper] Could not read on-chain market count');
+        logger.debug(
+          { error: error instanceof Error ? error.message : String(error) },
+          '[Keeper] Could not read on-chain market count'
+        );
       }
     }
   }

@@ -1,4 +1,4 @@
-import { Router, type Request, type Response } from 'express';
+import { type Request, type Response, Router } from 'express';
 
 import { getPortfolio } from '../services/portfolio.service.js';
 

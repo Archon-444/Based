@@ -43,7 +43,7 @@ export async function getTradesByMarket(params: TradeQueryParams): Promise<Trade
     return { trades: [], total: 0, page, pages: 0 };
   }
 
-  const where: any = { marketId: market.id };
+  const where: Record<string, unknown> = { marketId: market.id };
   if (trader) {
     where.trader = trader.toLowerCase();
   }

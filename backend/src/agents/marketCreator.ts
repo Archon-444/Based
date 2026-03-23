@@ -8,7 +8,7 @@
  * Usage: CLI-only for now (npm run agent:create -- "Will BTC hit $150K?")
  */
 
-import { type Hex, keccak256, toBytes, toHex } from 'viem';
+import { keccak256, toBytes, toHex } from 'viem';
 
 import {
   contractAddresses,
@@ -125,14 +125,37 @@ export async function createFromPrompt(input: string): Promise<CreateMarketResul
   // 2. Duplicate check
   const isDuplicate = await checkForDuplicates(proposal.question);
   if (isDuplicate) {
-    await logAction(null, 'skip', proposal, inputTokens, outputTokens, costUsd, true, 'Duplicate market exists');
+    await logAction(
+      null,
+      'skip',
+      proposal,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      true,
+      'Duplicate market exists'
+    );
     return { proposal, marketId: null, status: 'rejected', reason: 'Duplicate market exists' };
   }
 
   // 3. Risk flag check
   if (proposal.riskFlags.length > 0) {
-    await logAction(null, 'flag', proposal, inputTokens, outputTokens, costUsd, true, proposal.riskFlags.join(', '));
-    return { proposal, marketId: null, status: 'needs_review', reason: proposal.riskFlags.join(', ') };
+    await logAction(
+      null,
+      'flag',
+      proposal,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      true,
+      proposal.riskFlags.join(', ')
+    );
+    return {
+      proposal,
+      marketId: null,
+      status: 'needs_review',
+      reason: proposal.riskFlags.join(', '),
+    };
   }
 
   // 4. Execute on-chain creation
@@ -143,7 +166,9 @@ export async function createFromPrompt(input: string): Promise<CreateMarketResul
   return { proposal, marketId, status: 'created', txHash };
 }
 
-async function executeCreation(proposal: MarketProposal): Promise<{ marketId: string; txHash: string }> {
+async function executeCreation(
+  proposal: MarketProposal
+): Promise<{ marketId: string; txHash: string }> {
   if (!contractAddresses.marketFactory || !contractAddresses.usdc) {
     throw new Error('MARKET_FACTORY_ADDRESS or USDC_ADDRESS not configured');
   }
@@ -152,9 +177,7 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
   const adminWallet = getAdminWallet();
 
   // a. Generate questionId
-  const questionId = keccak256(
-    toBytes(proposal.question + ':' + Date.now().toString())
-  );
+  const questionId = keccak256(toBytes(proposal.question + ':' + Date.now().toString()));
 
   // b. Prepare parameters
   const deadline = BigInt(Math.floor(new Date(proposal.deadline).getTime() / 1000));
@@ -162,7 +185,7 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
   const liquidityUsdc = BigInt(proposal.suggestedLiquidityUsdc) * 1_000_000n; // Convert to 6-decimal USDC
 
   // c. Approve USDC to MarketFactory for initial liquidity
-  const approveData = encodeCall(erc20ApproveAbi as any, 'approve', [
+  const approveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
     contractAddresses.marketFactory,
     liquidityUsdc,
   ]);
@@ -177,7 +200,7 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
   });
 
   // d. Create market
-  const createData = encodeCall(marketFactoryAbi as any, 'createMarket', [
+  const createData = encodeCall(marketFactoryAbi as unknown as readonly unknown[], 'createMarket', [
     questionId,
     proposal.question,
     BigInt(proposal.outcomeCount),
@@ -202,7 +225,11 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
   log.info({ marketId, txHash: createReceipt.transactionHash }, '[MarketCreator] Market created');
 
   // e. Activate market
-  const activateData = encodeCall(marketFactoryAbi as any, 'activateMarket', [marketId]);
+  const activateData = encodeCall(
+    marketFactoryAbi as unknown as readonly unknown[],
+    'activateMarket',
+    [marketId]
+  );
 
   await sendTransaction({
     walletClient: adminWallet,
@@ -219,12 +246,11 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
     const bond = 500_000_000n; // MIN_BOND = 500 USDC (6 decimals)
     const liveness = proposal.category === 'sports' ? 7200n : 172800n; // 2h for sports, 48h otherwise
 
-    const registerData = encodeCall(umaCtfAdapterAbi as any, 'registerMarket', [
-      marketId,
-      reward,
-      bond,
-      liveness,
-    ]);
+    const registerData = encodeCall(
+      umaCtfAdapterAbi as unknown as readonly unknown[],
+      'registerMarket',
+      [marketId, reward, bond, liveness]
+    );
 
     await sendTransaction({
       walletClient: adminWallet,
@@ -234,20 +260,28 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
       walletLabel: 'admin',
       methodLabel: 'UmaAdapter.registerMarket',
     });
-  } else if (proposal.automationType === 'pyth' && contractAddresses.pythAdapter && proposal.priceFeedId) {
+  } else if (
+    proposal.automationType === 'pyth' &&
+    contractAddresses.pythAdapter &&
+    proposal.priceFeedId
+  ) {
     const resolutionTypeMap: Record<string, number> = {
       ABOVE_THRESHOLD: 0,
       BELOW_THRESHOLD: 1,
       BETWEEN: 2,
     };
 
-    const registerData = encodeCall(pythOracleAdapterAbi as any, 'registerMarket', [
-      marketId,
-      proposal.priceFeedId,
-      BigInt(proposal.strikePrice ?? 0) * 100_000_000n, // Convert to Pyth's 8-decimal format
-      0n, // strikePriceHigh (only for BETWEEN)
-      resolutionTypeMap[proposal.resolutionType ?? 'ABOVE_THRESHOLD'] ?? 0,
-    ]);
+    const registerData = encodeCall(
+      pythOracleAdapterAbi as unknown as readonly unknown[],
+      'registerMarket',
+      [
+        marketId,
+        proposal.priceFeedId,
+        BigInt(proposal.strikePrice ?? 0) * 100_000_000n, // Convert to Pyth's 8-decimal format
+        0n, // strikePriceHigh (only for BETWEEN)
+        resolutionTypeMap[proposal.resolutionType ?? 'ABOVE_THRESHOLD'] ?? 0,
+      ]
+    );
 
     await sendTransaction({
       walletClient: adminWallet,
@@ -262,7 +296,7 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
   // g. Initialize AMM pool
   if (contractAddresses.amm) {
     // Approve USDC to AMM
-    const ammApproveData = encodeCall(erc20ApproveAbi as any, 'approve', [
+    const ammApproveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
       contractAddresses.amm,
       liquidityUsdc,
     ]);
@@ -276,10 +310,11 @@ async function executeCreation(proposal: MarketProposal): Promise<{ marketId: st
       methodLabel: 'USDC.approve(amm)',
     });
 
-    const initPoolData = encodeCall(predictionMarketAmmAbi as any, 'initializePool', [
-      marketId,
-      liquidityUsdc,
-    ]);
+    const initPoolData = encodeCall(
+      predictionMarketAmmAbi as unknown as readonly unknown[],
+      'initializePool',
+      [marketId, liquidityUsdc]
+    );
 
     await sendTransaction({
       walletClient: adminWallet,

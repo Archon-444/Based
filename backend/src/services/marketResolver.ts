@@ -145,12 +145,13 @@ export class MarketResolverService {
     let oracleSnapshot: ResolveOracleSnapshot | undefined;
 
     switch (criteria.type) {
-      case 'oracle':
+      case 'oracle': {
         const oracleResult = await this.resolveWithOracle(market, criteria);
         winningOutcome = oracleResult.outcome;
         reason = oracleResult.reason;
         oracleSnapshot = oracleResult.snapshot;
         break;
+      }
 
       case 'time-based':
         // Time-based markets need manual resolution
@@ -220,8 +221,8 @@ export class MarketResolverService {
    * Parse resolution criteria from market data
    * This is a simplified parser - production version would be more sophisticated
    */
-  private parseResolutionCriteria(market: any): ResolutionCriteria {
-    const question = market.question.toLowerCase();
+  private parseResolutionCriteria(market: Record<string, unknown>): ResolutionCriteria {
+    const question = (market.question as string).toLowerCase();
 
     // Check if it's a price-based question
     // Examples:
@@ -252,7 +253,7 @@ export class MarketResolverService {
             oracleSymbol: pattern.symbol,
             priceThreshold: threshold,
             direction,
-            endTime: market.endDate,
+            endTime: market.endDate as Date | undefined,
           };
         }
       }
@@ -269,7 +270,7 @@ export class MarketResolverService {
    * Resolve market using oracle data
    */
   private async resolveWithOracle(
-    market: any,
+    market: Record<string, unknown>,
     criteria: ResolutionCriteria
   ): Promise<{
     outcome: number;
@@ -347,7 +348,8 @@ export class MarketResolverService {
       onChainId: string;
     },
     winningOutcome: number,
-    oracleSnapshot?: ResolveOracleSnapshot
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _oracleSnapshot?: ResolveOracleSnapshot
   ): Promise<void> {
     const targetId = market.onChainId;
 
@@ -364,9 +366,12 @@ export class MarketResolverService {
     try {
       // For Base, resolution is handled by the keeper service via UMA/Pyth adapters
       // This path is used for manual resolution fallback
-      logWarn('[MarketResolver] Direct resolution submission — use keeper service for Base markets', {
-        onChainMarketId: targetId,
-      });
+      logWarn(
+        '[MarketResolver] Direct resolution submission — use keeper service for Base markets',
+        {
+          onChainMarketId: targetId,
+        }
+      );
 
       recordMarketResolution(market.chain, 'success');
 
@@ -389,7 +394,7 @@ export class MarketResolverService {
   /**
    * Get markets pending resolution
    */
-  async getPendingResolutions(): Promise<any[]> {
+  async getPendingResolutions(): Promise<unknown[]> {
     const markets = await prisma.market.findMany({
       where: {
         status: 'active',

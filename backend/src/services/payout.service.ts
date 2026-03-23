@@ -4,7 +4,6 @@ import { getChainConfig } from '../config/chainConfig.js';
 import { prisma } from '../database/prismaClient.js';
 
 const MICRO_USDC = 1_000_000;
-const MICRO_USDC_BIGINT = BigInt(MICRO_USDC);
 const FPMM_TRADING_FEE_BPS = 30n;
 const BPS_DENOMINATOR = 10_000n;
 
@@ -22,23 +21,6 @@ type ShareInfo = {
   isFPMM: boolean;
   calculationMethod: 'FPMM' | 'Parimutuel';
 };
-
-function coerceBigInt(value: unknown): bigint | null {
-  if (typeof value === 'bigint') {
-    return value;
-  }
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return BigInt(Math.trunc(value));
-  }
-  if (typeof value === 'string' && value.length > 0) {
-    try {
-      return BigInt(value);
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
 
 export const payoutService = {
   async calculatePayout(params: CalculatePayoutParams): Promise<{

@@ -27,6 +27,7 @@ export class AppError extends Error {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const errorHandler = (error: unknown, req: Request, res: Response, _next: NextFunction) => {
   // Log error details server-side (with full stack trace)
   logger.error(
@@ -35,7 +36,9 @@ export const errorHandler = (error: unknown, req: Request, res: Response, _next:
       path: req.path,
       method: req.method,
       ip: req.ip,
-      userId: (req as any).wallet?.address,
+      userId: (
+        (req as unknown as Record<string, unknown>).wallet as Record<string, unknown> | undefined
+      )?.address,
     },
     'Error occurred'
   );

@@ -6,14 +6,13 @@
  */
 
 import {
+  type Chain,
   createPublicClient,
   createWalletClient,
   http,
-  webSocket,
-  type Chain,
   type PublicClient,
-  type Transport,
   type WalletClient,
+  webSocket,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { base, baseSepolia } from 'viem/chains';

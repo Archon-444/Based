@@ -63,7 +63,10 @@ const PRICING = {
 };
 
 function estimateCost(inputTokens: number, outputTokens: number): number {
-  return (inputTokens / 1_000_000) * PRICING.inputPerMTok + (outputTokens / 1_000_000) * PRICING.outputPerMTok;
+  return (
+    (inputTokens / 1_000_000) * PRICING.inputPerMTok +
+    (outputTokens / 1_000_000) * PRICING.outputPerMTok
+  );
 }
 
 // ---------- Cost Tracking ----------
@@ -73,13 +76,22 @@ const agentCosts = new Map<string, AgentCostRecord>();
 function getOrCreateCostRecord(agentName: string): AgentCostRecord {
   let record = agentCosts.get(agentName);
   if (!record) {
-    record = { totalInputTokens: 0, totalOutputTokens: 0, totalCostUsd: 0, callCount: 0, lastCallAt: null };
+    record = {
+      totalInputTokens: 0,
+      totalOutputTokens: 0,
+      totalCostUsd: 0,
+      callCount: 0,
+      lastCallAt: null,
+    };
     agentCosts.set(agentName, record);
   }
   return record;
 }
 
-function recordUsage(agentName: string, usage: { input_tokens: number; output_tokens: number }): number {
+function recordUsage(
+  agentName: string,
+  usage: { input_tokens: number; output_tokens: number }
+): number {
   const cost = estimateCost(usage.input_tokens, usage.output_tokens);
   const record = getOrCreateCostRecord(agentName);
   record.totalInputTokens += usage.input_tokens;
@@ -257,7 +269,10 @@ export async function callAndParse<T>(
   } catch (error) {
     recordAgentCall(agentName, 'failure');
     log.error(
-      { error: error instanceof Error ? error.message : String(error), durationMs: Date.now() - startMs },
+      {
+        error: error instanceof Error ? error.message : String(error),
+        durationMs: Date.now() - startMs,
+      },
       `[ClaudeClient] callAndParse failed for ${agentName}`
     );
     return null;
@@ -315,7 +330,10 @@ export async function callWithSearch(
   } catch (error) {
     recordAgentCall(agentName, 'failure');
     log.error(
-      { error: error instanceof Error ? error.message : String(error), durationMs: Date.now() - startMs },
+      {
+        error: error instanceof Error ? error.message : String(error),
+        durationMs: Date.now() - startMs,
+      },
       `[ClaudeClient] callWithSearch failed for ${agentName}`
     );
     return null;
@@ -388,7 +406,9 @@ export async function searchAndParse<T>(
     const retryResponse = await callWithRetry(client, {
       model,
       max_tokens: 4096,
-      system: systemPrompt + '\n\nRespond ONLY with a valid JSON object. No markdown, no explanation, no backticks.',
+      system:
+        systemPrompt +
+        '\n\nRespond ONLY with a valid JSON object. No markdown, no explanation, no backticks.',
       messages: [
         { role: 'user', content: userMessage },
         { role: 'assistant', content: text },
@@ -422,7 +442,10 @@ export async function searchAndParse<T>(
   } catch (error) {
     recordAgentCall(agentName, 'failure');
     log.error(
-      { error: error instanceof Error ? error.message : String(error), durationMs: Date.now() - startMs },
+      {
+        error: error instanceof Error ? error.message : String(error),
+        durationMs: Date.now() - startMs,
+      },
       `[ClaudeClient] searchAndParse failed for ${agentName}`
     );
     return null;

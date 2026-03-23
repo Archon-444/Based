@@ -35,6 +35,7 @@ export const verifyWalletSignature = async ({
   address,
   timestamp: timestampHeader,
   nonce,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   publicKey,
 }: VerifyWalletSignatureParams) => {
   try {

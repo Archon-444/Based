@@ -86,7 +86,7 @@ export async function handleMarketResolved(
   event: ProcessedEvent,
   eventData: MarketResolvedEvent
 ): Promise<void> {
-  const { market_id, resolver, winning_outcome, total_volume } = eventData;
+  const { market_id, winning_outcome, total_volume } = eventData;
 
   logInfo('[EventHandler] Processing MarketResolvedEvent', {
     marketId: market_id,
@@ -202,7 +202,7 @@ export async function handleDisputeCreated(
   event: ProcessedEvent,
   eventData: DisputeCreatedEvent
 ): Promise<void> {
-  const { dispute_id, market_id, disputor, reason } = eventData;
+  const { dispute_id, market_id, disputor } = eventData;
 
   logInfo('[EventHandler] Processing DisputeCreatedEvent', {
     disputeId: dispute_id,
@@ -305,7 +305,7 @@ export async function handleRoleGranted(
 
   try {
     // Upsert user
-    const user = await prisma.user.upsert({
+    await prisma.user.upsert({
       where: { walletAddress: wallet },
       update: {
         roles: { push: role },
@@ -482,7 +482,7 @@ export async function processEvent(event: ProcessedEvent): Promise<void> {
       eventType: event.eventType,
       transactionHash: event.transactionHash,
       sequenceNumber: event.sequenceNumber,
-      eventData: eventData as any,
+      eventData: eventData as unknown as Record<string, unknown>,
       blockHeight: event.blockHeight,
       timestamp: event.timestamp,
       marketId: event.marketId,

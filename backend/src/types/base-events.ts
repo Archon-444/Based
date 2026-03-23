@@ -131,10 +131,10 @@ export interface PythMarketResolvedEvent {
 // ==================== Solidity MarketStatus mapping ====================
 
 export const MARKET_STATUS_MAP: Record<number, string> = {
-  0: 'active',     // Created — but we map to 'active' since DB doesn't have 'created'
-  1: 'active',     // Active
-  2: 'resolving',  // Resolving
-  3: 'disputed',   // Disputed
-  4: 'resolved',   // Resolved
-  5: 'cancelled',  // Cancelled
+  0: 'active', // Created — but we map to 'active' since DB doesn't have 'created'
+  1: 'active', // Active
+  2: 'resolving', // Resolving
+  3: 'disputed', // Disputed
+  4: 'resolved', // Resolved
+  5: 'cancelled', // Cancelled
 } as const;

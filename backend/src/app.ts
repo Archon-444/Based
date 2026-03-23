@@ -97,7 +97,7 @@ const createRateLimiter = (windowMs: number, max: number, message: string) => {
     // Advanced key generator: IP + User ID (if authenticated)
     keyGenerator: (req) => {
       const ip = req.ip || req.socket.remoteAddress || 'unknown';
-      const userId = (req as any).wallet?.address;
+      const userId = (req as unknown as Record<string, Record<string, string>>).wallet?.address;
       return userId ? `${ip}:${userId}` : ip;
     },
     handler: (req, res) => {
@@ -105,7 +105,7 @@ const createRateLimiter = (windowMs: number, max: number, message: string) => {
         {
           ip: req.ip,
           path: req.path,
-          userId: (req as any).wallet?.address,
+          userId: (req as unknown as Record<string, Record<string, string>>).wallet?.address,
         },
         'Rate limit exceeded'
       );

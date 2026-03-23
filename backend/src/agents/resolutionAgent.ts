@@ -10,7 +10,7 @@
  * Safety: All errors are caught internally — never throws into the keeper.
  */
 
-import type { Address, Hex } from 'viem';
+import type { Hex } from 'viem';
 
 import { contractAddresses, umaCtfAdapterAbi } from '../blockchain/base/abis/index.js';
 import { encodeCall, sendTransaction } from '../blockchain/base/transactionService.js';
@@ -92,7 +92,10 @@ export async function tryResolveUmaMarket(market: MarketInput): Promise<void> {
     },
   });
   if (existingAssertion) {
-    log.info({ marketId: market.onChainId }, '[Resolution] Market already has a pending assertion, skipping');
+    log.info(
+      { marketId: market.onChainId },
+      '[Resolution] Market already has a pending assertion, skipping'
+    );
     return;
   }
 
@@ -141,7 +144,11 @@ Search the web for authoritative evidence to support your determination.
   // Confidence gate
   if (proposal.confidence < env.AGENT_CONFIDENCE_THRESHOLD) {
     log.info(
-      { marketId: market.onChainId, confidence: proposal.confidence, threshold: env.AGENT_CONFIDENCE_THRESHOLD },
+      {
+        marketId: market.onChainId,
+        confidence: proposal.confidence,
+        threshold: env.AGENT_CONFIDENCE_THRESHOLD,
+      },
       '[Resolution] Confidence below threshold, skipping auto-assertion'
     );
     await logAgentAction(
@@ -160,10 +167,23 @@ Search the web for authoritative evidence to support your determination.
   // Validate outcome index
   if (proposal.proposedOutcome < 0 || proposal.proposedOutcome >= market.outcomes.length) {
     log.error(
-      { marketId: market.onChainId, proposedOutcome: proposal.proposedOutcome, outcomeCount: market.outcomes.length },
+      {
+        marketId: market.onChainId,
+        proposedOutcome: proposal.proposedOutcome,
+        outcomeCount: market.outcomes.length,
+      },
       '[Resolution] Invalid outcome index from LLM'
     );
-    await logAgentAction(dbMarket?.id ?? null, 'skip', proposal, inputTokens, outputTokens, costUsd, false, 'Invalid outcome index');
+    await logAgentAction(
+      dbMarket?.id ?? null,
+      'skip',
+      proposal,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      false,
+      'Invalid outcome index'
+    );
     return;
   }
 
@@ -172,16 +192,43 @@ Search the web for authoritative evidence to support your determination.
 
   if (txHash) {
     log.info(
-      { marketId: market.onChainId, txHash, proposedOutcome: proposal.proposedOutcome, confidence: proposal.confidence },
+      {
+        marketId: market.onChainId,
+        txHash,
+        proposedOutcome: proposal.proposedOutcome,
+        confidence: proposal.confidence,
+      },
       '[Resolution] Outcome asserted on-chain'
     );
-    await logAgentAction(dbMarket?.id ?? null, 'resolve', proposal, inputTokens, outputTokens, costUsd, true, null, txHash);
+    await logAgentAction(
+      dbMarket?.id ?? null,
+      'resolve',
+      proposal,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      true,
+      null,
+      txHash
+    );
   } else {
-    await logAgentAction(dbMarket?.id ?? null, 'resolve', proposal, inputTokens, outputTokens, costUsd, false, 'On-chain assertion failed');
+    await logAgentAction(
+      dbMarket?.id ?? null,
+      'resolve',
+      proposal,
+      inputTokens,
+      outputTokens,
+      costUsd,
+      false,
+      'On-chain assertion failed'
+    );
   }
 }
 
-async function executeAssertion(onChainMarketId: string, proposal: ResolutionProposal): Promise<string | null> {
+async function executeAssertion(
+  onChainMarketId: string,
+  proposal: ResolutionProposal
+): Promise<string | null> {
   if (!contractAddresses.umaAdapter || !contractAddresses.usdc) {
     log.error('[Resolution] UMA_ADAPTER_ADDRESS or USDC_ADDRESS not configured');
     return null;
@@ -194,7 +241,7 @@ async function executeAssertion(onChainMarketId: string, proposal: ResolutionPro
     // Read bond amount from UMA adapter
     const marketData = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as any,
+      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
       functionName: 'getMarketData',
       args: [onChainMarketId as Hex],
     })) as { bond: bigint };
@@ -203,7 +250,7 @@ async function executeAssertion(onChainMarketId: string, proposal: ResolutionPro
     log.info({ marketId: onChainMarketId, bond: bond.toString() }, '[Resolution] Read bond amount');
 
     // Approve USDC to UMA adapter
-    const approveData = encodeCall(erc20ApproveAbi as any, 'approve', [
+    const approveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
       contractAddresses.umaAdapter,
       bond,
     ]);
@@ -218,10 +265,11 @@ async function executeAssertion(onChainMarketId: string, proposal: ResolutionPro
     });
 
     // Assert outcome via UMA adapter
-    const assertData = encodeCall(umaCtfAdapterAbi as any, 'assertOutcome', [
-      onChainMarketId,
-      BigInt(proposal.proposedOutcome),
-    ]);
+    const assertData = encodeCall(
+      umaCtfAdapterAbi as unknown as readonly unknown[],
+      'assertOutcome',
+      [onChainMarketId, BigInt(proposal.proposedOutcome)]
+    );
 
     const receipt = await sendTransaction({
       walletClient: keeperWallet,

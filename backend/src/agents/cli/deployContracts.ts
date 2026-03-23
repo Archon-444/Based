@@ -14,19 +14,19 @@
  */
 
 import 'dotenv/config';
+
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import {
+  type Address,
   createPublicClient,
   createWalletClient,
-  http,
   encodeAbiParameters,
-  encodeFunctionData,
   type Hex,
-  type Address,
+  http,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { baseSepolia } from 'viem/chains';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 
 // ---------- Contract Artifacts ----------
 
@@ -50,20 +50,23 @@ const BASE_SEPOLIA_PYTH = '0xA2aa501b19aff244D90cc15a4Cf739D2725B5729' as Addres
 
 // ---------- Helpers ----------
 
-function encodeConstructor(abi: any[], bytecode: Hex, args: any[]): Hex {
-  const constructor = abi.find((item: any) => item.type === 'constructor');
-  if (!constructor || constructor.inputs.length === 0) return bytecode;
-  const encoded = encodeAbiParameters(constructor.inputs, args);
+function encodeConstructor(abi: unknown[], bytecode: Hex, args: unknown[]): Hex {
+  const constructor = (abi as Record<string, unknown>[]).find(
+    (item) => item.type === 'constructor'
+  ) as Record<string, unknown> | undefined;
+  const inputs = constructor?.inputs as readonly unknown[] | undefined;
+  if (!inputs || inputs.length === 0) return bytecode;
+  const encoded = encodeAbiParameters(inputs as Parameters<typeof encodeAbiParameters>[0], args);
   return (bytecode + encoded.slice(2)) as Hex;
 }
 
 // ---------- Deploy Function ----------
 
 async function deployContract(
-  walletClient: any,
-  publicClient: any,
+  walletClient: ReturnType<typeof createWalletClient>,
+  publicClient: ReturnType<typeof createPublicClient>,
   bytecodeWithArgs: Hex,
-  label: string,
+  label: string
 ): Promise<Address> {
   const hash = await walletClient.deployContract({
     abi: [],
@@ -109,7 +112,9 @@ async function main() {
   const balance = await publicClient.getBalance({ address: account.address });
   console.log(`Balance:  ${Number(balance) / 1e18} ETH`);
   if (balance === 0n) {
-    console.error('\nNo ETH! Get some from: https://www.coinbase.com/faucets/base-ethereum-sepolia');
+    console.error(
+      '\nNo ETH! Get some from: https://www.coinbase.com/faucets/base-ethereum-sepolia'
+    );
     process.exit(1);
   }
 
@@ -125,8 +130,8 @@ async function main() {
       pyth: loadArtifact('PythOracleAdapter', 'PythOracleAdapter'),
     };
     console.log('All 5 artifacts loaded\n');
-  } catch (e: any) {
-    console.error(`Failed to load artifacts: ${e.message}`);
+  } catch (e: unknown) {
+    console.error(`Failed to load artifacts: ${e instanceof Error ? e.message : String(e)}`);
     console.error('Run: cd contracts-base && forge build');
     process.exit(1);
   }
@@ -135,32 +140,61 @@ async function main() {
   console.log('--- Deploying Contracts ---\n');
 
   console.log('1/5 ConditionalTokens...');
-  const ctfAddress = await deployContract(walletClient, publicClient, artifacts.ctf.bytecode, 'ConditionalTokens');
+  const ctfAddress = await deployContract(
+    walletClient,
+    publicClient,
+    artifacts.ctf.bytecode,
+    'ConditionalTokens'
+  );
 
   console.log('2/5 MarketFactory...');
-  const factoryBytecode = encodeConstructor(artifacts.factory.abi, artifacts.factory.bytecode, [ctfAddress, BASE_SEPOLIA_USDC]);
-  const factoryAddress = await deployContract(walletClient, publicClient, factoryBytecode, 'MarketFactory');
+  const factoryBytecode = encodeConstructor(artifacts.factory.abi, artifacts.factory.bytecode, [
+    ctfAddress,
+    BASE_SEPOLIA_USDC,
+  ]);
+  const factoryAddress = await deployContract(
+    walletClient,
+    publicClient,
+    factoryBytecode,
+    'MarketFactory'
+  );
 
   console.log('3/5 PredictionMarketAMM...');
-  const ammBytecode = encodeConstructor(artifacts.amm.abi, artifacts.amm.bytecode, [ctfAddress, factoryAddress, BASE_SEPOLIA_USDC]);
+  const ammBytecode = encodeConstructor(artifacts.amm.abi, artifacts.amm.bytecode, [
+    ctfAddress,
+    factoryAddress,
+    BASE_SEPOLIA_USDC,
+  ]);
   const ammAddress = await deployContract(walletClient, publicClient, ammBytecode, 'AMM');
 
   console.log('4/5 UmaCtfAdapter...');
-  const umaBytecode = encodeConstructor(artifacts.uma.abi, artifacts.uma.bytecode, [BASE_SEPOLIA_OOV3, factoryAddress, BASE_SEPOLIA_USDC]);
+  const umaBytecode = encodeConstructor(artifacts.uma.abi, artifacts.uma.bytecode, [
+    BASE_SEPOLIA_OOV3,
+    factoryAddress,
+    BASE_SEPOLIA_USDC,
+  ]);
   const umaAddress = await deployContract(walletClient, publicClient, umaBytecode, 'UmaCtfAdapter');
 
   console.log('5/5 PythOracleAdapter...');
-  const pythBytecode = encodeConstructor(artifacts.pyth.abi, artifacts.pyth.bytecode, [BASE_SEPOLIA_PYTH, factoryAddress]);
-  const pythAddress = await deployContract(walletClient, publicClient, pythBytecode, 'PythOracleAdapter');
+  const pythBytecode = encodeConstructor(artifacts.pyth.abi, artifacts.pyth.bytecode, [
+    BASE_SEPOLIA_PYTH,
+    factoryAddress,
+  ]);
+  const pythAddress = await deployContract(
+    walletClient,
+    publicClient,
+    pythBytecode,
+    'PythOracleAdapter'
+  );
 
   // Grant RESOLVER_ROLE
   console.log('\n--- Granting Roles ---\n');
 
-  const resolverRole = await publicClient.readContract({
+  const resolverRole = (await publicClient.readContract({
     address: factoryAddress,
     abi: artifacts.factory.abi,
     functionName: 'RESOLVER_ROLE',
-  }) as Hex;
+  })) as Hex;
 
   const grantUma = await walletClient.writeContract({
     address: factoryAddress,
@@ -214,7 +248,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((e) => {
-  console.error('\nDeployment failed:', e.message);
+main().catch((e: unknown) => {
+  console.error('\nDeployment failed:', e instanceof Error ? e.message : String(e));
   process.exit(1);
 });

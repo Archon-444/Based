@@ -62,7 +62,14 @@ export const authenticateWallet = async (req: Request, res: Response, next: Next
       return res.status(401).json({ error: 'Request timestamp is in the future' });
     }
 
-    const isValid = await verifyWalletSignature({ signature, message, address, timestamp, nonce, publicKey });
+    const isValid = await verifyWalletSignature({
+      signature,
+      message,
+      address,
+      timestamp,
+      nonce,
+      publicKey,
+    });
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid wallet signature' });
     }

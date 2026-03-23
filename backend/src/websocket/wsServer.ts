@@ -6,8 +6,7 @@
  */
 
 import type { Server } from 'http';
-
-import { WebSocketServer, type WebSocket } from 'ws';
+import { type WebSocket, WebSocketServer } from 'ws';
 
 import { logger } from '../config/logger.js';
 import { setWsConnections } from '../monitoring/metrics.js';
@@ -20,6 +19,10 @@ import {
 } from './wsHandlers.js';
 
 const HEARTBEAT_INTERVAL = 30_000;
+
+interface WebSocketWithHeartbeat extends WebSocket {
+  isAlive: boolean;
+}
 
 interface ClientMessage {
   type: 'subscribe' | 'unsubscribe';
@@ -36,9 +39,9 @@ export function attachWebSocketServer(server: Server): WebSocketServer {
     setWsConnections(getClientCount());
 
     // Mark as alive for heartbeat
-    (ws as any).isAlive = true;
+    (ws as WebSocketWithHeartbeat).isAlive = true;
     ws.on('pong', () => {
-      (ws as any).isAlive = true;
+      (ws as WebSocketWithHeartbeat).isAlive = true;
     });
 
     ws.on('message', (data: Buffer) => {
@@ -69,12 +72,12 @@ export function attachWebSocketServer(server: Server): WebSocketServer {
   // Heartbeat: ping every 30s, terminate stale connections
   const heartbeat = setInterval(() => {
     for (const ws of wss.clients) {
-      if ((ws as any).isAlive === false) {
+      if ((ws as WebSocketWithHeartbeat).isAlive === false) {
         unregisterClient(ws);
         ws.terminate();
         continue;
       }
-      (ws as any).isAlive = false;
+      (ws as WebSocketWithHeartbeat).isAlive = false;
       ws.ping();
     }
     setWsConnections(getClientCount());

@@ -116,7 +116,9 @@ Trigger: ${trigger === 'price_move' ? 'Significant price movement detected' : 'S
         headline: commentary.keyFactor,
         body: commentary.commentary,
         sentiment: commentary.sentiment,
-        keyFactors: commentary.priceContext ? [commentary.keyFactor, commentary.priceContext] : [commentary.keyFactor],
+        keyFactors: commentary.priceContext
+          ? [commentary.keyFactor, commentary.priceContext]
+          : [commentary.keyFactor],
       },
     });
   } catch (dbError) {
@@ -186,7 +188,10 @@ export function startCommentaryCron(): cron.ScheduledTask {
           await generateCommentary(market.onChainId, 'scheduled');
         } catch (error) {
           log.error(
-            { marketId: market.onChainId, error: error instanceof Error ? error.message : String(error) },
+            {
+              marketId: market.onChainId,
+              error: error instanceof Error ? error.message : String(error),
+            },
             '[Commentary] Cron commentary failed for market'
           );
         }
@@ -212,7 +217,7 @@ async function getCurrentPrices(marketOnChainId: string): Promise<number[] | nul
     const publicClient = getPublicClient();
     const rawPrices = (await publicClient.readContract({
       address: contractAddresses.amm,
-      abi: predictionMarketAmmAbi as any,
+      abi: predictionMarketAmmAbi as unknown as readonly unknown[],
       functionName: 'getPrices',
       args: [marketOnChainId as Hex],
     })) as bigint[];

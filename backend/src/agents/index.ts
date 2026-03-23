@@ -9,7 +9,7 @@ import type { ScheduledTask } from 'node-cron';
 
 import { env } from '../config/env.js';
 import { createAgentLogger } from './shared/agentLogger.js';
-import { getAgentCosts, getClaudeClient, type AgentCostRecord } from './shared/claudeClient.js';
+import { type AgentCostRecord, getAgentCosts, getClaudeClient } from './shared/claudeClient.js';
 
 const log = createAgentLogger('manager');
 

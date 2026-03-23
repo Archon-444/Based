@@ -62,7 +62,10 @@ export function broadcast(marketId: string, payload: Record<string, unknown>): v
         ws.send(message);
       }
     } catch (error) {
-      logger.warn({ error: error instanceof Error ? error.message : String(error) }, '[WS] Send error');
+      logger.warn(
+        { error: error instanceof Error ? error.message : String(error) },
+        '[WS] Send error'
+      );
     }
   }
 }

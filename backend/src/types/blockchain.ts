@@ -119,7 +119,7 @@ export interface AptosEvent {
   };
   sequence_number: string;
   type: string;
-  data: Record<string, any>;
+  data: Record<string, unknown>;
 }
 
 /**

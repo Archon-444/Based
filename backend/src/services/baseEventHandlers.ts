@@ -5,6 +5,7 @@
  * a BlockchainEvent audit row. Follows the pattern in eventHandlers.ts.
  */
 
+import type { Prisma } from '@prisma/client';
 import type { Log } from 'viem';
 
 import { getPublicClient } from '../blockchain/base/viemClient.js';
@@ -61,7 +62,7 @@ async function storeAuditEvent(
       eventType,
       transactionHash: log.transactionHash!,
       sequenceNumber: BigInt(log.logIndex ?? 0),
-      eventData: eventData as any,
+      eventData: eventData as unknown as Prisma.InputJsonValue,
       blockHeight: log.blockNumber ? BigInt(log.blockNumber) : null,
       timestamp: await getTimestamp(log),
       marketId: marketDbId,
@@ -126,7 +127,10 @@ export async function handleMarketActivated(args: MarketActivatedEvent, log: Log
   recordBaseEvent('MarketActivated');
 }
 
-export async function handleMarketStatusChanged(args: MarketStatusChangedEvent, log: Log): Promise<void> {
+export async function handleMarketStatusChanged(
+  args: MarketStatusChangedEvent,
+  log: Log
+): Promise<void> {
   const market = await findMarketByOnChainId(args.marketId);
   if (!market) return;
 
@@ -134,7 +138,7 @@ export async function handleMarketStatusChanged(args: MarketStatusChangedEvent, 
 
   await prisma.market.update({
     where: { id: market.id },
-    data: { status: newStatus as any, lastSyncedAt: new Date() },
+    data: { status: newStatus as Prisma.MarketUpdateInput['status'], lastSyncedAt: new Date() },
   });
 
   await storeAuditEvent('MarketStatusChanged', log, market.id, {
@@ -341,14 +345,18 @@ export async function handleLiquidityRemoved(args: LiquidityRemovedEvent, log: L
   recordBaseEvent('LiquidityRemoved');
 }
 
-export async function handlePoolFrozen(args: PoolFrozenEvent, log: Log): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function handlePoolFrozen(args: PoolFrozenEvent, _log: Log): Promise<void> {
   logger.info({ marketId: args.marketId }, '[BaseHandler] PoolFrozen');
   recordBaseEvent('PoolFrozen');
 }
 
 // ---------- UMA Adapter Handlers ----------
 
-export async function handleUmaMarketRegistered(args: UmaMarketRegisteredEvent, log: Log): Promise<void> {
+export async function handleUmaMarketRegistered(
+  args: UmaMarketRegisteredEvent,
+  log: Log
+): Promise<void> {
   const market = await findMarketByOnChainId(args.marketId);
   if (!market) return;
 
@@ -369,8 +377,7 @@ export async function handleOutcomeAsserted(args: OutcomeAssertedEvent, log: Log
   const market = await findMarketByOnChainId(args.marketId);
   if (!market) return;
 
-  // Get block timestamp for assertedAt
-  const block = await prisma.blockchainEvent.findFirst(); // We'll use log timestamp
+  // We'll use log timestamp for assertedAt
   const assertedAt = await getTimestamp(log);
 
   await prisma.umaAssertion.create({
@@ -453,7 +460,10 @@ export async function handleAssertionSettled(args: AssertionSettledEvent, log: L
   recordBaseEvent('AssertionSettled');
 }
 
-export async function handleAssertionDisputed(args: AssertionDisputedEvent, log: Log): Promise<void> {
+export async function handleAssertionDisputed(
+  args: AssertionDisputedEvent,
+  log: Log
+): Promise<void> {
   const assertion = await prisma.umaAssertion.findUnique({
     where: { assertionId: args.assertionId },
   });
@@ -502,7 +512,10 @@ export async function handleMarketReset(args: MarketResetEvent, log: Log): Promi
 
 // ---------- Pyth Adapter Handlers ----------
 
-export async function handlePythMarketRegistered(args: PythMarketRegisteredEvent, log: Log): Promise<void> {
+export async function handlePythMarketRegistered(
+  args: PythMarketRegisteredEvent,
+  log: Log
+): Promise<void> {
   const market = await findMarketByOnChainId(args.marketId);
   if (!market) return;
 
@@ -525,7 +538,10 @@ export async function handlePythMarketRegistered(args: PythMarketRegisteredEvent
   recordBaseEvent('PythMarketRegistered');
 }
 
-export async function handlePythMarketResolved(args: PythMarketResolvedEvent, log: Log): Promise<void> {
+export async function handlePythMarketResolved(
+  args: PythMarketResolvedEvent,
+  log: Log
+): Promise<void> {
   // Market resolution is already handled by the factory's MarketResolved event.
   // This handler just logs the Pyth-specific resolution details.
   logger.info(

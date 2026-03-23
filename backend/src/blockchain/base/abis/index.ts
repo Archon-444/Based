@@ -1,7 +1,7 @@
 export { marketFactoryAbi } from './MarketFactory.js';
 export { predictionMarketAmmAbi } from './PredictionMarketAMM.js';
-export { umaCtfAdapterAbi } from './UmaCtfAdapter.js';
 export { pythOracleAdapterAbi } from './PythOracleAdapter.js';
+export { umaCtfAdapterAbi } from './UmaCtfAdapter.js';
 
 import { env } from '../../../config/env.js';
 
