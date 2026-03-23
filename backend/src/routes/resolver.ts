@@ -131,7 +131,7 @@ router.get('/pending', async (req, res) => {
 
     // Add resolution analysis for each market
     const enrichedResolutions = await Promise.all(
-      pendingResolutions.map(async (market) => {
+      (pendingResolutions as { id: string; [key: string]: unknown }[]).map(async (market) => {
         const canResolve = await resolver.canAutoResolve(market.id);
         return {
           ...market,

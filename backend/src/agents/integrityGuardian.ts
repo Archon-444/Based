@@ -10,7 +10,7 @@
  * Safety: All errors are caught internally — never throws into the event handler.
  */
 
-import type { Address, Hex } from 'viem';
+import type { Abi, Address, Hex } from 'viem';
 
 import { contractAddresses, umaCtfAdapterAbi } from '../blockchain/base/abis/index.js';
 import { encodeCall, sendTransaction } from '../blockchain/base/transactionService.js';
@@ -230,7 +230,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     // Read OOV3 address from adapter
     const oov3Address = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
+      abi: umaCtfAdapterAbi as Abi,
       functionName: 'oov3',
     })) as Address;
 
@@ -250,7 +250,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     // Read bond from on-chain market data
     const marketData = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
+      abi: umaCtfAdapterAbi as Abi,
       functionName: 'getMarketData',
       args: [assertionData.market.onChainId as Hex],
     })) as { bond: bigint };
@@ -259,10 +259,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     log.info({ assertionId, bond: bond.toString() }, '[Integrity] Read bond for dispute');
 
     // Approve USDC to OOV3 for the dispute bond
-    const approveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
-      oov3Address,
-      bond,
-    ]);
+    const approveData = encodeCall(erc20ApproveAbi as Abi, 'approve', [oov3Address, bond]);
 
     await sendTransaction({
       walletClient: resolverWallet,
@@ -274,11 +271,10 @@ async function executeDispute(assertionId: string): Promise<string | null> {
     });
 
     // Dispute the assertion via OOV3
-    const disputeData = encodeCall(
-      oov3DisputeAbi as unknown as readonly unknown[],
-      'disputeAssertion',
-      [assertionId, resolverWallet.account!.address]
-    );
+    const disputeData = encodeCall(oov3DisputeAbi as Abi, 'disputeAssertion', [
+      assertionId,
+      resolverWallet.account!.address,
+    ]);
 
     const receipt = await sendTransaction({
       walletClient: resolverWallet,

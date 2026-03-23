@@ -10,7 +10,7 @@
  * Safety: All errors are caught internally — never throws into the keeper.
  */
 
-import type { Hex } from 'viem';
+import type { Abi, Hex } from 'viem';
 
 import { contractAddresses, umaCtfAdapterAbi } from '../blockchain/base/abis/index.js';
 import { encodeCall, sendTransaction } from '../blockchain/base/transactionService.js';
@@ -241,7 +241,7 @@ async function executeAssertion(
     // Read bond amount from UMA adapter
     const marketData = (await publicClient.readContract({
       address: contractAddresses.umaAdapter,
-      abi: umaCtfAdapterAbi as unknown as readonly unknown[],
+      abi: umaCtfAdapterAbi as Abi,
       functionName: 'getMarketData',
       args: [onChainMarketId as Hex],
     })) as { bond: bigint };
@@ -250,7 +250,7 @@ async function executeAssertion(
     log.info({ marketId: onChainMarketId, bond: bond.toString() }, '[Resolution] Read bond amount');
 
     // Approve USDC to UMA adapter
-    const approveData = encodeCall(erc20ApproveAbi as unknown as readonly unknown[], 'approve', [
+    const approveData = encodeCall(erc20ApproveAbi as Abi, 'approve', [
       contractAddresses.umaAdapter,
       bond,
     ]);
@@ -265,11 +265,10 @@ async function executeAssertion(
     });
 
     // Assert outcome via UMA adapter
-    const assertData = encodeCall(
-      umaCtfAdapterAbi as unknown as readonly unknown[],
-      'assertOutcome',
-      [onChainMarketId, BigInt(proposal.proposedOutcome)]
-    );
+    const assertData = encodeCall(umaCtfAdapterAbi as Abi, 'assertOutcome', [
+      onChainMarketId,
+      BigInt(proposal.proposedOutcome),
+    ]);
 
     const receipt = await sendTransaction({
       walletClient: keeperWallet,

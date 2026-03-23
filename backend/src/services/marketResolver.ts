@@ -262,7 +262,7 @@ export class MarketResolverService {
     // If no oracle pattern matched, mark as manual
     return {
       type: 'manual',
-      endTime: market.endDate,
+      endTime: market.endDate as Date | undefined,
     };
   }
 

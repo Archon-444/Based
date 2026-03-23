@@ -63,8 +63,10 @@ function encodeConstructor(abi: unknown[], bytecode: Hex, args: unknown[]): Hex 
 // ---------- Deploy Function ----------
 
 async function deployContract(
-  walletClient: ReturnType<typeof createWalletClient>,
-  publicClient: ReturnType<typeof createPublicClient>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  walletClient: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  publicClient: any,
   bytecodeWithArgs: Hex,
   label: string
 ): Promise<Address> {

@@ -482,7 +482,8 @@ export async function processEvent(event: ProcessedEvent): Promise<void> {
       eventType: event.eventType,
       transactionHash: event.transactionHash,
       sequenceNumber: event.sequenceNumber,
-      eventData: eventData as unknown as Record<string, unknown>,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      eventData: eventData as any,
       blockHeight: event.blockHeight,
       timestamp: event.timestamp,
       marketId: event.marketId,
