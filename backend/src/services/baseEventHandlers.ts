@@ -15,21 +15,18 @@ import { recordBaseEvent } from '../monitoring/metrics.js';
 import type {
   AssertionDisputedEvent,
   AssertionSettledEvent,
-  BuyEvent,
   LiquidityAddedEvent,
   LiquidityRemovedEvent,
-  MarketActivatedEvent,
   MarketCancelledEvent,
   MarketCreatedEvent,
   MarketResetEvent,
   MarketResolvedEvent,
   MarketStatusChangedEvent,
   OutcomeAssertedEvent,
-  PoolFrozenEvent,
   PoolInitializedEvent,
   PythMarketRegisteredEvent,
   PythMarketResolvedEvent,
-  SellEvent,
+  TradeEvent,
   UmaMarketRegisteredEvent,
 } from '../types/base-events.js';
 import { MARKET_STATUS_MAP } from '../types/base-events.js';
@@ -113,20 +110,6 @@ export async function handleMarketCreated(args: MarketCreatedEvent, log: Log): P
   logger.info({ onChainId, question: args.question }, '[BaseHandler] MarketCreated');
 }
 
-export async function handleMarketActivated(args: MarketActivatedEvent, log: Log): Promise<void> {
-  const market = await findMarketByOnChainId(args.marketId);
-  if (!market) return;
-
-  await prisma.market.update({
-    where: { id: market.id },
-    data: { status: 'active', lastSyncedAt: new Date() },
-  });
-
-  await storeAuditEvent('MarketActivated', log, market.id, { marketId: args.marketId });
-  broadcast(args.marketId, { type: 'market_activated', marketId: args.marketId });
-  recordBaseEvent('MarketActivated');
-}
-
 export async function handleMarketStatusChanged(
   args: MarketStatusChangedEvent,
   log: Log
@@ -192,32 +175,37 @@ export async function handlePoolInitialized(args: PoolInitializedEvent, log: Log
   await prisma.market.update({
     where: { id: market.id },
     data: {
-      feeRate: Number(args.feeRate),
       lastSyncedAt: new Date(),
     },
   });
 
   await storeAuditEvent('PoolInitialized', log, market.id, {
     marketId: args.marketId,
-    funding: args.funding.toString(),
-    feeRate: args.feeRate.toString(),
+    initialLiquidity: args.initialLiquidity.toString(),
+    provider: args.provider,
   });
 
   recordBaseEvent('PoolInitialized');
 }
 
-export async function handleBuy(args: BuyEvent, log: Log): Promise<void> {
+/**
+ * Handles the unified Trade event (covers both buys and sells).
+ * The `isBuy` flag determines the trade direction.
+ */
+export async function handleTrade(args: TradeEvent, log: Log): Promise<void> {
   const market = await findMarketByOnChainId(args.marketId);
   if (!market) return;
+
+  const tradeType = args.isBuy ? 'BUY' : 'SELL';
 
   await prisma.trade.create({
     data: {
       marketId: market.id,
-      trader: args.buyer.toLowerCase(),
+      trader: args.trader.toLowerCase(),
       outcomeIndex: Number(args.outcomeIndex),
-      tradeType: 'BUY',
-      amount: args.investmentAmount,
-      outcomeTokens: args.outcomeTokensBought,
+      tradeType,
+      amount: args.usdcAmount,
+      outcomeTokens: args.tokenAmount,
       fee: args.feeAmount,
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
@@ -226,67 +214,33 @@ export async function handleBuy(args: BuyEvent, log: Log): Promise<void> {
     },
   });
 
-  await prisma.market.update({
-    where: { id: market.id },
-    data: { totalVolume: { increment: args.investmentAmount }, lastSyncedAt: new Date() },
-  });
+  if (args.isBuy) {
+    await prisma.market.update({
+      where: { id: market.id },
+      data: { totalVolume: { increment: args.usdcAmount }, lastSyncedAt: new Date() },
+    });
+  }
 
-  await storeAuditEvent('Buy', log, market.id, {
+  await storeAuditEvent('Trade', log, market.id, {
     marketId: args.marketId,
-    buyer: args.buyer,
+    trader: args.trader,
     outcomeIndex: args.outcomeIndex.toString(),
-    amount: args.investmentAmount.toString(),
+    isBuy: args.isBuy,
+    usdcAmount: args.usdcAmount.toString(),
+    tokenAmount: args.tokenAmount.toString(),
+    feeAmount: args.feeAmount.toString(),
   });
 
   broadcast(args.marketId, {
     type: 'trade',
     marketId: args.marketId,
-    tradeType: 'BUY',
-    trader: args.buyer,
+    tradeType,
+    trader: args.trader,
     outcomeIndex: Number(args.outcomeIndex),
-    amount: args.investmentAmount.toString(),
-    tokens: args.outcomeTokensBought.toString(),
+    amount: args.usdcAmount.toString(),
+    tokens: args.tokenAmount.toString(),
   });
-  recordBaseEvent('Buy');
-}
-
-export async function handleSell(args: SellEvent, log: Log): Promise<void> {
-  const market = await findMarketByOnChainId(args.marketId);
-  if (!market) return;
-
-  await prisma.trade.create({
-    data: {
-      marketId: market.id,
-      trader: args.seller.toLowerCase(),
-      outcomeIndex: Number(args.outcomeIndex),
-      tradeType: 'SELL',
-      amount: args.returnAmount,
-      outcomeTokens: args.outcomeTokensSold,
-      fee: args.feeAmount,
-      txHash: log.transactionHash!,
-      blockNumber: Number(log.blockNumber),
-      logIndex: Number(log.logIndex),
-      timestamp: await getTimestamp(log),
-    },
-  });
-
-  await storeAuditEvent('Sell', log, market.id, {
-    marketId: args.marketId,
-    seller: args.seller,
-    outcomeIndex: args.outcomeIndex.toString(),
-    amount: args.returnAmount.toString(),
-  });
-
-  broadcast(args.marketId, {
-    type: 'trade',
-    marketId: args.marketId,
-    tradeType: 'SELL',
-    trader: args.seller,
-    outcomeIndex: Number(args.outcomeIndex),
-    amount: args.returnAmount.toString(),
-    tokens: args.outcomeTokensSold.toString(),
-  });
-  recordBaseEvent('Sell');
+  recordBaseEvent('Trade');
 }
 
 export async function handleLiquidityAdded(args: LiquidityAddedEvent, log: Log): Promise<void> {
@@ -298,8 +252,8 @@ export async function handleLiquidityAdded(args: LiquidityAddedEvent, log: Log):
       marketId: market.id,
       provider: args.provider.toLowerCase(),
       eventType: 'ADD',
-      amount: args.funding,
-      shares: args.sharesMinted,
+      amount: args.usdcAmount,
+      shares: args.shares,
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
@@ -310,7 +264,8 @@ export async function handleLiquidityAdded(args: LiquidityAddedEvent, log: Log):
   await storeAuditEvent('LiquidityAdded', log, market.id, {
     marketId: args.marketId,
     provider: args.provider,
-    funding: args.funding.toString(),
+    usdcAmount: args.usdcAmount.toString(),
+    shares: args.shares.toString(),
   });
 
   broadcast(args.marketId, { type: 'liquidity_added', marketId: args.marketId });
@@ -326,8 +281,8 @@ export async function handleLiquidityRemoved(args: LiquidityRemovedEvent, log: L
       marketId: market.id,
       provider: args.provider.toLowerCase(),
       eventType: 'REMOVE',
-      amount: args.collateralReturned,
-      shares: args.sharesBurned,
+      amount: args.usdcAmount,
+      shares: args.shares,
       txHash: log.transactionHash!,
       blockNumber: Number(log.blockNumber),
       logIndex: Number(log.logIndex),
@@ -338,17 +293,12 @@ export async function handleLiquidityRemoved(args: LiquidityRemovedEvent, log: L
   await storeAuditEvent('LiquidityRemoved', log, market.id, {
     marketId: args.marketId,
     provider: args.provider,
-    collateral: args.collateralReturned.toString(),
+    usdcAmount: args.usdcAmount.toString(),
+    shares: args.shares.toString(),
   });
 
   broadcast(args.marketId, { type: 'liquidity_removed', marketId: args.marketId });
   recordBaseEvent('LiquidityRemoved');
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function handlePoolFrozen(args: PoolFrozenEvent, _log: Log): Promise<void> {
-  logger.info({ marketId: args.marketId }, '[BaseHandler] PoolFrozen');
-  recordBaseEvent('PoolFrozen');
 }
 
 // ---------- UMA Adapter Handlers ----------
@@ -367,8 +317,8 @@ export async function handleUmaMarketRegistered(
 
   await storeAuditEvent('UmaMarketRegistered', log, market.id, {
     marketId: args.marketId,
-    reward: args.reward.toString(),
     bond: args.bond.toString(),
+    liveness: args.liveness.toString(),
   });
   recordBaseEvent('UmaMarketRegistered');
 }
@@ -448,14 +398,14 @@ export async function handleAssertionSettled(args: AssertionSettledEvent, log: L
   await storeAuditEvent('AssertionSettled', log, market?.id ?? null, {
     marketId: args.marketId,
     assertionId: args.assertionId,
-    truthful: args.truthful,
+    winningOutcome: args.winningOutcome.toString(),
   });
 
   broadcast(args.marketId, {
     type: 'assertion_settled',
     marketId: args.marketId,
     assertionId: args.assertionId,
-    truthful: args.truthful,
+    winningOutcome: Number(args.winningOutcome),
   });
   recordBaseEvent('AssertionSettled');
 }
@@ -473,7 +423,7 @@ export async function handleAssertionDisputed(
     where: { assertionId: args.assertionId },
     data: {
       status: 'DISPUTED',
-      disputeCount: { increment: 1 },
+      disputeCount: Number(args.disputeCount),
     },
   });
 
@@ -482,12 +432,14 @@ export async function handleAssertionDisputed(
   await storeAuditEvent('AssertionDisputed', log, market?.id ?? null, {
     marketId: args.marketId,
     assertionId: args.assertionId,
+    disputeCount: args.disputeCount.toString(),
   });
 
   broadcast(args.marketId, {
     type: 'assertion_disputed',
     marketId: args.marketId,
     assertionId: args.assertionId,
+    disputeCount: Number(args.disputeCount),
   });
   recordBaseEvent('AssertionDisputed');
 }
@@ -503,7 +455,6 @@ export async function handleMarketReset(args: MarketResetEvent, log: Log): Promi
 
   await storeAuditEvent('MarketReset', log, market.id, {
     marketId: args.marketId,
-    disputeCount: args.disputeCount.toString(),
   });
 
   broadcast(args.marketId, { type: 'market_reset', marketId: args.marketId });

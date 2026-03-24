@@ -27,21 +27,18 @@ import { recordBaseIndexerBlock } from '../monitoring/metrics.js';
 import {
   handleAssertionDisputed,
   handleAssertionSettled,
-  handleBuy,
   handleLiquidityAdded,
   handleLiquidityRemoved,
-  handleMarketActivated,
   handleMarketCancelled,
   handleMarketCreated,
   handleMarketReset,
   handleMarketResolved,
   handleMarketStatusChanged,
   handleOutcomeAsserted,
-  handlePoolFrozen,
   handlePoolInitialized,
   handlePythMarketRegistered,
   handlePythMarketResolved,
-  handleSell,
+  handleTrade,
   handleUmaMarketRegistered,
 } from './baseEventHandlers.js';
 
@@ -107,8 +104,6 @@ async function dispatchEvent(
     // MarketFactory
     case 'MarketFactory:MarketCreated':
       return handleMarketCreated(args, log);
-    case 'MarketFactory:MarketActivated':
-      return handleMarketActivated(args, log);
     case 'MarketFactory:MarketStatusChanged':
       return handleMarketStatusChanged(args, log);
     case 'MarketFactory:MarketResolved':
@@ -119,16 +114,12 @@ async function dispatchEvent(
     // AMM
     case 'PredictionMarketAMM:PoolInitialized':
       return handlePoolInitialized(args, log);
-    case 'PredictionMarketAMM:Buy':
-      return handleBuy(args, log);
-    case 'PredictionMarketAMM:Sell':
-      return handleSell(args, log);
+    case 'PredictionMarketAMM:Trade':
+      return handleTrade(args, log);
     case 'PredictionMarketAMM:LiquidityAdded':
       return handleLiquidityAdded(args, log);
     case 'PredictionMarketAMM:LiquidityRemoved':
       return handleLiquidityRemoved(args, log);
-    case 'PredictionMarketAMM:PoolFrozen':
-      return handlePoolFrozen(args, log);
 
     // UMA
     case 'UmaCtfAdapter:MarketRegistered':

@@ -1,6 +1,6 @@
 /**
  * TypeScript interfaces for decoded EVM events from Base chain contracts.
- * Maps 1:1 to the Solidity event signatures.
+ * Maps 1:1 to the Solidity event signatures in the ABI files.
  */
 
 // ==================== MarketFactory Events ====================
@@ -31,61 +31,49 @@ export interface MarketCancelledEvent {
   cancelledAt: bigint;
 }
 
-export interface MarketActivatedEvent {
-  marketId: `0x${string}`;
-}
-
 // ==================== PredictionMarketAMM Events ====================
 
 export interface PoolInitializedEvent {
   marketId: `0x${string}`;
-  funding: bigint;
-  feeRate: bigint;
+  initialLiquidity: bigint;
+  provider: `0x${string}`;
 }
 
-export interface BuyEvent {
+/**
+ * Unified Trade event — replaces separate Buy/Sell events.
+ * The `isBuy` flag distinguishes buy vs sell.
+ */
+export interface TradeEvent {
   marketId: `0x${string}`;
-  buyer: `0x${string}`;
+  trader: `0x${string}`;
   outcomeIndex: bigint;
-  investmentAmount: bigint;
-  outcomeTokensBought: bigint;
+  isBuy: boolean;
+  usdcAmount: bigint;
+  tokenAmount: bigint;
   feeAmount: bigint;
-}
-
-export interface SellEvent {
-  marketId: `0x${string}`;
-  seller: `0x${string}`;
-  outcomeIndex: bigint;
-  returnAmount: bigint;
-  outcomeTokensSold: bigint;
-  feeAmount: bigint;
+  newPrices: readonly bigint[];
 }
 
 export interface LiquidityAddedEvent {
   marketId: `0x${string}`;
   provider: `0x${string}`;
-  funding: bigint;
-  sharesMinted: bigint;
+  usdcAmount: bigint;
+  shares: bigint;
 }
 
 export interface LiquidityRemovedEvent {
   marketId: `0x${string}`;
   provider: `0x${string}`;
-  sharesBurned: bigint;
-  collateralReturned: bigint;
-}
-
-export interface PoolFrozenEvent {
-  marketId: `0x${string}`;
+  usdcAmount: bigint;
+  shares: bigint;
 }
 
 // ==================== UmaCtfAdapter Events ====================
 
 export interface UmaMarketRegisteredEvent {
   marketId: `0x${string}`;
-  questionId: `0x${string}`;
-  reward: bigint;
   bond: bigint;
+  liveness: bigint;
 }
 
 export interface OutcomeAssertedEvent {
@@ -98,17 +86,17 @@ export interface OutcomeAssertedEvent {
 export interface AssertionSettledEvent {
   marketId: `0x${string}`;
   assertionId: `0x${string}`;
-  truthful: boolean;
+  winningOutcome: bigint;
 }
 
 export interface AssertionDisputedEvent {
   marketId: `0x${string}`;
   assertionId: `0x${string}`;
+  disputeCount: bigint;
 }
 
 export interface MarketResetEvent {
   marketId: `0x${string}`;
-  disputeCount: bigint;
 }
 
 // ==================== PythOracleAdapter Events ====================

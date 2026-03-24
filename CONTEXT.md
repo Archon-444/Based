@@ -50,36 +50,54 @@ Dependencies: OpenZeppelin v5.6.1, forge-std v1.15.0, PRBMath v4.1.1 SD59x18.
 
 ### MarketFactory.sol — 35/35 tests
 
+- Constructor: `(_conditionalTokens, _usdc)`. Uses ReentrancyGuard.
 - Roles: `DEFAULT_ADMIN_ROLE`, `MARKET_CREATOR_ROLE`, `RESOLVER_ROLE`
+- Constants: `MAX_OUTCOMES`, `MAX_QUESTION_LENGTH`, `MIN_OUTCOMES`
 - Market ID: `keccak256(abi.encode(questionId, outcomeCount, deadline))`
 - Factory is the CTF oracle (`address(this)` in `prepareCondition`)
-- Key functions: `createMarket`, `activateMarket`, `beginResolution`, `resolveMarket`, `disputeMarket`, `resetToResolving`, `cancelMarket`, `reportPayoutsFor`
-- Market struct: questionId, question, outcomeCount, deadline, createdAt, creator, status, conditionId, ancillaryData, initialLiquidity
+- Key functions: `createMarket` (returns bytes32 marketId), `activateMarket`, `beginResolution`, `resolveMarket`, `disputeMarket`, `resetToResolving`, `cancelMarket`, `reportPayoutsFor`
+- View helpers: `getMarket(marketId)`, `getMarketCount()`, `getActiveMarkets()`, `getAllMarketIds()`, `isMarketActive(marketId)`, `marketExists(marketId)`, `conditionalTokens()`, `usdc()`
+- Market struct: questionId, question, outcomeCount, deadline, createdAt, creator, status (uint8 enum), conditionId, ancillaryData, initialLiquidity
 - Status enum: Created → Active → Resolving → Resolved | Disputed → Resolving | Cancelled
+- Events: `MarketCreated(marketId, questionId, creator, question, outcomeCount, deadline, createdAt)`, `MarketResolved(marketId, resolvedAt)`, `MarketCancelled(marketId, cancelledAt)`, `MarketStatusChanged(marketId, oldStatus, newStatus)`
+- Errors: `DeadlineInPast(deadline, currentTime)`, `InvalidOutcomeCount(provided, min, max)`, `MarketAlreadyExists(marketId)`, `MarketNotFound(marketId)`, `MarketNotInStatus(marketId, expected, actual)`, `QuestionTooLong(length, maxLength)`, `EmptyQuestion`
 
 ### PredictionMarketAMM.sol — 26/26 tests
 
 - CPMM for binary markets (outcomeCount == 2), LMSR for multi-outcome (>2)
-- Key functions: `initializePool`, `buy`, `sell`, `addLiquidity`, `removeLiquidity`, `getPrices`, `freezePool`
+- Inherits Ownable (not AccessControl). Constructor: `(_conditionalTokens, _marketFactory, _usdc)`
+- Key functions: `initializePool`, `buy`, `sell`, `addLiquidity`, `removeLiquidity(marketId, sharesToBurn)`, `getPrices`, `freezePool`, `getPool`, `getReserves`, `withdrawProtocolFees`
+- View helpers: `reserves(bytes32, uint256)`, `lpShares(bytes32, address)`, `buybackFees()`, `protocolFees()`, `owner()`, `conditionalTokens()`, `marketFactory()`, `usdc()`
+- Constants: `BPS`, `BUYBACK_FEE_SHARE`, `DEFAULT_FEE_BPS`, `LP_FEE_SHARE`, `MAX_FEE_BPS`, `MIN_LIQUIDITY`, `PRECISION`, `PROTOCOL_FEE_SHARE`
 - `getPrices` returns uint256[] in 18-decimal fixed point (sum to ~1e18)
+- Pool struct: conditionId, outcomeCount, totalLpShares, feeBps, lmsrB (uint256), initialized, frozen
 - Fee: 2% (200 bps) — 84% LP, 12% protocol, 4% buyback
 - LP shares: `mapping(bytes32 => mapping(address => uint256))`
+- ERC-1155 receiver: `onERC1155Received`, `onERC1155BatchReceived`
+- Events: `Trade(marketId, trader, outcomeIndex, isBuy, usdcAmount, tokenAmount, feeAmount, newPrices[])`, `PoolInitialized(marketId, initialLiquidity, provider)`, `LiquidityAdded(marketId, provider, usdcAmount, shares)`, `LiquidityRemoved(marketId, provider, usdcAmount, shares)`
 
 ### UmaCtfAdapter.sol — 34/34 tests
 
-- Constants: `MIN_BOND = 500e6`, `DEFAULT_LIVENESS_SPORTS = 7200`, `DEFAULT_LIVENESS_POLITICS = 172800`
-- Key functions: `registerMarket(marketId, reward, bond, liveness)`, `assertOutcome(marketId, proposedOutcome)`, `settle(marketId)`
+- Constructor: `(_oov3, _factory, _usdc)` — 3 params (no _conditionalTokens)
+- Constants: `MIN_BOND = 500e6`, `DEFAULT_LIVENESS_SPORTS = 7200` (uint64), `DEFAULT_LIVENESS_POLITICS = 172800` (uint64), `BOND_RATIO_BPS`
+- Key functions: `registerMarket(marketId, reward, bond, liveness)`, `assertOutcome(marketId, proposedOutcome)` (returns void), `settle(marketId)`
+- View helpers: `getMarketData(marketId)` (returns MarketData struct), `getMarketForAssertion(assertionId)`, `factory()`, `oov3()`, `usdc()`
 - Callbacks: `assertionResolvedCallback`, `assertionDisputedCallback`
 - First dispute: auto-reset to Resolving. Second dispute: stays Disputed, waits for DVM.
 - Needs `RESOLVER_ROLE` on MarketFactory.
+- Events: `MarketRegistered(marketId, bond, liveness)`, `OutcomeAsserted(marketId, assertionId, proposedOutcome, asserter)`, `AssertionSettled(marketId, assertionId, winningOutcome)`, `AssertionDisputed(marketId, assertionId, disputeCount)`, `MarketReset(marketId)`
 
 ### PythOracleAdapter.sol — 26/26 tests
 
+- Constructor: `(_pyth, _factory)` — 2 params only (no _conditionalTokens, no _usdc)
 - Binary markets only. Resolution types: ABOVE, BELOW, BETWEEN
-- `registerMarket(marketId, feedId, strikePrice, strikePriceHigh, resolutionType)`
+- `registerMarket(marketId, feedId, strikePrice, strikePriceHigh, resolutionType)` — strikePriceHigh (int256) is for BETWEEN range markets
 - `resolve(marketId, pythUpdateData)` — payable, atomic resolution (beginResolution + resolveMarket + reportPayoutsFor)
+- View helpers: `getMarketConfig(marketId)` (returns PythMarketConfig struct), `factory()`, `pyth()`
+- PythMarketConfig struct: feedId (bytes32), strikePrice (int256), strikePriceHigh (int256), resolutionType (uint8), registered, resolved
 - Price comparison: raw Pyth int64 vs stored strikePrice (same expo)
 - Needs `RESOLVER_ROLE` on MarketFactory.
+- Events: `MarketRegistered(marketId, feedId, strikePrice, resolutionType)`, `MarketResolved(marketId, feedId, price, expo, winningOutcome)`
 
 ### Test counts
 
@@ -250,7 +268,7 @@ ErrorBoundary → ThemeProvider → WagmiProvider → QueryClientProvider → Ra
 | `useChainSellPosition()` | Write | `AMM.sell(marketId, outcomeIndex, tokenAmount, minUsdcOut)` |
 | `useChainClaimWinnings()` | Write | `ConditionalTokens.redeemPositions(...)` |
 | `useChainAddLiquidity()` | Write | `AMM.addLiquidity(marketId, usdcAmount)` |
-| `useChainRemoveLiquidity()` | Write | `AMM.removeLiquidity(marketId, shares)` |
+| `useChainRemoveLiquidity()` | Write | `AMM.removeLiquidity(marketId, sharesToBurn)` |
 
 ### API hooks (TanStack Query)
 
@@ -321,6 +339,7 @@ ErrorBoundary → ThemeProvider → WagmiProvider → QueryClientProvider → Ra
 ### Addresses (Base Sepolia testnet)
 
 - Pyth: `0xA2aa501b19aff244D90cc15a4Cf739D2725B5729`
+- UMA OOV3: `0x0F7fC5E6482f096380db6158f978167b57388deE`
 - USDC (testnet): `0x036CbD53842c5426634e7929541eC2318f3dCF7e`
 - MarketFactory, AMM, UMA adapter, Pyth adapter: deployed (addresses in `.env`)
 

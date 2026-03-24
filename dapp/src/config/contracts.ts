@@ -95,7 +95,7 @@ export const PredictionMarketAMMABI = [
     name: 'removeLiquidity',
     inputs: [
       { name: 'marketId', type: 'bytes32' },
-      { name: 'shares', type: 'uint256' },
+      { name: 'sharesToBurn', type: 'uint256' },
     ],
     outputs: [{ name: 'usdcOut', type: 'uint256' }],
     stateMutability: 'nonpayable',
@@ -112,7 +112,7 @@ export const PredictionMarketAMMABI = [
         { name: 'outcomeCount', type: 'uint256' },
         { name: 'totalLpShares', type: 'uint256' },
         { name: 'feeBps', type: 'uint256' },
-        { name: 'lmsrB', type: 'int256' },
+        { name: 'lmsrB', type: 'uint256' },
         { name: 'initialized', type: 'bool' },
         { name: 'frozen', type: 'bool' },
       ],
