@@ -1,0 +1,9 @@
+[submodule "contracts-base/lib/openzeppelin-contracts"]
+	path = contracts-base/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts.git
+[submodule "contracts-base/lib/prb-math"]
+	path = contracts-base/lib/prb-math
+	url = https://github.com/PaulRBerg/prb-math.git
+[submodule "contracts-base/lib/forge-std"]
+	path = contracts-base/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std.git
