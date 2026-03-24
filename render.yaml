@@ -1,30 +1,47 @@
 services:
-  # Managed PostgreSQL Database
-  - type: psql
-    name: movemarket-db
-    plan: free # or starter
-    ipAllowList: [] # allow internal and external connections based on Render's defaults
-
-  # Node.js Express Backend
   - type: web
-    name: movemarket-api
-    env: docker
-    plan: free # or starter
-    region: oregon # adjust as needed
-    dockerfilePath: backend/Dockerfile
-    dockerContext: backend
+    name: aptos-prediction-market
+    runtime: node
+    region: oregon
+    rootDir: backend
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
     envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: movemarket-db
-          property: connectionString
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 4000
+        value: "3001"
+      - key: ACTIVE_CHAINS
+        value: base
+      - key: DATABASE_URL
+        fromDatabase:
+          name: prediction-market-db
+          property: connectionString
       - key: CORS_ORIGIN
-        value: https://aptos-prediction-market-japgzcxwm-archon-444s-projects.vercel.app
-      # You will need to add these manually in the Render dashboard:
-      # - APTOS_ADMIN_PRIVATE_KEY
-      # - APTOS_ADMIN_ACCOUNT
-      # - JWT_SECRET
+        sync: false
+      - key: BASE_RPC_URL
+        value: https://sepolia.base.org
+      - key: BASE_WS_URL
+        value: wss://base-sepolia.publicnode.com
+      - key: BASE_CHAIN_ID
+        value: "84532"
+      - key: MARKET_FACTORY_ADDRESS
+        value: "0x51baebd534f1b56003dcf11587874f9c9fa6f41a"
+      - key: AMM_ADDRESS
+        value: "0x5c775990facaddcc608a7770f78a8e57f401b93e"
+      - key: CONDITIONAL_TOKENS_ADDRESS
+        value: "0xaf64d3778a5c065499e2ce22bf94d949ea353c87"
+      - key: USDC_ADDRESS
+        value: "0x036CbD53842c5426634e7929541eC2318f3dCF7e"
+      - key: PYTH_CONTRACT_ADDRESS
+        value: "0xA2aa501b19aff244D90cc15a4Cf739D2725B5729"
+      - key: KEEPER_PRIVATE_KEY
+        sync: false
+      - key: RESOLVER_PRIVATE_KEY
+        sync: false
+
+databases:
+  - name: prediction-market-db
+    plan: free
+    region: oregon
