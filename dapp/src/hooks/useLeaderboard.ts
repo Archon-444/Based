@@ -30,7 +30,12 @@ export const useLeaderboard = (options: UseLeaderboardOptions = {}) => {
     enabled,
   });
 
-  const leaders = useMemo(() => query.data ?? [], [query.data]);
+  const leaders = useMemo(() => {
+    const d = query.data;
+    if (Array.isArray(d)) return d;
+    if (d && typeof d === 'object' && 'leaders' in d) return (d as any).leaders ?? [];
+    return [];
+  }, [query.data]);
 
   return {
     leaders,
