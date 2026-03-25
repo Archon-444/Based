@@ -18,7 +18,7 @@ export const config = createConfig({
     ...(projectId ? [walletConnect({ projectId })] : []),
   ],
   transports: {
-    [base.id]: http(env.baseRpcUrl || undefined),
-    [baseSepolia.id]: http(env.baseRpcUrl || undefined),
+    [base.id]: http(import.meta.env.VITE_BASE_MAINNET_RPC_URL || 'https://mainnet.base.org'),
+    [baseSepolia.id]: http(env.baseRpcUrl || 'https://sepolia.base.org'),
   },
 });

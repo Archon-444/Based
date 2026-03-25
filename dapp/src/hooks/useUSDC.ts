@@ -1,18 +1,19 @@
 import { useReadContract } from 'wagmi';
 import { erc20Abi, formatUnits } from 'viem';
 import { useAccount } from 'wagmi';
-import { CONTRACTS } from '../config/contracts';
+import { useContracts } from './useContracts';
 
 export const useUSDCBalance = () => {
   const { address } = useAccount();
+  const contracts = useContracts();
 
   const { data, isLoading, error, refetch } = useReadContract({
-    address: CONTRACTS.usdc,
+    address: contracts.usdc,
     abi: erc20Abi,
     functionName: 'balanceOf',
     args: address ? [address] : undefined,
     query: {
-      enabled: !!address && !!CONTRACTS.usdc,
+      enabled: !!address && !!contracts.usdc,
       refetchInterval: 15_000,
     },
   });

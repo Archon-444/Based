@@ -48,6 +48,26 @@ Build tool: Foundry (forge 0.8.24, via-IR optimization, 10K fuzz runs). All cont
 
 Dependencies: OpenZeppelin v5.6.1, forge-std v1.15.0, PRBMath v4.1.1 SD59x18.
 
+### ConditionalTokens.sol — Gnosis CTF (ported to 0.8.24)
+
+- Deployed at `0xaf64d3778a5c065499e2ce22bf94d949ea353c87` on Base Sepolia
+- **First contract deployed** — MarketFactory and AMM depend on it
+- ERC-1155 implementation (inherits OpenZeppelin v5 ERC1155)
+- Uses SafeERC20 for all ERC-20 collateral transfers
+- Constructor: `()` — no arguments, `ERC1155("")`
+- Token ID computation: `conditionId = keccak256(abi.encodePacked(oracle, questionId, outcomeSlotCount))`, `collectionId = bytes32(uint256(keccak256(abi.encodePacked(conditionId, indexSet))) + uint256(parentCollectionId))`, `positionId = uint256(keccak256(abi.encodePacked(collateralToken, collectionId)))`
+- Key functions:
+  - `prepareCondition(oracle, questionId, outcomeSlotCount)` — registers a new condition (requires outcomeSlotCount >= 2)
+  - `reportPayouts(questionId, payouts[])` — oracle reports resolution (msg.sender is the oracle)
+  - `splitPosition(collateralToken, parentCollectionId, conditionId, partition[], amount)` — splits collateral into outcome tokens
+  - `mergePositions(collateralToken, parentCollectionId, conditionId, partition[], amount)` — merges outcome tokens back to collateral
+  - `redeemPositions(collateralToken, parentCollectionId, conditionId, indexSets[])` — redeems resolved tokens for payout
+- View helpers: `getOutcomeSlotCount`, `getConditionId`, `getCollectionId`, `getPositionId`
+- State: `payoutNumerators(bytes32)`, `payoutDenominator(bytes32)`, internal `payoutNumeratorsArr(bytes32)`
+- Partition validation: each indexSet non-zero, disjoint, exhaustive (union covers all outcome slots)
+- Events: `ConditionPreparation(conditionId, oracle, questionId, outcomeSlotCount)`, `ConditionResolution(conditionId, oracle, questionId, outcomeSlotCount, payoutNumerators[])`, `PositionSplit(stakeholder, collateralToken, parentCollectionId, conditionId, partition[], amount)`, `PositionsMerge(stakeholder, collateralToken, parentCollectionId, conditionId, partition[], amount)`, `PayoutRedemption(redeemer, collateralToken, parentCollectionId, conditionId, indexSets[], payout)`
+- Source: Ported from Gnosis conditional-tokens-contracts to Solidity 0.8.24
+
 ### MarketFactory.sol — 35/35 tests
 
 - Constructor: `(_conditionalTokens, _usdc)`. Uses ReentrancyGuard.

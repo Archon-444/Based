@@ -1,18 +1,20 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
 import { erc20Abi, maxUint256 } from 'viem';
-import { CONTRACTS } from '../config/contracts';
+import { useContracts } from './useContracts';
 
-export function useApproveUSDC(spender: `0x${string}` = CONTRACTS.amm) {
+export function useApproveUSDC(spenderOverride?: `0x${string}`) {
   const { address } = useAccount();
+  const contracts = useContracts();
+  const spender = spenderOverride ?? contracts.amm;
 
   // Read current allowance
   const { data: allowance = 0n, refetch: refetchAllowance } = useReadContract({
-    address: CONTRACTS.usdc,
+    address: contracts.usdc,
     abi: erc20Abi,
     functionName: 'allowance',
     args: address ? [address, spender] : undefined,
     query: {
-      enabled: !!address && !!CONTRACTS.usdc,
+      enabled: !!address && !!contracts.usdc,
     },
   });
 
@@ -29,7 +31,7 @@ export function useApproveUSDC(spender: `0x${string}` = CONTRACTS.amm) {
 
   const approve = (amount?: bigint) => {
     writeContract({
-      address: CONTRACTS.usdc,
+      address: contracts.usdc,
       abi: erc20Abi,
       functionName: 'approve',
       args: [spender, amount ?? maxUint256],

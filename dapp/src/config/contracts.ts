@@ -1,11 +1,36 @@
+import { base, baseSepolia } from 'wagmi/chains';
 import { env } from './env';
 
-export const CONTRACTS = {
-  marketFactory: env.factoryAddress as `0x${string}`,
-  amm: env.ammAddress as `0x${string}`,
-  usdc: env.usdcAddress as `0x${string}`,
-  conditionalTokens: env.conditionalTokensAddress as `0x${string}`,
-} as const;
+export type ContractAddresses = {
+  marketFactory: `0x${string}`;
+  amm: `0x${string}`;
+  usdc: `0x${string}`;
+  conditionalTokens: `0x${string}`;
+};
+
+// Per-chain contract addresses
+export const CHAIN_CONTRACTS: Record<number, ContractAddresses> = {
+  [baseSepolia.id]: {
+    marketFactory: (env.factoryAddress || '') as `0x${string}`,
+    amm: (env.ammAddress || '') as `0x${string}`,
+    usdc: (env.usdcAddress || '0x036CbD53842c5426634e7929541eC2318f3dCF7e') as `0x${string}`,
+    conditionalTokens: (env.conditionalTokensAddress || '') as `0x${string}`,
+  },
+  [base.id]: {
+    marketFactory: (import.meta.env.VITE_MAINNET_FACTORY_ADDRESS || '') as `0x${string}`,
+    amm: (import.meta.env.VITE_MAINNET_AMM_ADDRESS || '') as `0x${string}`,
+    usdc: (import.meta.env.VITE_MAINNET_USDC_ADDRESS || '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913') as `0x${string}`,
+    conditionalTokens: (import.meta.env.VITE_MAINNET_CONDITIONAL_TOKENS_ADDRESS || '') as `0x${string}`,
+  },
+};
+
+export function getContractsForChain(chainId: number | undefined): ContractAddresses {
+  if (chainId && CHAIN_CONTRACTS[chainId]) return CHAIN_CONTRACTS[chainId];
+  return CHAIN_CONTRACTS[env.baseChainId] ?? CHAIN_CONTRACTS[baseSepolia.id];
+}
+
+// Static default for non-hook code
+export const CONTRACTS = getContractsForChain(env.baseChainId);
 
 // ABI fragments — only functions called from the frontend
 

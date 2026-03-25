@@ -41,6 +41,15 @@ app.use(
 
 // CORS with strict origin validation
 const allowedOrigins = env.CORS_ORIGIN.split(',').map((item) => item.trim());
+
+function isOriginAllowed(origin: string): boolean {
+  // Exact match against whitelist
+  if (allowedOrigins.includes(origin)) return true;
+  // Allow all Vercel preview deployments for this project
+  if (/^https:\/\/aptos-prediction-market[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
+  return false;
+}
+
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -49,8 +58,7 @@ app.use(
         return callback(null, true);
       }
 
-      // Check against whitelist
-      if (allowedOrigins.includes(origin)) {
+      if (isOriginAllowed(origin)) {
         callback(null, true);
       } else {
         console.warn('[CORS] Blocked request from origin:', origin);
