@@ -80,7 +80,7 @@ const MarketCard: React.FC<{ market: DisplayMarket; index: number }> = ({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, delay: index * 0.035 }}
     >
-      <Link to={`/market/${market.id}`} className="block h-full group">
+      <Link to={`/market/${market.onChainId}`} className="block h-full group">
         <div className={`relative h-full flex flex-col gap-4 rounded-2xl border bg-[#0D1224] p-5 transition-all duration-200 group-hover:-translate-y-0.5 ${
             isTrending
               ? 'border-warning-500/30 group-hover:border-warning-500/50 group-hover:shadow-[0_8px_32px_rgba(0,0,0,0.45),0_0_0_1px_rgba(245,158,11,0.15)]'
