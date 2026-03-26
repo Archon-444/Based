@@ -1,4 +1,4 @@
-// Validation utilities for Prophecy
+// Validation utilities for Based
 
 /**
  * Validates an Aptos address format

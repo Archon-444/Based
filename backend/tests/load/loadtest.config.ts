@@ -13,8 +13,8 @@ export const loadTestConfig = {
   // Test environments
   environments: {
     local: 'http://localhost:3000',
-    staging: 'https://staging-api.movemarket.com',
-    production: 'https://api.movemarket.com',
+    staging: 'https://staging-api.based.app',
+    production: 'https://api.based.app',
   },
 
   // Test scenarios

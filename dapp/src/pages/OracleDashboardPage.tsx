@@ -114,7 +114,7 @@ const OracleDashboardPage: React.FC = () => {
                         </h1>
                         <p className="text-lg text-slate-400 max-w-2xl">
                             Multi-oracle consensus prevents market manipulation. Join the network of independent
-                            truth providers securing Prophecy's prediction outcomes.
+                            truth providers securing Based's prediction outcomes.
                         </p>
                     </div>
                 </Container>

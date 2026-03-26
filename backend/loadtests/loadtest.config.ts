@@ -1,13 +1,14 @@
 import { randomBytes } from 'node:crypto';
 
+// TODO: Replace Aptos SDK with viem for EVM signing
 import { Ed25519PrivateKey } from '@aptos-labs/ts-sdk';
 import { config as dotenvConfig } from 'dotenv';
 
 dotenvConfig();
 
-const SIGNING_PREFIX = 'MoveMarket::';
+const SIGNING_PREFIX = 'Based::';
 
-type SupportedChain = 'aptos' | 'sui' | 'movement';
+type SupportedChain = 'base' | 'sui' | 'movement';
 
 export interface WalletAuthContext {
   address: string;
@@ -68,7 +69,7 @@ const createWalletAuthContext = (
 const baseUrl =
   process.env.LOADTEST_BASE_URL?.replace(/\/$/, '') ?? 'http://localhost:3000';
 
-const activeChain = (process.env.LOADTEST_ACTIVE_CHAIN?.toLowerCase() as SupportedChain) ?? 'aptos';
+const activeChain = (process.env.LOADTEST_ACTIVE_CHAIN?.toLowerCase() as SupportedChain) ?? 'base';
 
 export const loadTestConfig: LoadTestConfig = {
   baseUrl,

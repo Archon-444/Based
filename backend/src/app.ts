@@ -46,7 +46,7 @@ function isOriginAllowed(origin: string): boolean {
   // Exact match against whitelist
   if (allowedOrigins.includes(origin)) return true;
   // Allow all Vercel preview deployments for this project
-  if (/^https:\/\/aptos-prediction-market[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
+  if (/^https:\/\/based[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
   return false;
 }
 
@@ -146,7 +146,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Move Market API Docs',
+    customSiteTitle: 'Based API Docs',
     customfavIcon: '/favicon.ico',
   })
 );

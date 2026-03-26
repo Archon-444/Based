@@ -1,5 +1,5 @@
 # Security Audit Package
-**Project:** Move Market Prediction Market
+**Project:** Based Prediction Market
 **Date Prepared:** 2025-10-23
 **Status:** Ready for Audit
 
@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-Move Market is a decentralized prediction market platform built on Aptos blockchain. The platform enables users to create, trade, and resolve prediction markets using an automated market maker (LMSR) with oracle-backed resolution.
+Based is a decentralized prediction market platform built on Base. The platform enables users to create, trade, and resolve prediction markets using an automated market maker (LMSR) with oracle-backed resolution.
 
 **Key Features:**
 - LMSR (Logarithmic Market Scoring Rule) AMM
@@ -410,7 +410,7 @@ aptos move test
 - Decentralized oracle
 - Complex dispute resolution
 
-**Move Market (This Project):**
+**Based (This Project):**
 - Multi-oracle consensus
 - LMSR AMM
 - Hybrid centralized/decentralized model
@@ -548,7 +548,7 @@ sha256sum *.move > checksums.txt
 ```bash
 # Clone repository
 git clone [repo-url]
-cd aptos-prediction-market
+cd Based
 
 # Install dependencies
 aptos init

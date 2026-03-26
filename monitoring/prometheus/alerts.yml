@@ -1,5 +1,5 @@
 groups:
-  - name: movemarket_api
+  - name: based_api
     interval: 30s
     rules:
       # High error rate
@@ -14,7 +14,7 @@ groups:
 
       # API down
       - alert: APIDown
-        expr: up{job="movemarket-backend"} == 0
+        expr: up{job="based-backend"} == 0
         for: 1m
         labels:
           severity: critical
@@ -42,7 +42,7 @@ groups:
           summary: "Unusually high request rate"
           description: "Request rate is {{ $value }}/s on {{ $labels.instance }}"
 
-  - name: movemarket_database
+  - name: based_database
     interval: 30s
     rules:
       # Database down
@@ -75,7 +75,7 @@ groups:
           summary: "Database queries are slow"
           description: "Query efficiency dropped on {{ $labels.instance }}"
 
-  - name: movemarket_system
+  - name: based_system
     interval: 30s
     rules:
       # High CPU usage
@@ -118,34 +118,34 @@ groups:
           summary: "Instance is down"
           description: "Node exporter is not responding on {{ $labels.instance }}"
 
-  - name: movemarket_blockchain
+  - name: based_blockchain
     interval: 60s
     rules:
       # Blockchain node down
       - alert: BlockchainNodeDown
-        expr: up{job="aptos-node"} == 0
+        expr: up{job="base-node"} == 0
         for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "Aptos node is down"
-          description: "Cannot reach Aptos node on {{ $labels.instance }}"
+          summary: "Base node is down"
+          description: "Cannot reach Base node on {{ $labels.instance }}"
 
       # Node not syncing
       - alert: BlockchainNodeNotSyncing
-        expr: aptos_state_sync_version == 0
+        expr: base_node_sync_status == 0
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: "Blockchain node stopped syncing"
-          description: "Aptos node is not syncing on {{ $labels.instance }}"
+          description: "Base node is not syncing on {{ $labels.instance }}"
 
-  - name: movemarket_business
+  - name: based_business
     interval: 60s
     rules:
       - alert: SettlementExecutionsFailing
-        expr: rate(movemarket_settlement_executions_total{result="failure"}[5m]) > 0.05
+        expr: rate(based_settlement_executions_total{result="failure"}[5m]) > 0.05
         for: 5m
         labels:
           severity: warning
@@ -154,8 +154,8 @@ groups:
           description: "Settlement failures > 3/min on {{ $labels.instance }} (chain={{ $labels.chain }})"
 
       - alert: SettlementQueueStalled
-        expr: (increase(movemarket_claim_ticket_build_total[15m]) > 0)
-          and (increase(movemarket_settlement_executions_total{result="success"}[15m]) == 0)
+        expr: (increase(based_claim_ticket_build_total[15m]) > 0)
+          and (increase(based_settlement_executions_total{result="success"}[15m]) == 0)
         for: 15m
         labels:
           severity: critical
@@ -164,7 +164,7 @@ groups:
           description: "Claims are being generated but no settlements executed in the last 15m on {{ $labels.instance }}"
 
       - alert: MarketResolutionsFailing
-        expr: rate(movemarket_market_resolution_total{result="failure"}[5m]) > 0
+        expr: rate(based_market_resolution_total{result="failure"}[5m]) > 0
         for: 5m
         labels:
           severity: warning
@@ -173,7 +173,7 @@ groups:
           description: "Resolver errors detected on {{ $labels.instance }} (chain={{ $labels.chain }})"
 
       - alert: SuiIndexerStalled
-        expr: increase(movemarket_sui_events_processed_total[15m]) == 0
+        expr: increase(based_sui_events_processed_total[15m]) == 0
         for: 15m
         labels:
           severity: warning
@@ -182,7 +182,7 @@ groups:
           description: "No Sui events processed in the last 15m on {{ $labels.instance }}"
 
       - alert: SuiIndexerErrors
-        expr: rate(movemarket_sui_indexer_polls_total{result="failure"}[5m]) > 0.1
+        expr: rate(based_sui_indexer_polls_total{result="failure"}[5m]) > 0.1
         for: 5m
         labels:
           severity: warning

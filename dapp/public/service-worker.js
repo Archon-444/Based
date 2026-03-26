@@ -1,13 +1,13 @@
 /* eslint-disable no-restricted-globals */
 /**
- * Move Market Service Worker
+ * Based Service Worker
  *
  * Provides offline support, caching, and push notifications
  * for the PWA experience.
  */
 
-const CACHE_NAME = 'aptos-predict-v1';
-const RUNTIME_CACHE = 'aptos-predict-runtime-v1';
+const CACHE_NAME = 'based-v1';
+const RUNTIME_CACHE = 'based-runtime-v1';
 
 // Assets to cache on install
 const STATIC_ASSETS = [
@@ -27,7 +27,7 @@ const CACHE_FIRST_PATTERNS = [
 // Network-first resources (API calls)
 const NETWORK_FIRST_PATTERNS = [
   /\/api\//,
-  /aptos\.dev/,
+  /base\.org/,
 ];
 
 // NEVER cache these (sensitive data, auth, private endpoints)
@@ -210,7 +210,7 @@ self.addEventListener('push', (event) => {
   console.log('[ServiceWorker] Push received');
 
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'Move Market';
+  const title = data.title || 'Based';
   const options = {
     body: data.body || 'You have a new notification',
     icon: '/icon-192.png',

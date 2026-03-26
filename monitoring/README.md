@@ -1,6 +1,6 @@
 # Monitoring Stack
 
-The monitoring stack uses Prometheus, Grafana, Node Exporter, and Alertmanager to observe the Move Market backend.
+The monitoring stack uses Prometheus, Grafana, Node Exporter, and Alertmanager to observe the Based backend.
 
 ## Quick Start
 
@@ -23,14 +23,14 @@ Ensure environment variables (e.g., `ALERTMANAGER_SMTP_PASSWORD`) are supplied w
 
 The backend exposes `/metrics` (Prometheus format) with the following key metrics:
 
-- `movemarket_http_requests_total`
-- `movemarket_http_request_duration_seconds`
-- `movemarket_settlement_executions_total`
-- `movemarket_settlement_batch_request`
-- `movemarket_claim_ticket_build_total`
-- `movemarket_market_resolution_total`
-- `movemarket_sui_indexer_polls_total`
-- `movemarket_sui_events_processed_total`
+- `based_http_requests_total`
+- `based_http_request_duration_seconds`
+- `based_settlement_executions_total`
+- `based_settlement_batch_request`
+- `based_claim_ticket_build_total`
+- `based_market_resolution_total`
+- `based_sui_indexer_polls_total`
+- `based_sui_events_processed_total`
 - `process_*` and `nodejs_*` metrics (from `prom-client` default collectors)
 
 > ℹ️ The latest metrics extend Sui coverage: settlement batches, market resolution outcomes, and indexer poll throughput. After deploying the updated backend, import the refreshed **Backend Overview** dashboard (see below) and confirm Prometheus is scraping the backend job so the panels populate.

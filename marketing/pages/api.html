@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Move Market · API Reference</title>
+  <title>Based · API Reference</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -19,8 +19,8 @@
         <div class="flex items-center gap-3">
           <span class="text-3xl">🛠️</span>
           <div>
-            <h1 class="text-3xl font-bold">Move Market API Reference</h1>
-            <p class="text-sm text-gray-400">REST &amp; GraphQL endpoints for builders across Aptos &amp; Sui</p>
+            <h1 class="text-3xl font-bold">Based API Reference</h1>
+            <p class="text-sm text-gray-400">REST endpoints for builders on Base</p>
           </div>
         </div>
         <a href="../index.html" class="text-sm text-blue-400 hover:text-blue-300 transition">
@@ -36,13 +36,13 @@
           <div>
             <h3 class="text-lg font-semibold mb-2">Production</h3>
             <code class="bg-gray-950 border border-gray-800 px-3 py-2 rounded-lg text-sm text-blue-300 w-full block">
-https://api.movemarket.app/api
+https://api.based.app/api
             </code>
           </div>
           <div>
             <h3 class="text-lg font-semibold mb-2">Local Development</h3>
             <code class="bg-gray-950 border border-gray-800 px-3 py-2 rounded-lg text-sm text-blue-300 w-full block">
-http://localhost:3001/api
+http://localhost:4000/api
             </code>
           </div>
           <p class="text-xs text-gray-500">
@@ -56,14 +56,14 @@ http://localhost:3001/api
           <div>
             <h3 class="text-xl font-semibold">REST Endpoints</h3>
           <p class="text-sm text-gray-400">
-            Standard JSON endpoints for markets, bets, suggestions, and oracle events. Authenticated endpoints expect wallet headers with the active chain (`aptos` or `sui`).
+            Standard JSON endpoints for markets, bets, suggestions, and oracle events. Authenticated endpoints expect wallet signature headers.
             </p>
           </div>
           <pre class="bg-gray-950 border border-gray-800 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto">
 GET    /api/markets                  # list markets
 GET    /api/markets/:chain/:id       # market details
 POST   /api/markets/calculate-payout # payout estimate (requires wallet headers)
-POST   /api/s suggestions            # create market suggestion (authenticated)
+POST   /api/suggestions              # create market suggestion (authenticated)
 POST   /api/auth/nonce               # sign-in nonce for wallet auth
           </pre>
           <a class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-semibold" href="../../backend/README.md" target="_blank">
@@ -107,7 +107,7 @@ POST /api/markets/calculate-payout
 Headers:
   Content-Type: application/json
   X-Wallet-Address: 0xabc...
-  X-Active-Chain: aptos // or "sui"
+  X-Active-Chain: base
 Body:
 {
   "marketId": "93f6...",
@@ -121,23 +121,20 @@ Body:
       <section class="bg-gray-900 border border-gray-800 rounded-xl p-6">
         <h2 class="text-2xl font-semibold mb-3">SDK Helpers</h2>
         <p class="text-sm text-gray-400 mb-4">
-          Prefer the TypeScript SDK when integrating from React/Next.js apps. It handles wallet flows, Move transactions, and REST calls.
+          Prefer the TypeScript SDK when integrating from React/Next.js apps. It handles wallet flows, contract interactions, and REST calls.
         </p>
         <pre class="bg-gray-950 border border-gray-800 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto">
-import { MoveMarketSDK } from '@/services/MoveMarketSDK';
+import { useWriteContract } from "wagmi";
+import { MarketFactoryABI } from "./abis/MarketFactory";
 
-const sdk = new MoveMarketSDK('testnet', MODULE_ADDRESS);
-const markets = await sdk.listMarkets();
-const quote = await sdk.calculatePayout(marketId, outcomeIndex, 100);
+// Interact with contracts via wagmi hooks
+const { writeContract } = useWriteContract();
         </pre>
-        <a class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-semibold" href="../../dapp/src/services/MoveMarketSDK.ts" target="_blank">
-          View SDK Source →
-        </a>
       </section>
     </main>
 
     <footer class="border-t border-gray-900 py-6 text-center text-xs text-gray-500">
-      © 2025 Move Market · Builders welcome
+      © 2025 Based · Builders welcome
     </footer>
   </div>
 </body>

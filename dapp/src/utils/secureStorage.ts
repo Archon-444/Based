@@ -7,7 +7,7 @@
  * - Encryption key derived from session-specific entropy
  */
 
-const DB_NAME = 'Prophecy';
+const DB_NAME = 'Based';
 const DB_VERSION = 1;
 const STORE_NAME = 'secureData';
 const ENCRYPTION_ENABLED = true; // Set to false to disable encryption (not recommended)

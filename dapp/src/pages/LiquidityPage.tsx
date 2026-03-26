@@ -155,7 +155,7 @@ const LiquidityPage: React.FC = () => {
               <h2 className="text-lg font-bold text-white mb-4">How FPMM Pricing Works</h2>
               <div className="space-y-3 text-sm text-slate-400">
                 <p>
-                  Prophecy uses a <strong className="text-white">Fixed Product Market Maker (FPMM)</strong> to price
+                  Based uses a <strong className="text-white">Fixed Product Market Maker (FPMM)</strong> to price
                   outcomes automatically. Each market starts with equal probability across all outcomes.
                 </p>
                 <p>

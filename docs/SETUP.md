@@ -26,8 +26,8 @@ aptos --version
 
 ```bash
 cd ~/Documents  # or your preferred location
-git clone https://github.com/yourusername/aptos-prediction-market.git
-cd aptos-prediction-market
+git clone https://github.com/Archon-444/Based.git
+cd Based
 ```
 
 ## Step 3: Configure Aptos CLI

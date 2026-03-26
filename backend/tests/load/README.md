@@ -1,6 +1,6 @@
 # Load Testing Guide
 
-This directory contains load tests for the Move Market backend API using k6.
+This directory contains load tests for the Based backend API using k6.
 
 ## Prerequisites
 
@@ -50,7 +50,7 @@ k6 run scenarios/ratelimit.loadtest.ts
 
 **Against Staging:**
 ```bash
-k6 run -e API_URL=https://staging-api.movemarket.com scenarios/suggestions.loadtest.ts
+k6 run -e API_URL=https://staging-api.based.app scenarios/suggestions.loadtest.ts
 ```
 
 ## Test Scenarios
@@ -171,7 +171,7 @@ Tests stability over time:
 **Environment Variables:**
 ```bash
 # Test against different environments
-export API_URL=https://staging-api.movemarket.com
+export API_URL=https://staging-api.based.app
 k6 run scenarios/suggestions.loadtest.ts
 
 # Adjust load

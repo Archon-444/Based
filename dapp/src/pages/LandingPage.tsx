@@ -334,7 +334,7 @@ export const LandingPage: React.FC = () => {
         <Container>
           <div className="text-center mb-16">
             <p className="text-xs font-bold uppercase tracking-widest text-primary-400 mb-3">
-              Why Prophecy
+              Why Based
             </p>
             <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
               Built for Serious Traders

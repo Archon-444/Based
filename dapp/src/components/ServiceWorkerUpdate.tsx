@@ -53,7 +53,7 @@ export const ServiceWorkerUpdate: React.FC = () => {
                   Update Available
                 </h3>
                 <p className="text-sm text-slate-400 mb-3">
-                  A new version of Prophecy is available with improvements and bug fixes.
+                  A new version of Based is available with improvements and bug fixes.
                 </p>
 
                 <div className="flex gap-2">

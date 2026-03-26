@@ -33,7 +33,7 @@ const DaoOverviewPage: React.FC = () => {
               DAO Governance & Incentives
             </h1>
             <p className="text-lg text-slate-400">
-              The Prophecy DAO curates high-quality markets, manages protocol roles, and rewards contributors.
+              The Based DAO curates high-quality markets, manages protocol roles, and rewards contributors.
               This page outlines the lifecycle from suggestion to settlement and the incentives that keep the system
               aligned with the community.
             </p>

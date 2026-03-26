@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Move Market · Smart Contract Portal</title>
+  <title>Based · Smart Contract Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
@@ -19,8 +19,8 @@
         <div class="flex items-center gap-3">
           <span class="text-3xl">🧱</span>
           <div>
-            <h1 class="text-3xl font-bold">Move Market Smart Contracts</h1>
-            <p class="text-sm text-gray-400">Move modules for Aptos & Sui</p>
+            <h1 class="text-3xl font-bold">Based Smart Contracts</h1>
+            <p class="text-sm text-gray-400">Solidity contracts on Base</p>
           </div>
         </div>
         <a href="../index.html" class="text-sm text-blue-400 hover:text-blue-300 transition">
@@ -32,28 +32,27 @@
     <main class="max-w-5xl mx-auto px-6 py-16 space-y-16">
       <section class="grid md:grid-cols-2 gap-8">
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-3">
-          <h2 class="text-2xl font-semibold">Aptos Package</h2>
+          <h2 class="text-2xl font-semibold">Base Contracts</h2>
           <p class="text-sm text-gray-400">
-            Core LMSR market manager, liquidity vault, oracle access control, and role registry implemented in Move.
+            Core prediction market contracts: MarketFactory, AMM, ConditionalTokens, and Oracle adapters (UMA + Pyth) implemented in Solidity.
           </p>
           <ul class="text-sm text-gray-300 list-disc pl-5 space-y-2">
-            <li><strong>Module:</strong> <code>move_market::market_manager</code></li>
-            <li><strong>Address:</strong> <code>0xb232...d894</code> (devnet)</li>
-            <li><strong>Source:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts/sources/market_manager.move" target="_blank">market_manager.move</a></li>
-            <li><strong>Deployment:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts/scripts/deploy_devnet.sh" target="_blank">deploy_devnet.sh</a></li>
+            <li><strong>MarketFactory:</strong> <code>0x51ba...f41a</code> (Base Sepolia)</li>
+            <li><strong>AMM:</strong> <code>0x5c77...b93e</code> (Base Sepolia)</li>
+            <li><strong>Source:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-base/src/" target="_blank">contracts-base/src/</a></li>
+            <li><strong>Deployment:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-base/script/" target="_blank">Deployment scripts</a></li>
           </ul>
         </div>
 
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-3">
-          <h2 class="text-2xl font-semibold">Sui Package</h2>
+          <h2 class="text-2xl font-semibold">Test Suite</h2>
           <p class="text-sm text-gray-400">
-            Sharded liquidity pools and settlement logic ported to Sui Move with shared object support.
+            121 tests covering MarketFactory, AMM, UMA adapter, Pyth adapter, and ConditionalTokens.
           </p>
           <ul class="text-sm text-gray-300 list-disc pl-5 space-y-2">
-            <li><strong>Package ID:</strong> <code>0x76ac...0d9c</code> (devnet)</li>
-            <li><strong>Source:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-sui/sources/market_manager_v2_secure.move" target="_blank">market_manager_v2_secure.move</a></li>
-            <li><strong>Deployment:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-sui/scripts/deploy_devnet.sh" target="_blank">deploy_devnet.sh</a></li>
-            <li><strong>Verification:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-sui/FORMAL_VERIFICATION.md" target="_blank">Formal Verification Notes</a></li>
+            <li><strong>Framework:</strong> Foundry (forge)</li>
+            <li><strong>Tests:</strong> <a class="text-blue-400 hover:text-blue-300" href="../../contracts-base/test/" target="_blank">contracts-base/test/</a></li>
+            <li><strong>Coverage:</strong> Run <code>forge coverage</code></li>
           </ul>
         </div>
       </section>
@@ -64,19 +63,19 @@
           <div class="flex items-start gap-3">
             <span class="text-green-400 mt-0.5">✔</span>
             <p class="text-sm text-gray-300">
-              Formal verification artifacts for critical invariants (<code>FORMAL_VERIFICATION.md</code>)
+              121 passing tests with comprehensive edge case coverage
             </p>
           </div>
           <div class="flex items-start gap-3">
             <span class="text-green-400 mt-0.5">✔</span>
             <p class="text-sm text-gray-300">
-              Circuit breaker &amp; pause mechanisms managed via on-chain roles (<code>access_control.move</code>)
+              Circuit breaker &amp; pause mechanisms via access control roles
             </p>
           </div>
           <div class="flex items-start gap-3">
             <span class="text-green-400 mt-0.5">✔</span>
             <p class="text-sm text-gray-300">
-              Event indexer alignment—every emitted event includes <code>market_id</code>, <code>sequence_number</code>, and <code>chain</code>
+              Reentrancy guards on all state-changing functions
             </p>
           </div>
         </div>
@@ -86,27 +85,24 @@
         <h2 class="text-2xl font-semibold mb-4">Local Testing</h2>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
           <pre class="bg-gray-950 border border-gray-800 rounded-lg p-4 text-xs text-gray-300 overflow-x-auto">
-# Compile and test Aptos package
-cd contracts
-aptos move test
+# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 
-# Publish to devnet
-aptos move publish --profile default --named-addresses movemarket=default
+# Compile and test
+cd contracts-base
+forge build
+forge test
 
-# Compile and test Sui package
-cd ../contracts-sui
-sui move test
-sui client publish --gas-budget 200000000
+# Deploy to Base Sepolia
+forge script script/Deploy.s.sol --rpc-url https://sepolia.base.org --broadcast
           </pre>
-          <p class="text-xs text-gray-500">
-            Use the provided devnet fixtures in <code>scripts/</code> to pre-seed liquidity pools and oracle data.
-          </p>
         </div>
       </section>
     </main>
 
     <footer class="border-t border-gray-900 py-6 text-center text-xs text-gray-500">
-      © 2025 Move Market · Secure prediction markets
+      © 2025 Based · Secure prediction markets
     </footer>
   </div>
 </body>

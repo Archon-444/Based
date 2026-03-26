@@ -15,7 +15,7 @@ Fixed all 14 TypeScript compilation errors and resolved all blocking issues prev
 ### 1. ✅ TypeScript Compilation Errors (14 → 0)
 
 #### Duplicate `getModuleAddress` Method
-- **File**: `dapp/src/services/MoveMarketSDK.ts:71-81`
+- **File**: `dapp/src/services/MoveMarketSDK.ts:71-81` (historical reference)
 - **Issue**: Method was defined twice
 - **Fix**: Removed duplicate method definition
 

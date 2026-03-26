@@ -1,6 +1,6 @@
 # Backend Load Testing
 
-This directory contains scripted load tests for the Move Market backend.  
+This directory contains scripted load tests for the Based backend.  
 The scenarios target the `suggestions` API to validate baseline throughput and confirm that
 rate limiting behaves correctly when subjected to bursts of traffic.
 

@@ -1,9 +1,9 @@
 {
-  "name": "movemarket-dapp",
+  "name": "based-dapp",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Move Market - Cross-chain prediction markets dApp",
+  "description": "Based - Prediction markets on Base",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

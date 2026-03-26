@@ -28,10 +28,10 @@ export default function TermsOfServicePage() {
           {/* Introduction */}
           <Section icon={FiFileText} title="1. Acceptance of Terms">
             <p>
-              Welcome to PROPHECY ("the Platform," "we," "us," or "our"). By accessing or using the Platform, you ("User," "you," or "your") agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Platform.
+              Welcome to BASED ("the Platform," "we," "us," or "our"). By accessing or using the Platform, you ("User," "you," or "your") agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not access or use the Platform.
             </p>
             <p className="mt-4">
-              These Terms constitute a legally binding agreement between you and PROPHECY. Please read them carefully before using the Platform.
+              These Terms constitute a legally binding agreement between you and BASED. Please read them carefully before using the Platform.
             </p>
             <div className="mt-4 p-4 bg-error-500/[0.07] border border-error-500/25 rounded-xl">
               <p className="text-sm text-error-300">
@@ -59,7 +59,7 @@ export default function TermsOfServicePage() {
           <Section icon={FiShield} title="3. Platform Description">
             <h4 className="font-semibold text-white mb-3">3.1 Decentralized Application</h4>
             <p className="mb-4">
-              PROPHECY is a decentralized prediction market platform built on the Base network. The Platform allows users to:
+              BASED is a decentralized prediction market platform built on the Base network. The Platform allows users to:
             </p>
             <ul className="list-disc pl-6 space-y-2 mb-4">
               <li>Create prediction markets on future events</li>
@@ -199,7 +199,7 @@ export default function TermsOfServicePage() {
           {/* Intellectual Property */}
           <Section icon={FiShield} title="8. Intellectual Property">
             <p className="mb-4">
-              The Platform, including its design, code, logo, and content, is owned by PROPHECY and protected by intellectual property laws. You may not:
+              The Platform, including its design, code, logo, and content, is owned by BASED and protected by intellectual property laws. You may not:
             </p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Copy, modify, or distribute Platform code without permission</li>
@@ -249,7 +249,7 @@ export default function TermsOfServicePage() {
           {/* Indemnification */}
           <Section icon={FiShield} title="10. Indemnification">
             <p>
-              You agree to indemnify, defend, and hold harmless PROPHECY, its affiliates, officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including legal fees) arising from:
+              You agree to indemnify, defend, and hold harmless BASED, its affiliates, officers, directors, employees, and agents from any claims, damages, losses, liabilities, and expenses (including legal fees) arising from:
             </p>
             <ul className="list-disc pl-6 space-y-2 mt-4">
               <li>Your use of the Platform</li>
@@ -283,7 +283,7 @@ export default function TermsOfServicePage() {
           <Section icon={FiFileText} title="12. Dispute Resolution and Arbitration">
             <h4 className="font-semibold text-white mb-3">12.1 Informal Resolution</h4>
             <p className="mb-4">
-              Before filing a claim, you agree to contact us at legal@prophecy.finance to attempt informal resolution of any dispute.
+              Before filing a claim, you agree to contact us at legal@based.app to attempt informal resolution of any dispute.
             </p>
 
             <h4 className="font-semibold text-white mb-3">12.2 Binding Arbitration</h4>
@@ -322,7 +322,7 @@ export default function TermsOfServicePage() {
 
             <h4 className="font-semibold text-white mb-3">13.4 Entire Agreement</h4>
             <p className="mb-4">
-              These Terms, together with our Privacy Policy, constitute the entire agreement between you and PROPHECY.
+              These Terms, together with our Privacy Policy, constitute the entire agreement between you and BASED.
             </p>
 
             <h4 className="font-semibold text-white mb-3">13.5 Assignment</h4>
@@ -337,9 +337,9 @@ export default function TermsOfServicePage() {
               For questions about these Terms, please contact us:
             </p>
             <div className="bg-white/[0.04] rounded-xl p-6 space-y-2">
-              <p><strong>Email:</strong> legal@prophecy.finance</p>
-              <p><strong>Support:</strong> support@prophecy.finance</p>
-              <p><strong>Security:</strong> security@prophecy.finance</p>
+              <p><strong>Email:</strong> legal@based.app</p>
+              <p><strong>Support:</strong> support@based.app</p>
+              <p><strong>Security:</strong> security@based.app</p>
               <p><strong>Discord:</strong> Join our community server</p>
             </div>
           </Section>

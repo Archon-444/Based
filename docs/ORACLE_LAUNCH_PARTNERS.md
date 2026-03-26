@@ -10,7 +10,7 @@
 - **Security moat**: Multi-oracle consensus with slashing + transparent reputation trail (`submitOracleVote`, `getOracleReputation`)
 - **Frictionless integration**: Stake + key management handled by `registerOracle` and automatic nonce/signature helpers in the SDK
 - **Revenue share**: Shared protocol fees + BRO staking incentives for early oracle operators
-- **Marketing halo**: Co-announcements across Move Market + partner channels; inclusion in Polymarket-competitive narrative
+- **Marketing halo**: Co-announcements across Based + partner channels; inclusion in Polymarket-competitive narrative
 
 ---
 
@@ -53,11 +53,11 @@
 ## 5. Communications Templates
 **Intro Email Snippet**
 ```
-Subject: Launching Move Market with <Partner> as founding oracle
+Subject: Launching Based with <Partner> as founding oracle
 
 Hi <Name>,
 
-We just shipped full end-to-end oracle tooling for Move Market on Aptos—
+We just shipped full end-to-end oracle tooling for Based on Aptos—
 including stake onboarding, automated nonce/signature handling, and real-time reputation APIs.
 
 We’d love to feature <Partner> as a launch oracle. Quick 30-minute sync next week?
@@ -67,7 +67,7 @@ Best,
 ```
 
 **Call Agenda (30 min)**
-1. 5 min – Context: Polymarket weakness, Move Market security moat
+1. 5 min – Context: Polymarket weakness, Based security moat
 2. 10 min – Live demo: `registerOracle` + `submitOracleVote` flow
 3. 10 min – Incentives + co-marketing opportunities
 4. 5 min – Next steps, technical contact exchange

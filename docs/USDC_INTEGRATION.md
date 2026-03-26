@@ -1,6 +1,6 @@
 # 🪙 USDC Integration Guide
 
-Complete USDC integration for the Move Market, replacing AptosCoin with native USDC for all betting operations.
+Complete USDC integration for the Based, replacing AptosCoin with native USDC for all betting operations.
 
 ## 📋 What's Been Added
 
@@ -11,7 +11,7 @@ Complete USDC integration for the Move Market, replacing AptosCoin with native U
 - **Integration tests** - Comprehensive test coverage for all modules
 
 ### Frontend Integration (TypeScript)
-- **`MoveMarketSDK.ts`** - Complete TypeScript SDK for frontend
+- **`BasedSDK.ts`** - Complete TypeScript SDK for frontend
 - **Deployment script** - Automated deployment with initialization
 
 ## 🚀 Quick Start
@@ -45,10 +45,10 @@ aptos move test --named-addresses prediction_market=<YOUR_ADDRESS>,admin=<YOUR_A
 ### 3. Use in Frontend
 
 ```typescript
-import { MoveMarketSDK } from './services/MoveMarketSDK';
+import { BasedSDK } from './services/BasedSDK';
 import { Network } from "@aptos-labs/ts-sdk";
 
-const sdk = new MoveMarketSDK(
+const sdk = new BasedSDK(
   Network.DEVNET,
   import.meta.env.VITE_MODULE_ADDRESS!,
   import.meta.env.VITE_USDC_MODULE_ADDRESS

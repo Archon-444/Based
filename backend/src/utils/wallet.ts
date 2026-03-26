@@ -2,7 +2,7 @@ import { verifyMessage } from 'viem';
 
 import { env } from '../config/env.js';
 
-const SIGNING_PREFIX = 'MoveMarket::';
+const SIGNING_PREFIX = 'Based::';
 const seenNonces = new Map<string, number>();
 const CLEANUP_INTERVAL = 60_000;
 let lastCleanup = Date.now();

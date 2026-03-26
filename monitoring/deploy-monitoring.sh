@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Deploying Move Market Monitoring Stack..."
+echo "🚀 Deploying Based Monitoring Stack..."
 
 # Check if Docker is available
 if ! command -v docker &> /dev/null; then

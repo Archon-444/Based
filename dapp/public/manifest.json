@@ -1,23 +1,29 @@
 {
-  "name": "Move Market - Prediction Markets",
-  "short_name": "Move Market",
-  "description": "The fastest, fairest prediction market platform. Built on Aptos blockchain.",
+  "name": "Based - Prediction Markets",
+  "short_name": "Based",
+  "description": "The fastest, fairest prediction market platform. Built on Base.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#6366f1",
+  "background_color": "#080B18",
+  "theme_color": "#3B82F6",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icon-192.png",
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
@@ -36,24 +42,14 @@
       "short_name": "Markets",
       "description": "View active prediction markets",
       "url": "/markets",
-      "icons": [
-        {
-          "src": "/icon-markets.png",
-          "sizes": "96x96"
-        }
-      ]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     },
     {
       "name": "My Bets",
       "short_name": "Dashboard",
       "description": "View your active bets and winnings",
       "url": "/dashboard",
-      "icons": [
-        {
-          "src": "/icon-dashboard.png",
-          "sizes": "96x96"
-        }
-      ]
+      "icons": [{ "src": "/favicon.svg", "sizes": "any" }]
     }
   ],
   "prefer_related_applications": false

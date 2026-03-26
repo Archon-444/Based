@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#080B18"/>
+      <stop offset="100%" stop-color="#0D1224"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="40"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Subtle grid lines -->
+  <g opacity="0.03" stroke="white" stroke-width="1">
+    <line x1="0" y1="0" x2="1200" y2="630"/>
+    <line x1="400" y1="0" x2="400" y2="630"/>
+    <line x1="800" y1="0" x2="800" y2="630"/>
+    <line x1="0" y1="210" x2="1200" y2="210"/>
+    <line x1="0" y1="420" x2="1200" y2="420"/>
+  </g>
+
+  <!-- Ambient glow blobs -->
+  <circle cx="300" cy="315" r="200" fill="#3B82F6" opacity="0.06" filter="url(#softglow)"/>
+  <circle cx="900" cy="315" r="200" fill="#8B5CF6" opacity="0.06" filter="url(#softglow)"/>
+
+  <!-- Border accent line at top -->
+  <rect x="0" y="0" width="1200" height="3" fill="url(#accent)"/>
+
+  <!-- Logo mark -->
+  <rect x="80" y="220" width="100" height="100" rx="24" fill="url(#accent)" filter="url(#glow)"/>
+  <text x="130" y="294" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="68" fill="white" letter-spacing="-2">B</text>
+
+  <!-- Brand name -->
+  <text x="210" y="290" font-family="Inter,system-ui,sans-serif" font-weight="900" font-size="64" fill="white" letter-spacing="-2">Based</text>
+
+  <!-- Tagline -->
+  <text x="82" y="370" font-family="Inter,system-ui,sans-serif" font-weight="500" font-size="28" fill="#94A3B8">Prediction Markets on Base</text>
+
+  <!-- Subtitle details -->
+  <text x="82" y="420" font-family="Inter,system-ui,sans-serif" font-weight="400" font-size="20" fill="#475569">AI-powered resolution  ·  Gasless trading  ·  UMA + Pyth oracles</text>
+
+  <!-- Bottom border accent -->
+  <rect x="0" y="627" width="1200" height="3" fill="url(#accent)"/>
+</svg>

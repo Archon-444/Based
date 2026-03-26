@@ -28,7 +28,7 @@ export default function PrivacyPolicyPage() {
           {/* Introduction */}
           <Section icon={FiShield} title="1. Introduction">
             <p>
-              Welcome to PROPHECY (the "Platform"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our decentralized prediction market platform built on the Base network.
+              Welcome to BASED (the "Platform"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our decentralized prediction market platform built on the Base network.
             </p>
             <p className="mt-4">
               By using the Platform, you agree to the collection and use of information in accordance with this Privacy Policy. If you do not agree with our policies and practices, please do not use the Platform.
@@ -245,13 +245,13 @@ export default function PrivacyPolicyPage() {
               If you have questions, concerns, or requests regarding this Privacy Policy or your personal data, please contact us:
             </p>
             <div className="bg-white/[0.04] rounded-xl p-6 space-y-2">
-              <p><strong>Email:</strong> privacy@prophecy.finance</p>
-              <p><strong>Security Email:</strong> security@prophecy.finance</p>
+              <p><strong>Email:</strong> privacy@based.app</p>
+              <p><strong>Security Email:</strong> security@based.app</p>
               <p><strong>Discord:</strong> Join our server for support</p>
               <p><strong>GitHub:</strong> Report issues on our public repository</p>
             </div>
             <p className="mt-4 text-sm text-slate-400">
-              For security vulnerabilities, please use our bug bounty program or email security@prophecy.finance directly.
+              For security vulnerabilities, please use our bug bounty program or email security@based.app directly.
             </p>
           </Section>
 

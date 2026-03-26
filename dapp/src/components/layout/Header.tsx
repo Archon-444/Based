@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
                 <FiTrendingUp className="w-5 h-5 text-white" />
               </div>
               <div className="hidden sm:block">
-                <span className="text-lg font-black text-white tracking-tight">Prophecy</span>
+                <span className="text-lg font-black text-white tracking-tight">Based</span>
                 <span className="block text-[9px] uppercase font-bold tracking-[0.15em] text-primary-400">
                   Prediction Protocol
                 </span>

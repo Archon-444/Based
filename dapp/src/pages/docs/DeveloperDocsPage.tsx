@@ -83,12 +83,13 @@ export const DeveloperDocsPage: React.FC = () => {
     },
   ];
 
-  const quickstart = `# Install Aptos CLI
-curl -fsSL "https://aptos.dev/scripts/install_cli.py" | python3
+  const quickstart = `# Install Foundry
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
 
 # Clone the repository
-git clone https://github.com/yourusername/aptos-prediction-market
-cd aptos-prediction-market
+git clone https://github.com/Archon-444/Based
+cd Based
 
 # Install frontend dependencies
 cd dapp && npm install
@@ -100,110 +101,98 @@ cp .env.example .env
 # Start development server
 npm run dev
 
-# Compile Move contracts
-cd ../contracts
-aptos move compile`;
+# Compile Solidity contracts
+cd ../contracts-base
+forge build`;
 
-  const integration = `import { Aptos, AptosConfig, Network } from "@aptos-labs/ts-sdk";
-import { useWallet } from "@aptos-labs/wallet-adapter-react";
+  const integration = `import { createPublicClient, createWalletClient, http } from "viem";
+import { baseSepolia } from "viem/chains";
 
-// Initialize Aptos client
-const config = new AptosConfig({ network: Network.TESTNET });
-const aptos = new Aptos(config);
+// Initialize clients
+const publicClient = createPublicClient({
+  chain: baseSepolia,
+  transport: http(),
+});
 
-// Module address
-const MODULE_ADDRESS = "${contractAddresses.testnet}";
+// Contract addresses
+const MARKET_FACTORY = "${contractAddresses.testnet}";
 
-// Place a bet
-async function placeBet(
-  marketId: number,
-  outcomeIndex: number,
-  amount: number
-) {
-  const { account, signAndSubmitTransaction } = useWallet();
+// Place a bet (using wagmi hooks in React)
+import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { MarketFactoryABI } from "./abis/MarketFactory";
 
-  const transaction = await aptos.transaction.build.simple({
-    sender: account.address,
-    data: {
-      function: \`\${MODULE_ADDRESS}::betting::place_bet\`,
-      typeArguments: [],
-      functionArguments: [marketId, outcomeIndex, amount],
-    },
-  });
+function usePlaceBet() {
+  const { writeContract, data: hash } = useWriteContract();
+  const { isSuccess } = useWaitForTransactionReceipt({ hash });
 
-  const response = await signAndSubmitTransaction(transaction);
-  await aptos.waitForTransaction({ transactionHash: response.hash });
+  const placeBet = (marketId: bigint, outcomeIndex: number, amount: bigint) => {
+    writeContract({
+      address: MARKET_FACTORY,
+      abi: MarketFactoryABI,
+      functionName: "placeBet",
+      args: [marketId, outcomeIndex, amount],
+    });
+  };
 
-  return response;
+  return { placeBet, isSuccess };
 }
 
-// Fetch market info
-async function getMarketInfo(marketId: number) {
-  const result = await aptos.view({
-    payload: {
-      function: \`\${MODULE_ADDRESS}::market_manager::get_market_info\`,
-      typeArguments: [],
-      functionArguments: [marketId],
-    },
+// Read market info
+async function getMarketInfo(marketId: bigint) {
+  return publicClient.readContract({
+    address: MARKET_FACTORY,
+    abi: MarketFactoryABI,
+    functionName: "getMarketInfo",
+    args: [marketId],
   });
-
-  return result;
 }`;
 
-  const moveContract = `module prediction_market::market_manager {
-    use std::string::String;
-    use std::vector;
-    use aptos_framework::timestamp;
-    use aptos_framework::account;
+  const solidityContract = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
-    /// Market data structure
-    struct Market has store {
-        id: u64,
-        question: String,
-        outcomes: vector<String>,
-        end_time: u64,
-        is_resolved: bool,
-        winning_outcome: u8,
-        category: u8,
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract MarketFactory is Ownable {
+    struct Market {
+        uint256 id;
+        string question;
+        string[] outcomes;
+        uint256 endTime;
+        bool isResolved;
+        uint8 winningOutcome;
+        uint8 category;
     }
 
-    /// Global market storage
-    struct MarketStore has key {
-        markets: vector<Market>,
-        next_market_id: u64,
-    }
+    Market[] public markets;
+    uint256 public nextMarketId;
 
-    /// Initialize the market store
-    public entry fun initialize(admin: &signer) {
-        move_to(admin, MarketStore {
-            markets: vector::empty(),
-            next_market_id: 0,
-        });
-    }
+    event MarketCreated(uint256 indexed id, string question, uint256 endTime);
 
-    /// Create a new prediction market
-    public entry fun create_market(
-        creator: &signer,
-        question: String,
-        outcomes: vector<String>,
-        end_time: u64,
-        category: u8,
-    ) acquires MarketStore {
-        let store = borrow_global_mut<MarketStore>(@prediction_market);
-        let market_id = store.next_market_id;
+    constructor() Ownable(msg.sender) {}
 
-        let market = Market {
-            id: market_id,
-            question,
-            outcomes,
-            end_time,
-            is_resolved: false,
-            winning_outcome: 0,
-            category,
-        };
+    /// @notice Create a new prediction market
+    function createMarket(
+        string calldata question,
+        string[] calldata outcomes,
+        uint256 endTime,
+        uint8 category
+    ) external returns (uint256) {
+        require(outcomes.length >= 2, "Need at least 2 outcomes");
+        require(endTime > block.timestamp, "End time must be in future");
 
-        vector::push_back(&mut store.markets, market);
-        store.next_market_id = market_id + 1;
+        uint256 marketId = nextMarketId++;
+        Market storage market = markets.push();
+        market.id = marketId;
+        market.question = question;
+        market.endTime = endTime;
+        market.category = category;
+
+        for (uint256 i = 0; i < outcomes.length; i++) {
+            market.outcomes.push(outcomes[i]);
+        }
+
+        emit MarketCreated(marketId, question, endTime);
+        return marketId;
     }
 }`;
 
@@ -221,7 +210,7 @@ async function getMarketInfo(marketId: number) {
               Developer Documentation
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6">
-              Build on Move Market
+              Build on Based
             </h1>
             <p className="text-lg md:text-xl text-primary-100 leading-relaxed mb-8">
               Comprehensive guides, API references, and code examples to help you integrate
@@ -229,7 +218,7 @@ async function getMarketInfo(marketId: number) {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a
-                href="https://github.com/yourusername/aptos-prediction-market"
+                href="https://github.com/Archon-444/Based"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-white text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition-colors"
@@ -294,7 +283,7 @@ async function getMarketInfo(marketId: number) {
               Contract Addresses
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Deployed smart contract addresses on Aptos
+              Deployed smart contract addresses on Base
             </p>
           </div>
 
@@ -337,10 +326,10 @@ async function getMarketInfo(marketId: number) {
         <Container>
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-900 dark:text-white mb-4">
-              Move Modules
+              Smart Contracts
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Core smart contract modules and their functions
+              Core Solidity contracts and their functions
             </p>
           </div>
 
@@ -430,15 +419,15 @@ async function getMarketInfo(marketId: number) {
         </Container>
       </section>
 
-      {/* Move Contract Example */}
+      {/* Solidity Contract Example */}
       <section className="py-16 lg:py-24">
         <Container>
           <div className="mb-12">
             <h2 className="text-3xl md:text-4xl font-display font-bold text-gray-900 dark:text-white mb-4">
-              Move Contract Example
+              Solidity Contract Example
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300">
-              Sample Move code for market creation
+              Sample Solidity code for market creation
             </p>
           </div>
 
@@ -446,16 +435,16 @@ async function getMarketInfo(marketId: number) {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FiDatabase className="w-5 h-5" />
-                market_manager.move
+                MarketFactory.sol
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="relative">
                 <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto text-sm">
-                  <code>{moveContract}</code>
+                  <code>{solidityContract}</code>
                 </pre>
                 <button
-                  onClick={() => copyToClipboard(moveContract, 'move')}
+                  onClick={() => copyToClipboard(solidityContract, 'move')}
                   className="absolute top-4 right-4 p-2 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors"
                 >
                   {copiedCode === 'move' ? (
@@ -479,21 +468,21 @@ async function getMarketInfo(marketId: number) {
             </h2>
             <div className="grid md:grid-cols-3 gap-6">
               <a
-                href="https://aptos.dev/"
+                href="https://docs.base.org/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
               >
                 <FiBook className="w-8 h-8 text-primary-500 mx-auto mb-3" />
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  Aptos Docs
+                  Base Docs
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Official Aptos development documentation
+                  Official Base development documentation
                 </p>
               </a>
               <a
-                href="https://github.com/yourusername/aptos-prediction-market"
+                href="https://github.com/Archon-444/Based"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"
@@ -505,7 +494,7 @@ async function getMarketInfo(marketId: number) {
                 </p>
               </a>
               <a
-                href="https://discord.gg/aptos"
+                href="https://discord.gg/based"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-6 bg-white dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 hover:border-primary-500 dark:hover:border-primary-500 transition-colors"

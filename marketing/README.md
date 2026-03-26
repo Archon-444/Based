@@ -1,6 +1,6 @@
-# Move Market - Marketing Site
+# Based - Marketing Site
 
-Static marketing landing page for Move Market prediction markets platform.
+Static marketing landing page for Based prediction markets platform.
 
 ## Quick Start
 
@@ -57,8 +57,8 @@ netlify deploy --prod --dir=.
 Point your domain to the marketing site:
 
 ```
-Type: CNAME | Name: @   | Content: movemarket.pages.dev
-Type: CNAME | Name: www | Content: movemarket.app
+Type: CNAME | Name: @   | Content: based.pages.dev
+Type: CNAME | Name: www | Content: based.app
 ```
 
 ## Production Optimization
@@ -80,6 +80,6 @@ Before production:
 
 ## Links
 
-- dApp: https://app.movemarket.app
-- Docs: https://docs.movemarket.app
-- Contract: https://explorer.aptoslabs.com/account/0xb2329b6b3270c2577393cbe937de53f933545e29942331f452574f6afbd2d894?network=devnet
+- dApp: https://app.based.app
+- Docs: https://docs.based.app
+- Contract: https://sepolia.basescan.org

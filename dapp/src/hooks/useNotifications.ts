@@ -15,7 +15,7 @@ export interface AppNotification {
   amount?: number; // micro units (shares) for wins
 }
 
-const STORAGE_KEY = 'prophecy-notifications-read';
+const STORAGE_KEY = 'based-notifications-read';
 
 function getReadIds(): Set<string> {
   try {

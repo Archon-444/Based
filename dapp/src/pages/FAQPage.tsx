@@ -30,14 +30,14 @@ const FAQ_CATEGORIES: FAQItem[] = [
     color: 'text-primary-400',
     questions: [
       {
-        question: 'What is Prophecy?',
+        question: 'What is Based?',
         answer:
-          'Prophecy is a decentralized prediction market platform built on Base. It lets you trade on the outcomes of real-world events using USDC stablecoin. All transactions are transparent, non-custodial, and settled on-chain.',
+          'Based is a decentralized prediction market platform built on Base. It lets you trade on the outcomes of real-world events using USDC stablecoin. All transactions are transparent, non-custodial, and settled on-chain.',
       },
       {
         question: 'How do I get started?',
         answer:
-          'Connect your Coinbase Smart Wallet to Prophecy, get USDC using our testnet faucet, then browse markets and place your first prediction. The whole process takes under 5 minutes.',
+          'Connect your Coinbase Smart Wallet to Based, get USDC using our testnet faucet, then browse markets and place your first prediction. The whole process takes under 5 minutes.',
       },
       {
         question: 'Do I need to create an account?',
@@ -47,7 +47,7 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'What wallets are supported?',
         answer:
-          'Prophecy supports Coinbase Smart Wallet for seamless onboarding on Base.',
+          'Based supports Coinbase Smart Wallet for seamless onboarding on Base.',
       },
     ],
   },
@@ -94,7 +94,7 @@ const FAQ_CATEGORIES: FAQItem[] = [
           'All bets use USDC (USD Coin), a 1:1 USD-pegged stablecoin. On testnet, get free test USDC from our in-app faucet.',
       },
       {
-        question: 'What fees does Prophecy charge?',
+        question: 'What fees does Based charge?',
         answer:
           'A 2% platform fee on winning payouts only. Losers pay nothing. Gas fees on Base are near-zero. No deposit, withdrawal, or maintenance fees.',
       },
@@ -135,12 +135,12 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'Is my money safe?',
         answer:
-          'Funds are secured by audited Move smart contracts — not held by Prophecy. The Move language has built-in safety features preventing common exploits. Professional audits are planned before mainnet.',
+          'Funds are secured by audited Move smart contracts — not held by Based. The Move language has built-in safety features preventing common exploits. Professional audits are planned before mainnet.',
       },
       {
-        question: 'Can Prophecy access my funds?',
+        question: 'Can Based access my funds?',
         answer:
-          'No. Prophecy cannot access, freeze, or control your funds. When you bet, funds go directly to the smart contract. Only you can claim winnings.',
+          'No. Based cannot access, freeze, or control your funds. When you bet, funds go directly to the smart contract. Only you can claim winnings.',
       },
       {
         question: 'Has the smart contract been audited?',
@@ -157,12 +157,12 @@ const FAQ_CATEGORIES: FAQItem[] = [
       {
         question: 'Is prediction market betting legal?',
         answer:
-          'Legality varies by jurisdiction. Users are responsible for understanding and complying with local laws. Prophecy is currently for educational and entertainment purposes on testnet.',
+          'Legality varies by jurisdiction. Users are responsible for understanding and complying with local laws. Based is currently for educational and entertainment purposes on testnet.',
       },
       {
         question: 'Do I pay taxes on winnings?',
         answer:
-          'Most jurisdictions treat prediction market winnings as taxable income or capital gains. You are responsible for compliance. Prophecy does not provide tax advice.',
+          'Most jurisdictions treat prediction market winnings as taxable income or capital gains. You are responsible for compliance. Based does not provide tax advice.',
       },
       {
         question: 'What is your KYC policy?',
@@ -199,7 +199,7 @@ export const FAQPage: React.FC = () => {
               Frequently Asked Questions
             </h1>
             <p className="text-lg text-slate-400 leading-relaxed">
-              Everything you need to know about Prophecy, prediction markets, and on-chain betting.
+              Everything you need to know about Based, prediction markets, and on-chain betting.
             </p>
           </motion.div>
         </Container>
@@ -311,7 +311,7 @@ export const FAQPage: React.FC = () => {
               <Button
                 variant="ghost"
                 size="md"
-                onClick={() => window.open('https://discord.gg/prophecy', '_blank')}
+                onClick={() => window.open('https://discord.gg/based', '_blank')}
                 className="rounded-xl border border-white/[0.1] text-slate-300 hover:bg-white/[0.05] hover:text-white hover:border-white/[0.18]"
               >
                 Join Discord

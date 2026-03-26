@@ -37,7 +37,7 @@ const STEPS = [
     number: '02',
     Icon: FiDollarSign,
     title: 'Get USDC',
-    description: 'Fund your wallet with USDC on Base. Prophecy supports stablecoin wagers with near-zero gas fees.',
+    description: 'Fund your wallet with USDC on Base. Based supports stablecoin wagers with near-zero gas fees.',
     details: [
       'Bridge USDC using LayerZero, Wormhole, or another supported bridge',
       'Use a DEX to swap ETH into USDC on Base',
@@ -248,7 +248,7 @@ export const HowItWorksPage: React.FC = () => {
         {/* ── Why Choose Us ────────────────────────────────────────── */}
         <section className="mb-24">
           <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Why Prophecy</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-3">Why Based</h2>
             <p className="text-slate-500">Built on Base for the best prediction market experience</p>
           </div>
 

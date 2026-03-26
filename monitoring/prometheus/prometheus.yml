@@ -2,7 +2,7 @@ global:
   scrape_interval: 15s # Scrape metrics every 15 seconds
   evaluation_interval: 15s # Evaluate rules every 15 seconds
   external_labels:
-    cluster: 'movemarketsystem'
+    cluster: 'basedsystem'
     environment: 'production'
 
 # Alertmanager configuration
@@ -24,7 +24,7 @@ scrape_configs:
       - targets: ['localhost:9090']
 
   # Backend API metrics
-  - job_name: 'movemarket-backend'
+  - job_name: 'based-backend'
     static_configs:
       - targets: ['host.docker.internal:3000'] # Backend /metrics endpoint
     metrics_path: '/metrics'
@@ -40,8 +40,8 @@ scrape_configs:
     static_configs:
       - targets: ['postgres-exporter:9187']
 
-  # Blockchain node metrics (Aptos node)
-  - job_name: 'aptos-node'
+  # Blockchain node metrics (Base node)
+  - job_name: 'base-node'
     static_configs:
-      - targets: ['aptos-node:9101'] # If running own node
+      - targets: ['base-node:9101'] # If running own node
     scrape_interval: 30s

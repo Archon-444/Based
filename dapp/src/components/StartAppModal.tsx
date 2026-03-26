@@ -67,7 +67,7 @@ export const StartAppModal: React.FC<StartAppModalProps> = ({
                 </div>
 
                 <h2 className="text-2xl font-display font-bold text-white text-center mb-2">
-                  Welcome to Prophecy!
+                  Welcome to Based!
                 </h2>
                 <p className="text-primary-100 text-center text-sm">
                   Your decentralized prediction market

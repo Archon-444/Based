@@ -12,7 +12,7 @@ const endpoints = {
 };
 
 const buildSuggestionPayload = (index: number) => ({
-  question: `Will Aptos load test ${index} succeed?`,
+  question: `Will Based load test ${index} succeed?`,
   outcomes: ['Yes', 'No', 'Maybe'],
   category: 'load-testing',
   durationHours: 24,

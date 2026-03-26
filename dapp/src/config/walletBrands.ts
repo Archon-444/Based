@@ -12,83 +12,64 @@ interface WalletBrandSpec {
 
 const walletBrandSpecs: WalletBrandSpec[] = [
   {
-    ids: ['petra', 'petra wallet'],
+    ids: ['coinbase wallet', 'coinbase smart wallet', 'coinbase'],
     info: {
-      icon: '/assets/wallets/petra.svg',
-      brandColor: '#36ADEF',
-      website: 'https://petra.app',
-      initials: 'P',
+      icon: '/assets/wallets/coinbase.svg',
+      brandColor: '#0052FF',
+      website: 'https://wallet.coinbase.com',
+      initials: 'C',
     },
   },
   {
-    ids: ['martian', 'martian wallet', 'martian aptos wallet'],
+    ids: ['metamask', 'metamask wallet', 'io.metamask'],
     info: {
-      icon: '/assets/wallets/martian.svg',
-      brandColor: '#171A1F',
-      website: 'https://martianwallet.xyz',
+      icon: '/assets/wallets/metamask.svg',
+      brandColor: '#F6851B',
+      website: 'https://metamask.io',
       initials: 'M',
     },
   },
   {
-    ids: ['fewcha', 'fewcha wallet'],
+    ids: ['rainbow', 'rainbow wallet'],
     info: {
-      icon: '/assets/wallets/fewcha.svg',
-      brandColor: '#96B8FE',
-      website: 'https://fewcha.app',
-      initials: 'F',
+      icon: '/assets/wallets/rainbow.svg',
+      brandColor: '#001E59',
+      website: 'https://rainbow.me',
+      initials: 'R',
     },
   },
   {
-    ids: ['pontem', 'pontem wallet'],
+    ids: ['walletconnect', 'wallet connect'],
     info: {
-      icon: '/assets/wallets/pontem.svg',
-      brandColor: '#FD7211',
-      website: 'https://pontem.network',
-      initials: 'P',
+      icon: '/assets/wallets/walletconnect.svg',
+      brandColor: '#3B99FC',
+      website: 'https://walletconnect.com',
+      initials: 'W',
     },
   },
   {
-    ids: ['sui wallet', 'sui'],
+    ids: ['rabby', 'rabby wallet'],
     info: {
-      icon: '/assets/wallets/sui.svg',
-      brandColor: '#0F9CDF',
-      website: 'https://sui.io',
-      initials: 'S',
+      icon: '/assets/wallets/rabby.svg',
+      brandColor: '#8697FF',
+      website: 'https://rabby.io',
+      initials: 'R',
     },
   },
   {
-    ids: ['ethos', 'ethos wallet'],
+    ids: ['okx wallet', 'okx'],
     info: {
-      icon: '/assets/wallets/ethos.svg',
-      brandColor: '#253B36',
-      website: 'https://ethoswallet.xyz',
-      initials: 'E',
-    },
-  },
-  {
-    ids: ['suiet', 'suiet wallet'],
-    info: {
-      icon: '/assets/wallets/suiet.svg',
-      brandColor: '#000000',
-      website: 'https://suiet.app',
-      initials: 'S',
-    },
-  },
-  {
-    ids: ['nightly', 'nightly wallet'],
-    info: {
-      brandColor: '#1F1A5F',
-      website: 'https://nightly.app',
-      initials: 'N',
-    },
-  },
-  {
-    ids: ['okx wallet', 'okx', 'okx aptos wallet'],
-    info: {
-      icon: '/assets/wallets/okx.svg',
       brandColor: '#000000',
       website: 'https://okx.com/web3',
       initials: 'O',
+    },
+  },
+  {
+    ids: ['trust', 'trust wallet'],
+    info: {
+      brandColor: '#0500FF',
+      website: 'https://trustwallet.com',
+      initials: 'T',
     },
   },
 ];
@@ -100,7 +81,7 @@ const walletBrandMap = walletBrandSpecs.reduce<Record<string, WalletBrandInfo>>(
   return acc;
 }, {});
 
-const DEFAULT_BRAND_COLOR = '#00D4FF';
+const DEFAULT_BRAND_COLOR = '#3B82F6';
 const DEFAULT_INITIAL = 'W';
 
 export const WALLET_BRAND_FALLBACK: WalletBrandInfo = {

@@ -7,7 +7,7 @@ export default function ColorTestPage() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-display font-bold mb-4">PROPHECY Color Test</h1>
+          <h1 className="text-4xl font-display font-bold mb-4">BASED Color Test</h1>
           <p className="text-lg mb-6">Current theme: <span className="font-bold">{theme}</span></p>
           <button
             onClick={toggleTheme}

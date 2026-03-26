@@ -1,12 +1,12 @@
 {
-  "name": "movemarket-marketing",
+  "name": "based-marketing",
   "version": "0.1.0",
-  "description": "Move Market - Marketing Landing Page",
+  "description": "Based - Marketing Landing Page",
   "scripts": {
     "dev": "python3 -m http.server 3000",
     "preview": "python3 -m http.server 8080"
   },
-  "keywords": ["prediction-markets", "aptos", "blockchain", "defi"],
-  "author": "Move Market",
+  "keywords": ["prediction-markets", "base", "blockchain", "defi"],
+  "author": "Based",
   "license": "MIT"
 }

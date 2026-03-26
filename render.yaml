@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: aptos-prediction-market
+    name: based
     runtime: node
     region: oregon
     rootDir: backend

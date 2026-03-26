@@ -16,7 +16,7 @@
       },
       "targets": [
         {
-          "expr": "rate(movemarket_http_requests_total[1m])",
+          "expr": "rate(based_http_requests_total[1m])",
           "legendFormat": "{{method}} {{route}}",
           "refId": "A"
         }
@@ -38,7 +38,7 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.95, sum(rate(movemarket_http_request_duration_seconds_bucket[5m])) by (le, route)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(based_http_request_duration_seconds_bucket[5m])) by (le, route)) * 1000",
           "legendFormat": "{{route}} p95",
           "refId": "A"
         }
@@ -60,7 +60,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(movemarket_http_requests_total{status=\"429\"}[5m]))",
+          "expr": "sum(increase(based_http_requests_total{status=\"429\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -75,7 +75,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(movemarket_http_requests_total{status=~\"5..\"}[5m]))",
+          "expr": "sum(increase(based_http_requests_total{status=~\"5..\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -90,7 +90,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(movemarket_http_requests_total{status=~\"2..\"}[5m]))",
+          "expr": "sum(increase(based_http_requests_total{status=~\"2..\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -105,7 +105,7 @@
       },
       "targets": [
         {
-          "expr": "rate(movemarket_settlement_executions_total[5m]) * 60",
+          "expr": "rate(based_settlement_executions_total[5m]) * 60",
           "legendFormat": "{{chain}} {{result}}",
           "refId": "A"
         }
@@ -127,12 +127,12 @@
       },
       "targets": [
         {
-          "expr": "histogram_quantile(0.5, sum(rate(movemarket_settlement_batch_request_bucket[5m])) by (le, chain))",
+          "expr": "histogram_quantile(0.5, sum(rate(based_settlement_batch_request_bucket[5m])) by (le, chain))",
           "legendFormat": "{{chain}} p50",
           "refId": "A"
         },
         {
-          "expr": "histogram_quantile(0.95, sum(rate(movemarket_settlement_batch_request_bucket[5m])) by (le, chain))",
+          "expr": "histogram_quantile(0.95, sum(rate(based_settlement_batch_request_bucket[5m])) by (le, chain))",
           "legendFormat": "{{chain}} p95",
           "refId": "B"
         }
@@ -154,7 +154,7 @@
       },
       "targets": [
         {
-          "expr": "sum(increase(movemarket_claim_ticket_build_total[5m]))",
+          "expr": "sum(increase(based_claim_ticket_build_total[5m]))",
           "refId": "A"
         }
       ],
@@ -169,7 +169,7 @@
       },
       "targets": [
         {
-          "expr": "rate(movemarket_sui_indexer_polls_total[5m]) * 60",
+          "expr": "rate(based_sui_indexer_polls_total[5m]) * 60",
           "legendFormat": "{{result}}",
           "refId": "A"
         }
@@ -191,7 +191,7 @@
       },
       "targets": [
         {
-          "expr": "rate(movemarket_sui_events_processed_total[5m]) * 60",
+          "expr": "rate(based_sui_events_processed_total[5m]) * 60",
           "legendFormat": "Events processed",
           "refId": "A"
         }
@@ -213,7 +213,7 @@
       },
       "targets": [
         {
-          "expr": "rate(movemarket_market_resolution_total{result=\"success\"}[5m]) / rate(movemarket_market_resolution_total[5m]) * 100",
+          "expr": "rate(based_market_resolution_total{result=\"success\"}[5m]) / rate(based_market_resolution_total[5m]) * 100",
           "legendFormat": "{{chain}} success rate",
           "refId": "A"
         }
@@ -237,7 +237,7 @@
       },
       "targets": [
         {
-          "expr": "increase(movemarket_sui_indexer_polls_total{result=\"success\"}[15m])",
+          "expr": "increase(based_sui_indexer_polls_total{result=\"success\"}[15m])",
           "refId": "A"
         }
       ],
@@ -265,7 +265,7 @@
       },
       "targets": [
         {
-          "expr": "movemarket_settlement_queue_size{chain=\"sui\"}",
+          "expr": "based_settlement_queue_size{chain=\"sui\"}",
           "refId": "A"
         }
       ],
@@ -293,7 +293,7 @@
       },
       "targets": [
         {
-          "expr": "movemarket_active_markets{chain=\"sui\"}",
+          "expr": "based_active_markets{chain=\"sui\"}",
           "refId": "A"
         }
       ],

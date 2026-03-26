@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Move Market · Developer Documentation</title>
+  <title>Based · Developer Documentation</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,8 +20,8 @@
         <div class="flex items-center gap-3">
           <span class="text-3xl">📘</span>
           <div>
-            <h1 class="text-3xl font-bold">Move Market Developer Docs</h1>
-            <p class="text-sm text-gray-400">Integration playbook for engineers and protocol contributors across Aptos &amp; Sui</p>
+            <h1 class="text-3xl font-bold">Based Developer Docs</h1>
+            <p class="text-sm text-gray-400">Integration playbook for engineers and protocol contributors on Base</p>
           </div>
         </div>
         <a href="../index.html" class="text-sm text-blue-400 hover:text-blue-300 transition">
@@ -34,25 +34,25 @@
       <section>
         <h2 class="text-2xl font-semibold mb-3">Quick Start</h2>
           <p class="text-gray-400 mb-6">
-            Everything you need to run Move Market locally or integrate it with your own product—on both Aptos and Sui.
+            Everything you need to run Based locally or integrate it with your own product.
         </p>
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
           <div>
             <h3 class="text-lg font-semibold">Repository Structure</h3>
             <p class="text-sm text-gray-400">
-              The monorepo ships with smart contracts (<code>contracts/</code> for Aptos, <code>contracts-sui/</code> for Sui),
+              The monorepo ships with Solidity contracts (<code>contracts-base/</code>),
               backend services (<code>backend/</code>), the React dApp (<code>dapp/</code>), and extensive documentation (<code>docs/</code>).
             </p>
           </div>
           <pre class="bg-gray-950 border border-gray-800 rounded-lg p-4 text-sm text-gray-300 overflow-auto">
-git clone https://github.com/movemarket/move-market.git
-cd move-market
+git clone https://github.com/Archon-444/Based.git
+cd Based
 
 # Install dependencies
 cd dapp && npm install
 cd ../backend && npm install
 
-# Start local environment (multi-chain ready)
+# Start local environment
 npm run dev --prefix backend
 npm run dev --prefix dapp
 </pre>
@@ -63,19 +63,18 @@ npm run dev --prefix dapp
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h3 class="text-xl font-semibold mb-3">Frontend Integration</h3>
           <p class="text-sm text-gray-400 mb-4">
-            Step-by-step instructions for wiring the Move Market SDK, wallet adapters, and multi-chain UI.
+            Step-by-step instructions for wiring wagmi hooks, wallet adapters, and the UI.
           </p>
           <ul class="text-sm text-gray-300 space-y-2 list-disc pl-5">
             <li><a class="text-blue-400 hover:text-blue-300" href="../../docs/FRONTEND_INTEGRATION_GUIDE.md" target="_blank">Frontend Integration Guide</a></li>
             <li><a class="text-blue-400 hover:text-blue-300" href="../../dapp/README.md" target="_blank">dApp README</a></li>
-            <li><a class="text-blue-400 hover:text-blue-300" href="../../dapp/src/services/MoveMarketSDK.ts" target="_blank">MoveMarketSDK Source</a></li>
           </ul>
         </div>
 
         <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h3 class="text-xl font-semibold mb-3">Backend & Indexer</h3>
           <p class="text-sm text-gray-400 mb-4">
-            Learn how the Express/Prisma backend, multi-chain event indexers, and oracle synchronisation layers are wired.
+            Learn how the Express/Prisma backend, event indexer, and oracle synchronisation layers are wired.
           </p>
           <ul class="text-sm text-gray-300 space-y-2 list-disc pl-5">
             <li><a class="text-blue-400 hover:text-blue-300" href="../../backend/README.md" target="_blank">Backend Service Overview</a></li>
@@ -99,7 +98,7 @@ npm run dev --prefix dapp
     </main>
 
     <footer class="border-t border-gray-900 py-6 text-center text-xs text-gray-500">
-      © 2025 Move Market · Built with Move on Aptos &amp; Sui
+      © 2025 Based · Built with Solidity on Base
     </footer>
   </div>
 </body>

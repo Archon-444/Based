@@ -1,7 +1,7 @@
 # DAO Tooling Retrofit – Retro Notes
 
 **Date:** 2025-10-17  
-**Author:** Codex AI (paired with Move Market team)
+**Author:** Codex AI (paired with Based team)
 
 ## Goals
 - Replace the “fire-and-forget” market creation form with a curated workflow.

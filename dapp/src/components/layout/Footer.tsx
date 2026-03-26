@@ -41,7 +41,7 @@ export const Footer: React.FC = () => {
                   <FiTrendingUp className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <span className="text-lg font-black text-white tracking-tight">Prophecy</span>
+                  <span className="text-lg font-black text-white tracking-tight">Based</span>
                   <span className="block text-[9px] uppercase font-bold tracking-[0.15em] text-primary-400">
                     Prediction Protocol
                   </span>
@@ -122,7 +122,7 @@ export const Footer: React.FC = () => {
           <div className="mt-12 pt-8 border-t border-white/[0.05]">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-slate-600">
-                © {new Date().getFullYear()} Prophecy. All rights reserved.
+                © {new Date().getFullYear()} Based. All rights reserved.
               </p>
               <div className="flex gap-6">
                 <Link to="/privacy" className="text-xs text-slate-600 hover:text-slate-400 transition-colors">

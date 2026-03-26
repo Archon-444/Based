@@ -58,8 +58,8 @@ A decentralized prediction market on **Base** (Coinbase L2). Trade outcomes on r
 
 ```bash
 # Clone
-git clone https://github.com/archon-444/aptos-prediction-market.git
-cd aptos-prediction-market
+git clone https://github.com/Archon-444/Based.git
+cd Based
 
 # Frontend
 cd dapp

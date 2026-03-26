@@ -18,7 +18,7 @@ const API_BASE = env.apiUrl.replace(/\/$/, '');
 
 const buildUrl = (path: string) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
 
-const SIGNING_PREFIX = 'MoveMarket::';
+const SIGNING_PREFIX = 'Based::';
 
 const normalizeHex = (value: string): string => {
   if (!value) return value;

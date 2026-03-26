@@ -97,7 +97,7 @@ export const PWAInstallPrompt: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">
-                      Install Prophecy
+                      Install Based
                     </h3>
                     <p className="text-sm text-primary-100">
                       Access faster, works offline

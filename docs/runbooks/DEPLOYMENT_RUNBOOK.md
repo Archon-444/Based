@@ -1,4 +1,4 @@
-# Deployment Runbook - Move Market
+# Deployment Runbook - Based
 
 **Last Updated:** 2025-10-23
 **Owner:** DevOps Team
@@ -58,7 +58,7 @@ git log -1  # Verify commit
 DATABASE_URL=postgresql://...
 NODE_ENV=production|staging|development
 PORT=3000
-CORS_ORIGIN=https://movemarket.com
+CORS_ORIGIN=https://based.app
 
 # Blockchain
 APTOS_NETWORK=mainnet|testnet
@@ -77,7 +77,7 @@ SENTRY_DSN=...  # Error tracking
 
 **Frontend (.env.production):**
 ```bash
-VITE_API_URL=https://api.movemarket.com
+VITE_API_URL=https://api.based.app
 VITE_APTOS_NETWORK=mainnet
 VITE_MODULE_ADDRESS=0x...
 VITE_ENVIRONMENT=production
@@ -126,8 +126,8 @@ docker compose -f monitoring/docker-compose.yml up -d
 sudo apt install -y certbot
 
 # Generate certificates
-sudo certbot certonly --standalone -d api.movemarket.com
-sudo certbot certonly --standalone -d movemarket.com
+sudo certbot certonly --standalone -d api.based.app
+sudo certbot certonly --standalone -d based.app
 
 # Auto-renewal
 sudo systemctl enable certbot.timer
@@ -155,7 +155,7 @@ sudo ufw enable
 pg_dump aptos_prediction_market > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Upload to S3/backup storage
-aws s3 cp backup_*.sql s3://movemarket-backups/
+aws s3 cp backup_*.sql s3://based-backups/
 ```
 
 ### 3.2 Run Migrations
@@ -202,14 +202,14 @@ cd contracts
 
 # Update Move.toml with mainnet addresses
 [addresses]
-movemarket = "0x..."  # Replace with deployer address
+based = "0x..."  # Replace with deployer address
 circle = "0xf22bede237a07e121b56d91a491eb7bcdfd1f5907926a9e58338f964a01b17fa"  # Circle USDC mainnet
 
 # Compile
-aptos move compile --named-addresses movemarket=<deployer_address>
+aptos move compile --named-addresses based=<deployer_address>
 
 # Verify build
-ls build/Move Market/bytecode_modules/
+ls build/Based/bytecode_modules/
 ```
 
 **Step 2: Deploy via Multi-Sig**
@@ -323,14 +323,14 @@ sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME
 
 # Monitor
 pm2 status
-pm2 logs movemarket-backend --lines 100
+pm2 logs based-backend --lines 100
 ```
 
 **ecosystem.config.js:**
 ```javascript
 module.exports = {
   apps: [{
-    name: 'movemarket-backend',
+    name: 'based-backend',
     script: './dist/index.js',
     instances: 2,  # 2 instances for load balancing
     exec_mode: 'cluster',
@@ -349,13 +349,13 @@ module.exports = {
 ### 5.3 Configure Nginx Reverse Proxy
 
 ```nginx
-# /etc/nginx/sites-available/movemarket-api
+# /etc/nginx/sites-available/based-api
 server {
     listen 443 ssl http2;
-    server_name api.movemarket.com;
+    server_name api.based.app;
 
-    ssl_certificate /etc/letsencrypt/live/api.movemarket.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/api.movemarket.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/api.based.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.based.app/privkey.pem;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -372,7 +372,7 @@ server {
 
 ```bash
 # Enable site
-sudo ln -s /etc/nginx/sites-available/movemarket-api /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/based-api /etc/nginx/sites-enabled/
 
 # Test configuration
 sudo nginx -t
@@ -416,18 +416,18 @@ vercel --prod
 **Option B: Nginx Static Files**
 ```bash
 # Copy build to web root
-sudo cp -r dist/* /var/www/movemarket/
+sudo cp -r dist/* /var/www/based/
 
 # Configure nginx
-# /etc/nginx/sites-available/movemarket
+# /etc/nginx/sites-available/based
 server {
     listen 443 ssl http2;
-    server_name movemarket.com www.movemarket.com;
+    server_name based.app www.based.app;
 
-    ssl_certificate /etc/letsencrypt/live/movemarket.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/movemarket.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/based.app/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/based.app/privkey.pem;
 
-    root /var/www/movemarket;
+    root /var/www/based;
     index index.html;
 
     location / {
@@ -442,7 +442,7 @@ server {
 }
 
 # Enable and reload
-sudo ln -s /etc/nginx/sites-available/movemarket /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/based /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
@@ -454,32 +454,32 @@ sudo nginx -t && sudo systemctl reload nginx
 
 ```bash
 # Backend health
-curl https://api.movemarket.com/health
+curl https://api.based.app/health
 # Expected: {"status":"ok","uptime":123}
 
 # API docs available
-curl https://api.movemarket.com/api-docs.json | jq '.info.version'
+curl https://api.based.app/api-docs.json | jq '.info.version'
 
 # Metrics endpoint
-curl https://api.movemarket.com/metrics | grep http_requests_total
+curl https://api.based.app/metrics | grep http_requests_total
 ```
 
 ### 7.2 Functional Tests
 
 ```bash
 # Test suggestions API
-curl -X POST https://api.movemarket.com/api/suggestions \
+curl -X POST https://api.based.app/api/suggestions \
   -H "Content-Type: application/json" \
   -H "x-dev-wallet-address: 0x123..." \
   -d '{"question":"Test?","outcomes":["Yes","No"],"durationHours":24}'
 
 # List markets
-curl https://api.movemarket.com/api/markets | jq '.[0]'
+curl https://api.based.app/api/markets | jq '.[0]'
 ```
 
 ### 7.3 Frontend Smoke Test
 
-1. Open https://movemarket.com
+1. Open https://based.app
 2. Connect wallet (Petra/Martian)
 3. Browse markets
 4. Click on a market (detail page should load)
@@ -489,11 +489,11 @@ curl https://api.movemarket.com/api/markets | jq '.[0]'
 
 ```bash
 # Check Prometheus targets
-curl http://monitoring.movemarket.com:9090/api/v1/targets | jq '.data.activeTargets[].health'
+curl http://monitoring.based.app:9090/api/v1/targets | jq '.data.activeTargets[].health'
 # All should be "up"
 
 # Check Grafana dashboards
-open "http://monitoring.movemarket.com:3001/dashboards"
+open "http://monitoring.based.app:3001/dashboards"
 ```
 
 ---
@@ -513,7 +513,7 @@ Rollback immediately if:
 **Backend Rollback:**
 ```bash
 # Stop current version
-pm2 stop movemarket-backend
+pm2 stop based-backend
 
 # Checkout previous version
 git checkout <previous-tag>
@@ -525,10 +525,10 @@ npm run build
 psql aptos_prediction_market < backup_YYYYMMDD_HHMMSS.sql
 
 # Restart
-pm2 restart movemarket-backend
+pm2 restart based-backend
 
 # Verify
-curl https://api.movemarket.com/health
+curl https://api.based.app/health
 ```
 
 **Frontend Rollback:**
@@ -537,8 +537,8 @@ curl https://api.movemarket.com/health
 vercel rollback
 
 # Or nginx
-sudo rm -rf /var/www/movemarket/*
-sudo cp -r dist-backup/* /var/www/movemarket/
+sudo rm -rf /var/www/based/*
+sudo cp -r dist-backup/* /var/www/based/
 ```
 
 **Smart Contracts (NOT POSSIBLE):**
@@ -561,7 +561,7 @@ aptos move run \
 **Issue:** Backend not starting
 ```bash
 # Check logs
-pm2 logs movemarket-backend --err
+pm2 logs based-backend --err
 
 # Common causes:
 # - Database connection failed → Check DATABASE_URL
@@ -595,7 +595,7 @@ aptos transaction show --hash <tx_hash>
 
 **On-Call Engineer:** [Phone/Telegram]
 **DevOps Lead:** [Phone/Email]
-**Security Team:** security@movemarket.com
+**Security Team:** security@based.app
 **Aptos Support:** Discord #developer-support
 
 ### 9.3 Incident Response

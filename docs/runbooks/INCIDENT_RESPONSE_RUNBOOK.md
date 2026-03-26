@@ -1,4 +1,4 @@
-# Incident Response Runbook - Move Market
+# Incident Response Runbook - Based
 
 **Last Updated:** 2025-10-23
 **Owner:** Security & DevOps Team
@@ -13,15 +13,15 @@
 | Issue | Immediate Action | Command |
 |-------|-----------------|---------|
 | **Funds at risk** | Pause system | `aptos move run --function-id <addr>::access_control::pause_system` |
-| **API down** | Restart backend | `pm2 restart movemarket-backend` |
+| **API down** | Restart backend | `pm2 restart based-backend` |
 | **Database breach** | Rotate credentials | `./scripts/rotate-db-credentials.sh` |
 | **DDoS attack** | Enable rate limiting | `sudo ufw deny from <ip-range>` |
 
 ### Emergency Contacts
 
 - **On-Call Engineer:** +1-XXX-XXX-XXXX (Telegram: @oncall)
-- **Security Lead:** security@movemarket.com
-- **DevOps Lead:** devops@movemarket.com
+- **Security Lead:** security@based.app
+- **DevOps Lead:** devops@based.app
 - **CEO/Founder:** +1-XXX-XXX-XXXX
 
 ---
@@ -108,19 +108,19 @@
 **Assessment Checklist:**
 ```bash
 # Check system health
-curl https://api.movemarket.com/health
-curl https://api.movemarket.com/metrics | grep error
+curl https://api.based.app/health
+curl https://api.based.app/metrics | grep error
 
 # Check database
 psql -c "SELECT count(*) FROM users;" # Should return count
-psql -c "SELECT pg_database_size('aptos_prediction_market');" # Check size
+psql -c "SELECT pg_database_size('based');" # Check size
 
 # Check smart contracts
 aptos move view --function-id <addr>::market_manager::is_paused
 # Should return false (unless intentionally paused)
 
 # Check monitoring
-open "http://monitoring.movemarket.com:3001/dashboards"
+open "http://monitoring.based.app:3001/dashboards"
 ```
 
 ### 2.3 Containment (Immediate)
@@ -139,24 +139,24 @@ aptos move view --function-id <module_addr>::access_control::is_paused
 # Should return true
 
 # Announce on frontend
-# Update status page: https://status.movemarket.com
+# Update status page: https://status.based.app
 ```
 
 **For SEV-2 (Service Down):**
 ```bash
 # Enable maintenance mode
-pm2 stop movemarket-backend
+pm2 stop based-backend
 # Update nginx to serve maintenance page
 
 # Or rollback if recent deployment
 vercel rollback  # Frontend
-pm2 restart movemarket-backend --update-env  # Backend
+pm2 restart based-backend --update-env  # Backend
 ```
 
 ### 2.4 Mitigation (15-60 minutes)
 
 **Identify root cause:**
-- Review logs: `pm2 logs movemarket-backend --lines 500`
+- Review logs: `pm2 logs based-backend --lines 500`
 - Review metrics: Check Grafana dashboards
 - Review recent changes: `git log --since="2 hours ago"`
 - Review blockchain transactions: Aptos Explorer
@@ -179,10 +179,10 @@ pm2 restart movemarket-backend --update-env  # Backend
 **Unpause checklist:**
 ```bash
 # 1. Verify fix deployed
-curl https://api.movemarket.com/health
+curl https://api.based.app/health
 
 # 2. Test critical functions
-curl -X POST https://api.movemarket.com/api/suggestions \
+curl -X POST https://api.based.app/api/suggestions \
   -H "Content-Type: application/json" \
   -H "x-dev-wallet-address: 0x123..." \
   -d '{"question":"Test","outcomes":["A","B"],"durationHours":1}'
@@ -203,9 +203,9 @@ aptos move run \
 - Use incident.io or similar for tracking
 
 **External:**
-- Update status page: https://status.movemarket.com
+- Update status page: https://status.based.app
 - Post on Discord: #announcements
-- Tweet from @Move Market
+- Tweet from @Based
 - Email users (if SEV-1 or SEV-2 with user impact)
 
 **Communication Template:**
@@ -240,7 +240,7 @@ aptos move run --function-id <addr>::access_control::pause_system
 # Take screenshots, copy transaction hashes
 
 # 3. Alert security team
-# Email: security@movemarket.com
+# Email: security@based.app
 # Signal: +1-XXX-XXX-XXXX
 
 # 4. Contact audit firm (if available)
@@ -337,7 +337,7 @@ psql -c "SELECT * FROM pg_stat_statements ORDER BY calls DESC LIMIT 100;"
 pm2 status
 
 # 2. Check logs
-pm2 logs movemarket-backend --err --lines 100
+pm2 logs based-backend --err --lines 100
 
 # 3. Check system resources
 htop  # CPU/memory usage
@@ -349,20 +349,20 @@ df -h  # Disk space
 # Common fixes:
 
 # A) Process crashed - restart
-pm2 restart movemarket-backend
+pm2 restart based-backend
 
 # B) Out of memory
-pm2 restart movemarket-backend --update-env
+pm2 restart based-backend --update-env
 # Then increase PM2 memory limit in ecosystem.config.js
 
 # C) Database connection pool exhausted
 psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = 'idle';"
-pm2 restart movemarket-backend
+pm2 restart based-backend
 
 # D) Recent bad deployment - rollback
 git checkout <previous-tag>
 npm run build
-pm2 restart movemarket-backend
+pm2 restart based-backend
 ```
 
 ### Scenario 2: Database Down
@@ -420,7 +420,7 @@ psql -c "SELECT query, mean_exec_time, calls FROM pg_stat_statements ORDER BY me
 **Investigation:**
 ```bash
 # Check error types
-pm2 logs movemarket-backend | grep "ERROR"
+pm2 logs based-backend | grep "ERROR"
 
 # Check specific endpoints
 curl localhost:3000/metrics | grep http_requests_total | grep status=\"5
@@ -572,7 +572,7 @@ RATE_LIMIT_MAX=300  # Increase temporarily
 cd backend
 git checkout <previous-tag>
 npm run build
-pm2 restart movemarket-backend
+pm2 restart based-backend
 
 # Frontend rollback
 cd dapp
@@ -580,7 +580,7 @@ vercel rollback
 # Or: git checkout <previous-tag> && npm run build && deploy
 
 # Database rollback (if migrations failed)
-psql aptos_prediction_market < backup_pre_deployment.sql
+psql based < backup_pre_deployment.sql
 ```
 
 ### 8.3 Monitoring System Down
@@ -638,13 +638,13 @@ echo "   3. Alert the team"
 NEW_PASSWORD=$(openssl rand -base64 32)
 
 # Update PostgreSQL
-sudo -u postgres psql -c "ALTER USER movemarket WITH PASSWORD '$NEW_PASSWORD';"
+sudo -u postgres psql -c "ALTER USER based WITH PASSWORD '$NEW_PASSWORD';"
 
 # Update backend .env
-sed -i "s/DATABASE_URL=.*/DATABASE_URL=postgresql://movemarket:$NEW_PASSWORD@localhost:5432/aptos_prediction_market/" backend/.env
+sed -i "s/DATABASE_URL=.*/DATABASE_URL=postgresql://based:$NEW_PASSWORD@localhost:5432/based/" backend/.env
 
 # Restart backend
-pm2 restart movemarket-backend
+pm2 restart based-backend
 
 echo "✅ Database credentials rotated"
 ```
@@ -662,7 +662,7 @@ echo "=== System Health Check ==="
 
 # API
 echo -n "API: "
-curl -s https://api.movemarket.com/health | jq -r '.status'
+curl -s https://api.based.app/health | jq -r '.status'
 
 # Database
 echo -n "Database: "

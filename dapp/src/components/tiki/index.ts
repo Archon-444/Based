@@ -1,7 +1,7 @@
 /**
  * Tiki Component Library
  *
- * Prophecy themed components for the tiki rebrand.
+ * Based themed components.
  * These components add personality and visual distinction while
  * maintaining the serious technical infrastructure underneath.
  */

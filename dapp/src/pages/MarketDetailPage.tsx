@@ -191,8 +191,8 @@ export const MarketDetailPage: React.FC = () => {
   // OG meta tags — update per market
   useEffect(() => {
     if (!market) return;
-    const title = `${question} | Prophecy`;
-    const desc = `Predict the outcome on Prophecy. ${outcomeData.map((o) => `${o.label} ${o.pct}%`).join(' · ')}`;
+    const title = `${question} | Based`;
+    const desc = `Predict the outcome on Based. ${outcomeData.map((o) => `${o.label} ${o.pct}%`).join(' · ')}`;
     document.title = title;
     const setMeta = (prop: string, val: string, attr = 'property') => {
       let el = document.querySelector(`meta[${attr}="${prop}"]`) as HTMLMetaElement | null;
@@ -205,7 +205,7 @@ export const MarketDetailPage: React.FC = () => {
     setMeta('twitter:title', title);
     setMeta('twitter:description', desc);
     setMeta('twitter:card', 'summary', 'name');
-    return () => { document.title = 'Prophecy — Prediction Markets'; };
+    return () => { document.title = 'Based — Prediction Markets'; };
   }, [market, question, outcomeData]);
 
   const handleShare = () => {
@@ -218,7 +218,7 @@ export const MarketDetailPage: React.FC = () => {
     if (!market) return;
     const topOutcome = outcomeData[0];
     const text = encodeURIComponent(
-      `I'm predicting on Prophecy: "${question}"\n${topOutcome ? `${topOutcome.label} is at ${topOutcome.pct}%` : ''}\n\nWhat do you think?`
+      `I'm predicting on Based: "${question}"\n${topOutcome ? `${topOutcome.label} is at ${topOutcome.pct}%` : ''}\n\nWhat do you think?`
     );
     const url = encodeURIComponent(window.location.href);
     window.open(`https://x.com/intent/post?text=${text}&url=${url}`, '_blank', 'noopener');

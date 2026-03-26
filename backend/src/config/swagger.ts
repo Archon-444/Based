@@ -14,10 +14,10 @@ const swaggerOptions: Options = {
   definition: {
     openapi: '3.1.0',
     info: {
-      title: 'Move Market API',
+      title: 'Based API',
       version: packageJson.default.version ?? '0.1.0',
       description:
-        'REST API for the Move Market backend. Authentication is performed via wallet signature headers (see security scheme).',
+        'REST API for the Based backend. Authentication is performed via wallet signature headers (see security scheme).',
     },
     servers: [
       {

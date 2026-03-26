@@ -5,7 +5,7 @@ import type { MaskBroType, Sentiment } from '../components/tiki';
 /**
  * TikiDemo Page
  *
- * Showcases the tiki rebrand components for Prophecy
+ * Showcases the tiki rebrand components for Based
  * Used for testing and demonstrating the new visual identity
  */
 export default function TikiDemo() {
@@ -34,7 +34,7 @@ export default function TikiDemo() {
             <div className="flex items-center gap-3">
               <span className="text-5xl animate-bounce-slow">🗿</span>
               <div>
-                <h1 className="font-baloo text-4xl text-tiki-coconut font-bold">Prophecy</h1>
+                <h1 className="font-baloo text-4xl text-tiki-coconut font-bold">Based</h1>
                 <p className="text-tiki-coconut/70 text-sm">Tiki Rebrand Demo</p>
               </div>
             </div>
@@ -302,7 +302,7 @@ export default function TikiDemo() {
       <footer className="bg-tiki-deep-teal border-t-2 border-tiki-mango py-8">
         <div className="container mx-auto px-6 text-center text-tiki-coconut/60">
           <div className="text-4xl mb-4">🗿 😏 😔 🧙 🤪 😎</div>
-          <p className="mb-2">Prophecy - Where degens bet on what's probably true</p>
+          <p className="mb-2">Based - Where degens bet on what's probably true</p>
           <p className="text-sm">Built with ❤️ and tropical vibes on Base</p>
         </div>
       </footer>

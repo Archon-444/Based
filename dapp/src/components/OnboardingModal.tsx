@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { FiArrowRight, FiX, FiCheck } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
-const STORAGE_KEY = 'prophecy-onboarding-done';
+const STORAGE_KEY = 'based-onboarding-done';
 
 const STEPS = [
   {
     emoji: '🔮',
-    title: 'Welcome to Prophecy',
-    body: 'Prophecy is a decentralized prediction market on Base. You bet USDC on the outcome of real-world events — and win a share of the pool if you\'re right.',
+    title: 'Welcome to Based',
+    body: 'Based is a decentralized prediction market on Base. You bet USDC on the outcome of real-world events — and win a share of the pool if you\'re right.',
     highlight: 'Powered by on-chain smart contracts. Non-custodial. Open to anyone.',
   },
   {

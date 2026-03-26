@@ -33,7 +33,7 @@ fi
 
 # Check Prometheus targets
 echo "🔍 Checking Prometheus targets..."
-TARGETS=$(curl -s http://localhost:9090/api/v1/targets | jq -r '.data.activeTargets[] | select(.job=="movemarket-backend") | .health' 2>/dev/null || echo "unknown")
+TARGETS=$(curl -s http://localhost:9090/api/v1/targets | jq -r '.data.activeTargets[] | select(.job=="based-backend") | .health' 2>/dev/null || echo "unknown")
 
 if [ "$TARGETS" = "up" ]; then
     echo "✅ Backend target is healthy in Prometheus"
@@ -45,7 +45,7 @@ fi
 
 # Check for Sui-specific metrics
 echo "🔍 Checking for Sui-specific metrics..."
-SUI_METRICS=$(curl -s http://localhost:9090/api/v1/query?query=movemarket_sui_indexer_polls_total 2>/dev/null | jq -r '.data.result | length' 2>/dev/null || echo "0")
+SUI_METRICS=$(curl -s http://localhost:9090/api/v1/query?query=based_sui_indexer_polls_total 2>/dev/null | jq -r '.data.result | length' 2>/dev/null || echo "0")
 
 if [ "$SUI_METRICS" -gt 0 ]; then
     echo "✅ Sui indexer metrics found: $SUI_METRICS data points"

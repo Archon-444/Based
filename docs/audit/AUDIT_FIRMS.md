@@ -26,11 +26,11 @@
 
 **Request Template:**
 ```
-Subject: Security Audit Request - Move Market Prediction Market
+Subject: Security Audit Request - Based Prediction Market
 
 Hi OtterSec Team,
 
-We're seeking a security audit for Move Market, a prediction market platform built on Aptos.
+We're seeking a security audit for Based, a prediction market platform built on Base.
 
 Project Details:
 - Platform: Aptos blockchain

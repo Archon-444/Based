@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <defs>
+    <linearGradient id="rb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8697FF"/>
+      <stop offset="100%" stop-color="#7B6FFF"/>
+    </linearGradient>
+  </defs>
+  <circle cx="24" cy="24" r="24" fill="url(#rb)"/>
+  <!-- Stylized rabbit ears -->
+  <ellipse cx="19" cy="16" rx="4" ry="8" fill="white" opacity="0.9" transform="rotate(-10, 19, 16)"/>
+  <ellipse cx="29" cy="16" rx="4" ry="8" fill="white" opacity="0.9" transform="rotate(10, 29, 16)"/>
+  <!-- Face -->
+  <circle cx="24" cy="27" r="9" fill="white"/>
+  <circle cx="21" cy="25" r="1.5" fill="#7B6FFF"/>
+  <circle cx="27" cy="25" r="1.5" fill="#7B6FFF"/>
+  <ellipse cx="24" cy="29" rx="2" ry="1.2" fill="#FFB8C6"/>
+</svg>

@@ -371,7 +371,7 @@ ErrorBoundary → ThemeProvider → WagmiProvider → QueryClientProvider → Ra
 
 ### Frontend deployment
 
-- Vercel: https://aptos-prediction-market-eight.vercel.app/
+- Vercel: https://based.vercel.app/
 - Build command: `cd dapp && npm install && npm run build`
 - Output: `dapp/dist/`
 
