@@ -1,3 +1,18 @@
+import type { ComponentType } from 'react';
+import {
+  FiGrid,
+  FiDollarSign,
+  FiTarget,
+  FiFlag,
+  FiFilm,
+  FiCpu,
+  FiZap,
+  FiTrendingUp,
+  FiCloud,
+  FiHelpCircle,
+  FiClipboard,
+} from 'react-icons/fi';
+
 export enum MarketCategory {
   ALL = 'all',
   CRYPTO = 'crypto',
@@ -15,7 +30,7 @@ export interface CategoryInfo {
   id: MarketCategory;
   label: string;
   description: string;
-  icon: string;
+  icon: ComponentType<{ className?: string }>;
   color: string;
   bgColor: string;
 }
@@ -25,7 +40,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.ALL,
     label: 'All Markets',
     description: 'Browse all prediction markets',
-    icon: '🌐',
+    icon: FiGrid,
     color: 'text-gray-700 dark:text-gray-300',
     bgColor: 'bg-gray-100 dark:bg-gray-800',
   },
@@ -33,7 +48,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.CRYPTO,
     label: 'Crypto',
     description: 'Cryptocurrency and blockchain predictions',
-    icon: '₿',
+    icon: FiDollarSign,
     color: 'text-orange-600 dark:text-orange-400',
     bgColor: 'bg-orange-100 dark:bg-orange-900/30',
   },
@@ -41,7 +56,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.SPORTS,
     label: 'Sports',
     description: 'Sports events and competitions',
-    icon: '⚽',
+    icon: FiTarget,
     color: 'text-green-600 dark:text-green-400',
     bgColor: 'bg-green-100 dark:bg-green-900/30',
   },
@@ -49,7 +64,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.POLITICS,
     label: 'Politics',
     description: 'Political events and elections',
-    icon: '🗳️',
+    icon: FiFlag,
     color: 'text-blue-600 dark:text-blue-400',
     bgColor: 'bg-blue-100 dark:bg-blue-900/30',
   },
@@ -57,7 +72,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.ENTERTAINMENT,
     label: 'Entertainment',
     description: 'Movies, music, and pop culture',
-    icon: '🎬',
+    icon: FiFilm,
     color: 'text-purple-600 dark:text-purple-400',
     bgColor: 'bg-purple-100 dark:bg-purple-900/30',
   },
@@ -65,7 +80,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.TECHNOLOGY,
     label: 'Technology',
     description: 'Tech trends and innovations',
-    icon: '💻',
+    icon: FiCpu,
     color: 'text-cyan-600 dark:text-cyan-400',
     bgColor: 'bg-cyan-100 dark:bg-cyan-900/30',
   },
@@ -73,7 +88,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.SCIENCE,
     label: 'Science',
     description: 'Scientific discoveries and research',
-    icon: '🔬',
+    icon: FiZap,
     color: 'text-indigo-600 dark:text-indigo-400',
     bgColor: 'bg-indigo-100 dark:bg-indigo-900/30',
   },
@@ -81,7 +96,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.BUSINESS,
     label: 'Business',
     description: 'Company performance and market trends',
-    icon: '📈',
+    icon: FiTrendingUp,
     color: 'text-emerald-600 dark:text-emerald-400',
     bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
   },
@@ -89,7 +104,7 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.WEATHER,
     label: 'Weather',
     description: 'Weather events and climate predictions',
-    icon: '🌤️',
+    icon: FiCloud,
     color: 'text-sky-600 dark:text-sky-400',
     bgColor: 'bg-sky-100 dark:bg-sky-900/30',
   },
@@ -97,11 +112,21 @@ export const CATEGORY_INFO: Record<MarketCategory, CategoryInfo> = {
     id: MarketCategory.OTHER,
     label: 'Other',
     description: 'Miscellaneous predictions',
-    icon: '❓',
+    icon: FiHelpCircle,
     color: 'text-slate-600 dark:text-slate-400',
     bgColor: 'bg-slate-100 dark:bg-slate-900/30',
   },
 };
+
+export const CREATE_CATEGORY_OPTIONS = [
+  { value: 'general', label: 'General', icon: FiClipboard },
+  { value: 'crypto', label: 'Cryptocurrency', icon: FiDollarSign },
+  { value: 'sports', label: 'Sports', icon: FiTarget },
+  { value: 'politics', label: 'Politics', icon: FiFlag },
+  { value: 'technology', label: 'Technology', icon: FiCpu },
+  { value: 'entertainment', label: 'Entertainment', icon: FiFilm },
+  { value: 'science', label: 'Science', icon: FiZap },
+] as const;
 
 export function getCategoryFromQuestion(question: string): MarketCategory {
   const lowerQuestion = question.toLowerCase();

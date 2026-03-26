@@ -17,15 +17,13 @@ import { useUnifiedWallet } from '../hooks/useUnifiedWallet';
 import { useChain } from '../contexts/ChainContext';
 import { Container } from '../components/layout/Container';
 
-const CATEGORY_OPTIONS = [
-  { value: 'general', label: 'General', icon: '📋' },
-  { value: 'crypto', label: 'Cryptocurrency', icon: '₿' },
-  { value: 'sports', label: 'Sports', icon: '⚽' },
-  { value: 'politics', label: 'Politics', icon: '🏛️' },
-  { value: 'technology', label: 'Technology', icon: '💻' },
-  { value: 'entertainment', label: 'Entertainment', icon: '🎬' },
-  { value: 'science', label: 'Science', icon: '🔬' },
-];
+import { CREATE_CATEGORY_OPTIONS } from '../types/categories';
+
+const CATEGORY_OPTIONS = CREATE_CATEGORY_OPTIONS.map((c) => ({
+  value: c.value,
+  label: c.label,
+  icon: <c.icon className="w-4 h-4" /> as React.ReactNode,
+}));
 
 const creatorChains = ['aptos', 'sui'] as const;
 
@@ -574,7 +572,7 @@ export default function CreateMarketPage() {
                           Category
                         </div>
                         <div className="text-sm font-semibold text-white">
-                          {categoryLabel?.icon} {categoryLabel?.label}
+                          {categoryLabel?.icon}{' '}{categoryLabel?.label}
                         </div>
                       </div>
                     </div>

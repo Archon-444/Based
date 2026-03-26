@@ -339,7 +339,7 @@ export const MarketDetailPage: React.FC = () => {
                 </span>
                 {categoryInfo && (
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 bg-white/[0.05] px-3 py-1 rounded-full border border-white/[0.07]">
-                    <span>{categoryInfo.icon}</span>
+                    <categoryInfo.icon className="w-3.5 h-3.5" />
                     {categoryInfo.label}
                   </span>
                 )}

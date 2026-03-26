@@ -36,8 +36,8 @@ export const CategoryFilter: React.FC<CategoryFilterProps> = ({
                     : 'bg-white/[0.04] text-slate-400 border border-white/[0.07] hover:bg-white/[0.07] hover:text-slate-200 hover:border-white/[0.12]',
                 ].join(' ')}
               >
-                <span className="text-base leading-none" role="img" aria-label={info.label}>
-                  {info.icon}
+                <span className="text-base leading-none" aria-label={info.label}>
+                  <info.icon className="w-4 h-4" />
                 </span>
                 <span className="whitespace-nowrap">{info.label}</span>
                 {count > 0 && (

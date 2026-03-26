@@ -337,7 +337,7 @@ const DashboardPage: React.FC = () => {
                       <div className="flex flex-wrap items-start gap-2 mb-2">
                         {pos.category && (
                           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
-                            {pos.category.icon} {pos.category.label}
+                            {pos.category.icon && <pos.category.icon className="w-3 h-3 inline-block mr-1" />}{pos.category.label}
                           </span>
                         )}
                         <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
