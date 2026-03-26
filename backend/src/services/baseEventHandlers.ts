@@ -78,13 +78,29 @@ async function findMarketByOnChainId(marketId: string): Promise<{ id: string } |
 
 export async function handleMarketCreated(args: MarketCreatedEvent, log: Log): Promise<void> {
   const onChainId = args.marketId;
+  const count = Number(args.outcomeCount);
+
+  // Try to pull real outcome labels from a matching suggestion
+  let outcomes: string[];
+  const suggestion = await prisma.suggestion.findFirst({
+    where: { question: args.question, status: { in: ['approved', 'published'] } },
+    select: { outcomes: true },
+  });
+
+  if (suggestion && Array.isArray(suggestion.outcomes) && suggestion.outcomes.length === count) {
+    outcomes = suggestion.outcomes as string[];
+  } else if (count === 2) {
+    outcomes = ['Yes', 'No'];
+  } else {
+    outcomes = Array.from({ length: count }, (_, i) => `Outcome ${i + 1}`);
+  }
 
   const market = await prisma.market.create({
     data: {
       onChainId,
       chain: 'base',
       question: args.question,
-      outcomes: Array.from({ length: Number(args.outcomeCount) }, (_, i) => `Outcome ${i}`),
+      outcomes,
       creatorWallet: args.creator.toLowerCase(),
       endDate: new Date(Number(args.deadline) * 1000),
       status: 'active',
