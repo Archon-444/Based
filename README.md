@@ -1,188 +1,161 @@
-# Move Market
+# Based
 
-Move Market is a dual-chain (Aptos + Sui) prediction market that is mid-way through MVP development. The codebase includes Move smart contracts, a TypeScript/React dApp, and a Node/Prisma backend. The project is **not production ready**—core security work, USDC plumbing, and oracle integration remain in progress.
+A decentralized prediction market on **Base** (Coinbase L2). Trade outcomes on real-world events using USDC, with AI-powered market operations and gasless onboarding.
 
-## 🎯 Project Status (May 2025)
+## What's Under the Hood
 
-| Area | Completion | Notes |
+- **Gnosis Conditional Token Framework** (ERC-1155) for outcome tokens
+- **Dual oracle system** — UMA Optimistic Oracle for subjective events, Pyth Network for automated price resolution
+- **CPMM + LMSR AMM** — constant-product for binary markets, logarithmic scoring for multi-outcome
+- **AI agents** — auto-resolution, integrity guardian (dispute detection), market commentary, market creation (Anthropic Claude)
+- **Coinbase Smart Wallet + RainbowKit** — email/passkey onboarding, no seed phrases
+- **Gasless transactions** via Base Paymaster (Phase 7)
+
+## Project Status
+
+**Phase 6 complete** (March 2026) — testnet deployed to Base Sepolia. See [CONTEXT.md](CONTEXT.md) for the full living status document.
+
+| Component | Status | Details |
 | --- | --- | --- |
-| Aptos contracts & flows | ~60% | Market lifecycle and betting implemented; reentrancy guards, atomic resolution, and native USDC still missing |
-| Sui contracts & flows | ~45% | Sharded pool model in place; needs USDC routing, settlement queue validation, and full QA |
-| Backend (Express/Prisma) | ~55% | REST endpoints, auth scaffolding, and indexer shell exist; chain-aware payout logic & RBAC incomplete |
-| Frontend (React/Vite) | ~60% | Dual-chain wallet UI, market views, and betting modal working; create/resolve flows and payouts not wired end-to-end |
-| Operations & Security | ~30% | Runbooks drafted, but no monitoring deployment, audit engagement, or incident drills completed |
+| Smart contracts | 121 tests passing | MarketFactory, AMM, UMA adapter, Pyth adapter |
+| Backend | Deployed on Render | Express + Prisma + viem, event indexer, keeper, WebSocket |
+| Frontend | Deployed on Vercel | React 18, wagmi v2, RainbowKit, 18 routes |
+| AI agents | Feature-flagged | Resolution, integrity, commentary, market creator |
 
-**Key Reality Checks**
-- Smart contracts have not been audited; critical safety mechanisms (reentrancy guard, atomic resolution) are partially implemented or stubbed.
-- “USDC integration” is presently a dev shim. Real Circle/LayerZero plumbing has not started.
-- Oracle stack (Pyth + optimistic fallback) is in documentation but not integrated.
-- Token launch, governance, and Sui parity are deferred until the Aptos/Sui MVP is secure.
+**Honest status:** Pre-audit. Testnet only. USDC integration is a dev shim (no real Circle plumbing yet). Not production-ready.
 
-### ✅ What Works Today
-- Basic market creation, betting, and claim flows on local/test environments.
-- TypeScript SDKs for Aptos (MoveMarketSDK) with unit helpers.
-- Dual wallet selector (Aptos Connect + Sui Connect) and chain switch UX.
-- Documentation set (architecture notes, runbooks, audit prep) capturing intended design.
+## Tech Stack
 
-### 🚧 Critical Gaps Blocking MVP
-- Native USDC deposits/withdrawals on both chains.
-- Oracle selection + integration (Pyth primary, optimistic backup).
-- Contract hardening: reentrancy guards, atomic resolution, RBAC, pause controls.
-- Backend payout/settlement parity for Sui, chain-aware indexing, and RBAC.
-- Comprehensive testing (integration, load, fuzz) and external security audit.
+| Layer | Technology |
+| --- | --- |
+| Contracts | Solidity 0.8.24, Foundry, OpenZeppelin v5, PRBMath SD59x18 |
+| Backend | Node.js, Express, Prisma, viem, PostgreSQL |
+| Frontend | React 18, Vite, TypeScript, wagmi v2, RainbowKit, TailwindCSS |
+| AI | Anthropic Claude SDK (optional, feature-flagged) |
+| Oracles | UMA Optimistic Oracle V3, Pyth Network |
+| Deployment | Vercel (frontend), Render (backend), Base Sepolia (contracts) |
 
----
+## Deployed Contracts (Base Sepolia)
 
-## 🚀 Quick Start
+| Contract | Address |
+| --- | --- |
+| MarketFactory | `0x51baebd534f1b56003dcf11587874f9c9fa6f41a` |
+| PredictionMarketAMM | `0x5c775990facaddcc608a7770f78a8e57f401b93e` |
+| ConditionalTokens | `0xaf64d3778a5c065499e2ce22bf94d949ea353c87` |
+| USDC (testnet) | `0x036CbD53842c5426634e7929541eC2318f3dCF7e` |
+| Pyth | `0xA2aa501b19aff244D90cc15a4Cf739D2725B5729` |
+| UMA OOV3 | `0x0F7fC5E6482f096380db6158f978167b57388deE` |
+
+## Quick Start
 
 ### Prerequisites
-- Node.js v18+
-- Rust (latest stable)
-- Aptos CLI & Sui CLI
-- Git
 
-### Installation
+- Node.js 18+
+- [Foundry](https://getfoundry.sh/) (for contract development)
+- PostgreSQL
+
+### Install & Run
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/move-market.git
-cd move-market
+# Clone
+git clone https://github.com/archon-444/aptos-prediction-market.git
+cd aptos-prediction-market
 
-# Install frontend (React/Vite app)
+# Frontend
 cd dapp
 npm install
+npm run dev          # http://localhost:5173
 
-# Install backend (Express/Prisma)
-cd ../backend
+# Backend (separate terminal)
+cd backend
 npm install
+npx prisma generate
+npx prisma migrate dev
+npm run dev          # http://localhost:4000
 
-# Configure Move toolchains
-aptos init --network devnet
-sui client active-address # ensure a devnet address exists
+# Contract tests
+cd contracts-base
+forge test           # 121 tests
 ```
 
-### Development
-
-```bash
-# Start backend API (port 3001)
-npm run dev --prefix backend
-
-# Start frontend (port 5173)
-npm run dev --prefix dapp
-
-# Run Aptos contract tests
-cd contracts
-aptos move test
-
-# Run Sui contract tests
-cd ../contracts-sui
-sui move test
-```
-
----
-
-## 📁 Repository Structure
+## Repository Structure
 
 ```
-move-market/
-├── contracts/            # Aptos Move package
-├── contracts-sui/        # Sui Move package (shared-object design)
-├── backend/              # Express/Prisma API + indexer
-├── dapp/                 # React app (Vite, TanStack Query)
-├── docs/                 # Architecture, audits, runbooks
+based/
+├── contracts-base/       # Solidity contracts (Foundry)
+│   ├── src/              # ConditionalTokens, MarketFactory, AMM, Oracle adapters
+│   ├── test/             # 121 tests (MarketFactory, AMM, UMA, Pyth)
+│   └── script/           # Deployment scripts
+├── backend/              # Node.js API + services
+│   ├── src/
+│   │   ├── agents/       # AI agents (resolution, integrity, commentary)
+│   │   ├── blockchain/   # viem clients, ABIs, event indexer
+│   │   ├── routes/       # REST API endpoints
+│   │   ├── services/     # Keeper, transaction, market services
+│   │   └── websocket/    # Real-time updates
+│   └── prisma/           # Database schema & migrations
+├── dapp/                 # React frontend
+│   ├── src/
+│   │   ├── pages/        # 18 routes (markets, trading, admin, LP)
+│   │   ├── hooks/        # 40+ custom hooks (wagmi, API, contracts)
+│   │   ├── config/       # wagmi config, contract ABIs
+│   │   └── components/   # UI components
+│   └── public/
+├── docs/                 # Architecture, security, oracle docs
+│   ├── audit/            # Audit prep materials
+│   ├── analysis/         # Competitive & gap analysis
+│   ├── runbooks/         # Ops runbooks
+│   └── archive/          # Historical docs
 ├── monitoring/           # Prometheus/Grafana manifests
-└── scripts/              # Deployment utilities
+├── CONTEXT.md            # Living project status (start here)
+├── Dockerfile            # Backend container
+├── render.yaml           # Render deployment config
+└── vercel.json           # Vercel frontend config
 ```
 
----
+## Environment Variables
 
-## 📖 Documentation
-
-- **[ARCHITECTURE_DECOUPLED.md](ARCHITECTURE_DECOUPLED.md)** – High-level system design
-- **[COMPREHENSIVE_AUDIT_REPORT_OCT2025.md](COMPREHENSIVE_AUDIT_REPORT_OCT2025.md)** – Strategic & security audit
-- **[DEPLOYMENT_RUNBOOK.md](docs/runbooks/DEPLOYMENT_RUNBOOK.md)** – Ops checklist (needs validation)
-- **[INCIDENT_RESPONSE_RUNBOOK.md](docs/runbooks/INCIDENT_RESPONSE_RUNBOOK.md)** – Draft incident plan
-- **[MoveMarketSDK](dapp/src/services/MoveMarketSDK.ts)** – Aptos TypeScript SDK
-- **[Dual Chain Gap Checklist](docs/DUAL_CHAIN_GAP_CHECKLIST.md)** – (New) Aptos vs Sui work items
-
----
-
-## 🛠️ Current Focus Areas
-
-1. **Security Hardening** – Implement reentrancy guards, atomic resolution, and BFT-safe oracle handling on both chains.
-2. **USDC Integration** – Replace dev shims with real Circle/LayerZero flows, add settlement queue enforcement on Sui.
-3. **Backend Parity** – Ensure payout calculations, indexing, and RBAC are chain-aware.
-4. **Testing & Observability** – Integration tests, load tests, Prometheus/Grafana deployment, and audit readiness.
-5. **Documentation Accuracy** – Keep project status, scope, and roadmap truthful; defer token/governance until after MVP launch.
-
----
-
-## 🔐 Security
-
-- Move-based contracts provide strong safety primitives, but **critical guardrails are incomplete**.
-- No external audit has been scheduled yet; budget and vendor selection are outstanding.
-- Formal specs exist in draft form; they must be finished and run through Move Prover.
-- Bug bounty, compliance policies, and monitoring will be defined post-audit.
-
-**Security contact**: security@movemarket.app
-
----
-
-## 📜 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please review [CONTRIBUTING.md](CONTRIBUTING.md). Before submitting PRs, familiarise yourself with the dual-chain backlog and security priorities.
-
----
-
-## 🔧 Environment Variables
-
-Key variables required for local development (see `.env.example` for full list):
+Key variables for local development. See `.env.example` for the full list.
 
 | Variable | Description |
 | --- | --- |
-| `VITE_APTOS_NETWORK` | Aptos network (`devnet`, `testnet`, `mainnet`) |
-| `VITE_APTOS_MODULE_ADDRESS` | Published Move package address on Aptos |
-| `VITE_APTOS_USDC_ADDRESS` | Native USDC coin address on Aptos |
-| `VITE_SUI_NETWORK` | Sui network (`devnet`, `testnet`, `mainnet`) |
-| `VITE_SUI_PACKAGE_ID` | Published Move package ID on Sui |
-| `VITE_SUI_USDC_COIN_TYPE` | Native Circle USDC coin type on Sui (e.g., `0x...::coin::COIN`) |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `BASE_RPC_URL` | Base RPC endpoint (default: `https://sepolia.base.org`) |
+| `MARKET_FACTORY_ADDRESS` | MarketFactory contract address |
+| `AMM_ADDRESS` | PredictionMarketAMM contract address |
+| `CONDITIONAL_TOKENS_ADDRESS` | ConditionalTokens contract address |
+| `VITE_BASE_CHAIN_ID` | Chain ID (`84532` for Base Sepolia) |
+| `VITE_FACTORY_ADDRESS` | MarketFactory address (frontend) |
+| `VITE_API_URL` | Backend API URL |
+| `AGENT_ENABLED` | Master switch for AI agents (default: `false`) |
+| `ANTHROPIC_API_KEY` | Anthropic API key (only if agents enabled) |
 
-> ⚠️ Keep `.env` out of version control. Populate the USDC entries with the actual coin types created via your Circle testnet accounts.
+## API
 
----
+The backend exposes REST + WebSocket:
 
-## Sui Native USDC
+- `GET /api/markets` — list markets (with chain filter)
+- `GET /api/markets/:chain/:onChainId` — market detail
+- `GET /api/trades/:marketId` — trade history (paginated)
+- `GET /api/portfolio/:address` — user positions + P&L
+- `GET /api/leaderboard` — trader rankings
+- `WebSocket /ws` — real-time trade, price, and commentary updates (per-market subscriptions)
 
-This project targets Circle-issued native USDC on Sui. Default configuration points to **testnet**:
+## Documentation
 
-```
-0xa1ec7fc00a6f40db9693ad1415d0c193ad3906494428cf252621037bd7117e29::usdc::USDC
-```
+- **[CONTEXT.md](CONTEXT.md)** — Living project status and architecture overview
+- **[docs/SETUP.md](docs/SETUP.md)** — Detailed setup guide
+- **[docs/NEXT_STEPS.md](docs/NEXT_STEPS.md)** — Roadmap and upcoming phases
+- **[docs/USDC_INTEGRATION.md](docs/USDC_INTEGRATION.md)** — USDC integration details
+- **[docs/HYBRID_ARCHITECTURE_SECURITY.md](docs/HYBRID_ARCHITECTURE_SECURITY.md)** — Security architecture
+- **[docs/audit/](docs/audit/)** — Audit preparation materials
 
-When deploying to mainnet, update the relevant environment variables to:
+## Security
 
-```
-0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC
-```
+Smart contracts have **not been externally audited**. The project is on testnet only. Do not use with real funds.
 
-> 🚫 Bridged `wUSDC` (`0x5d4b3025…::coin::COIN`) is **not** supported. Users should migrate via Circle’s official guide before interacting with Move Market.
+If you find a security issue, please open a GitHub issue or reach out directly.
 
-See [docs/SUI_NATIVE_USDC.md](docs/SUI_NATIVE_USDC.md) for details.
+## License
 
----
-
-## 🔗 Links
-
-- **Documentation**: [docs/](docs/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/aptos-prediction-market/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/aptos-prediction-market/discussions)
-
----
-
-**Built with ❤️ on Aptos & Sui | Powered by Move**
+MIT — see [LICENSE](LICENSE).
