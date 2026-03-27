@@ -3,6 +3,10 @@
  *
  * Provides public client (HTTP), WebSocket client (event subscriptions),
  * and three wallet clients (admin, keeper, resolver) with role separation.
+ *
+ * Wallet initialization order:
+ * 1. CDP Server Wallet (if CDP_API_KEY_ID + CDP_API_KEY_SECRET + CDP_WALLET_SECRET set)
+ * 2. Raw private key fallback (ADMIN/KEEPER/RESOLVER_PRIVATE_KEY)
  */
 
 import {
@@ -19,6 +23,7 @@ import { base, baseSepolia } from 'viem/chains';
 
 import { env } from '../../config/env.js';
 import { logger } from '../../config/logger.js';
+import { createCdpWalletClient, isCdpConfigured } from './cdpWalletFactory.js';
 
 // ---------- Chain Selection ----------
 
@@ -33,6 +38,11 @@ let _wsClient: PublicClient | null = null;
 let _adminWallet: WalletClient | null = null;
 let _keeperWallet: WalletClient | null = null;
 let _resolverWallet: WalletClient | null = null;
+
+// Track async CDP initialization to prevent races
+let _adminWalletPromise: Promise<WalletClient> | null = null;
+let _keeperWalletPromise: Promise<WalletClient> | null = null;
+let _resolverWalletPromise: Promise<WalletClient> | null = null;
 
 /**
  * HTTP public client for reads, getLogs, estimateGas, etc.
@@ -68,59 +78,75 @@ export function getWsClient(): PublicClient {
   return _wsClient;
 }
 
+// ---------- Wallet Client Helpers ----------
+
+function createRawKeyWallet(privateKey: string, role: string): WalletClient {
+  const account = privateKeyToAccount(privateKey as `0x${string}`);
+  const wallet = createWalletClient({
+    account,
+    chain: getChain(),
+    transport: http(env.BASE_RPC_URL),
+  });
+  logger.info({ address: account.address, provider: 'raw-key' }, `[ViemClient] ${role} wallet initialized`);
+  return wallet;
+}
+
+async function getOrCreateWallet(
+  role: 'admin' | 'keeper' | 'resolver',
+  privateKeyEnv: string | undefined,
+): Promise<WalletClient> {
+  // Prefer CDP managed wallet
+  if (isCdpConfigured()) {
+    return createCdpWalletClient(role);
+  }
+
+  // Fallback: raw private key
+  if (!privateKeyEnv) {
+    throw new Error(
+      `No wallet configured for ${role}. Set CDP credentials (CDP_API_KEY_ID, CDP_API_KEY_SECRET, CDP_WALLET_SECRET) or ${role.toUpperCase()}_PRIVATE_KEY.`
+    );
+  }
+  return createRawKeyWallet(privateKeyEnv, role);
+}
+
 /**
  * Admin wallet — createMarket, registerMarket, grantRole
  */
-export function getAdminWallet(): WalletClient {
-  if (!_adminWallet) {
-    if (!env.ADMIN_PRIVATE_KEY) {
-      throw new Error('ADMIN_PRIVATE_KEY is required for admin wallet');
-    }
-    const account = privateKeyToAccount(env.ADMIN_PRIVATE_KEY as `0x${string}`);
-    _adminWallet = createWalletClient({
-      account,
-      chain: getChain(),
-      transport: http(env.BASE_RPC_URL),
+export async function getAdminWallet(): Promise<WalletClient> {
+  if (_adminWallet) return _adminWallet;
+  if (!_adminWalletPromise) {
+    _adminWalletPromise = getOrCreateWallet('admin', env.ADMIN_PRIVATE_KEY).then((w) => {
+      _adminWallet = w;
+      return w;
     });
-    logger.info({ address: account.address }, '[ViemClient] Admin wallet initialized');
   }
-  return _adminWallet;
+  return _adminWalletPromise;
 }
 
 /**
  * Keeper wallet — beginResolution, settleAssertion
  */
-export function getKeeperWallet(): WalletClient {
-  if (!_keeperWallet) {
-    if (!env.KEEPER_PRIVATE_KEY) {
-      throw new Error('KEEPER_PRIVATE_KEY is required for keeper wallet');
-    }
-    const account = privateKeyToAccount(env.KEEPER_PRIVATE_KEY as `0x${string}`);
-    _keeperWallet = createWalletClient({
-      account,
-      chain: getChain(),
-      transport: http(env.BASE_RPC_URL),
+export async function getKeeperWallet(): Promise<WalletClient> {
+  if (_keeperWallet) return _keeperWallet;
+  if (!_keeperWalletPromise) {
+    _keeperWalletPromise = getOrCreateWallet('keeper', env.KEEPER_PRIVATE_KEY).then((w) => {
+      _keeperWallet = w;
+      return w;
     });
-    logger.info({ address: account.address }, '[ViemClient] Keeper wallet initialized');
   }
-  return _keeperWallet;
+  return _keeperWalletPromise;
 }
 
 /**
  * Resolver wallet — reportPayoutsFor, Pyth resolve
  */
-export function getResolverWallet(): WalletClient {
-  if (!_resolverWallet) {
-    if (!env.RESOLVER_PRIVATE_KEY) {
-      throw new Error('RESOLVER_PRIVATE_KEY is required for resolver wallet');
-    }
-    const account = privateKeyToAccount(env.RESOLVER_PRIVATE_KEY as `0x${string}`);
-    _resolverWallet = createWalletClient({
-      account,
-      chain: getChain(),
-      transport: http(env.BASE_RPC_URL),
+export async function getResolverWallet(): Promise<WalletClient> {
+  if (_resolverWallet) return _resolverWallet;
+  if (!_resolverWalletPromise) {
+    _resolverWalletPromise = getOrCreateWallet('resolver', env.RESOLVER_PRIVATE_KEY).then((w) => {
+      _resolverWallet = w;
+      return w;
     });
-    logger.info({ address: account.address }, '[ViemClient] Resolver wallet initialized');
   }
-  return _resolverWallet;
+  return _resolverWalletPromise;
 }

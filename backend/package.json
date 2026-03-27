@@ -19,6 +19,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@circle-fin/smart-contract-platform": "^9.1.0",
+    "@coinbase/agentkit": "^0.10.4",
     "@coinbase/cdp-sdk": "^1.45.0",
     "@prisma/client": "^5.22.0",
     "@pythnetwork/price-service-client": "^1.9.0",

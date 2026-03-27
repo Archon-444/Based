@@ -174,7 +174,7 @@ export class KeeperService {
     logger.info({ count: ready.length }, '[Keeper] Settling mature assertions');
 
     const publicClient = getPublicClient();
-    const keeperWallet = getKeeperWallet();
+    const keeperWallet = await getKeeperWallet();
 
     for (const assertion of ready) {
       try {
@@ -284,7 +284,7 @@ export class KeeperService {
       updateData,
     ]);
 
-    const resolverWallet = getResolverWallet();
+    const resolverWallet = await getResolverWallet();
     await sendTransaction({
       walletClient: resolverWallet,
       publicClient,

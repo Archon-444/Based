@@ -108,7 +108,7 @@ export async function tryVerifyAssertion(
 
   // Self-dispute prevention: skip if our keeper wallet made this assertion
   try {
-    const keeperWallet = getKeeperWallet();
+    const keeperWallet = await getKeeperWallet();
     const keeperAddress = keeperWallet.account!.address.toLowerCase();
 
     const assertion = await prisma.umaAssertion.findFirst({
@@ -224,7 +224,7 @@ async function executeDispute(assertionId: string): Promise<string | null> {
   }
 
   const publicClient = getPublicClient();
-  const resolverWallet = getResolverWallet();
+  const resolverWallet = await getResolverWallet();
 
   try {
     // Read OOV3 address from adapter

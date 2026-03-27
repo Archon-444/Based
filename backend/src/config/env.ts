@@ -29,6 +29,11 @@ const envSchema = z.object({
   KEEPER_PRIVATE_KEY: z.string().optional(),
   RESOLVER_PRIVATE_KEY: z.string().optional(),
 
+  // CDP Managed Wallets (optional — replaces raw private keys)
+  CDP_API_KEY_ID: z.string().optional(),
+  CDP_API_KEY_SECRET: z.string().optional(),
+  CDP_WALLET_SECRET: z.string().optional(),
+
   // Agent Configuration (Phase 5)
   ANTHROPIC_API_KEY: z.string().optional(),
   AGENT_ENABLED: z.string().optional().default('false'),

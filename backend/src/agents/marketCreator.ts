@@ -174,7 +174,7 @@ async function executeCreation(
   }
 
   const publicClient = getPublicClient();
-  const adminWallet = getAdminWallet();
+  const adminWallet = await getAdminWallet();
 
   // a. Generate questionId
   const questionId = keccak256(toBytes(proposal.question + ':' + Date.now().toString()));

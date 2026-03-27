@@ -235,7 +235,7 @@ async function executeAssertion(
   }
 
   const publicClient = getPublicClient();
-  const keeperWallet = getKeeperWallet();
+  const keeperWallet = await getKeeperWallet();
 
   try {
     // Read bond amount from UMA adapter
