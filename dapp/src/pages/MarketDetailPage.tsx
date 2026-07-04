@@ -37,6 +37,11 @@ import { useDebounce } from '../hooks/useDebounce';
 import { useSDKContext } from '../contexts/SDKContext';
 import { fetchPayoutQuote, type PayoutQuote } from '../services/payoutApi';
 import { usePriceHistory } from '../hooks/usePriceHistory';
+import toast from '../components/ui/Toast';
+
+// Max acceptable slippage between the quoted shares and what the trade must return, in basis
+// points (1%). The AMM enforces this on-chain via `minTokensOut`.
+const SLIPPAGE_BPS = 100n;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -226,7 +231,24 @@ export const MarketDetailPage: React.FC = () => {
 
   const handleSubmit = useCallback(async () => {
     if (selectedOutcomeIndex === null || numAmount <= 0 || !market) return;
-    const txHash = await placeBet(market.onChainId ?? market.id, selectedOutcomeIndex, numAmount);
+
+    // Require a fresh on-chain quote so we can bound slippage. Without it the trade would run
+    // with no minimum-out and could execute at any price.
+    const expectedMicro = payoutData?.shares?.micro;
+    if (!expectedMicro) {
+      toast.error('Still fetching the latest price — please try again in a moment.');
+      return;
+    }
+    let minTokensOut: bigint;
+    try {
+      const expected = BigInt(expectedMicro);
+      minTokensOut = (expected * (10_000n - SLIPPAGE_BPS)) / 10_000n;
+    } catch {
+      toast.error('Could not compute a safe price. Please retry.');
+      return;
+    }
+
+    const txHash = await placeBet(market.onChainId ?? market.id, selectedOutcomeIndex, numAmount, minTokensOut);
     if (txHash) {
       setBetAmount('');
       setPayoutData(null);
@@ -234,7 +256,7 @@ export const MarketDetailPage: React.FC = () => {
       setTimeout(() => setBetSuccess(false), 3000);
       refetch();
     }
-  }, [selectedOutcomeIndex, numAmount, market, placeBet, refetch]);
+  }, [selectedOutcomeIndex, numAmount, market, placeBet, refetch, payoutData]);
 
   // ── Loading ───────────────────────────────────────────────────────────────
   if (isLoading) {

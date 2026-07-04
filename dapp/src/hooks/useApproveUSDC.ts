@@ -1,5 +1,6 @@
+import { useEffect } from 'react';
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi';
-import { erc20Abi, maxUint256 } from 'viem';
+import { erc20Abi } from 'viem';
 import { useContracts } from './useContracts';
 
 export function useApproveUSDC(spenderOverride?: `0x${string}`) {
@@ -29,19 +30,22 @@ export function useApproveUSDC(spenderOverride?: `0x${string}`) {
     return (allowance as bigint) < amount;
   };
 
-  const approve = (amount?: bigint) => {
+  // Approve an exact amount — never an unlimited (MaxUint256) allowance.
+  const approve = (amount: bigint) => {
     writeContract({
       address: contracts.usdc,
       abi: erc20Abi,
       functionName: 'approve',
-      args: [spender, amount ?? maxUint256],
+      args: [spender, amount],
     } as any);
   };
 
-  // Refetch allowance when approval confirms
-  if (isApproved) {
-    refetchAllowance();
-  }
+  // Refetch allowance when approval confirms (effect, not during render)
+  useEffect(() => {
+    if (isApproved) {
+      refetchAllowance();
+    }
+  }, [isApproved, refetchAllowance]);
 
   return {
     allowance: allowance as bigint,

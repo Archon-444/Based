@@ -28,18 +28,21 @@ export const useChainPlaceBet = () => {
     marketId: string,
     outcomeIndex: number,
     usdcAmount: number,
+    minTokensOut: bigint,
   ): Promise<ChainTransactionResult> => {
     if (!address) throw new Error('Wallet not connected');
     if (!contracts.amm) throw new Error('AMM address not configured');
+    if (!contracts.usdc) throw new Error('USDC address not configured');
 
     const amount = parseUnits(usdcAmount.toString(), 6);
-    const minTokensOut = 0n;
 
     const hash = await writeGasless({
       address: contracts.amm,
       abi: PredictionMarketAMMABI as any,
       functionName: 'buy',
       args: [marketId as `0x${string}`, BigInt(outcomeIndex), amount, minTokensOut],
+      erc20Approval: { token: contracts.usdc, spender: contracts.amm, amount },
+      waitForReceipt: true,
     });
 
     return { hash, success: true };
@@ -57,17 +60,17 @@ export const useChainSellPosition = () => {
     marketId: string,
     outcomeIndex: number,
     tokenAmount: bigint,
+    minUsdcOut: bigint,
   ): Promise<ChainTransactionResult> => {
     if (!address) throw new Error('Wallet not connected');
     if (!contracts.amm) throw new Error('AMM address not configured');
-
-    const minUsdcOut = 0n;
 
     const hash = await writeGasless({
       address: contracts.amm,
       abi: PredictionMarketAMMABI as any,
       functionName: 'sell',
       args: [marketId as `0x${string}`, BigInt(outcomeIndex), tokenAmount, minUsdcOut],
+      waitForReceipt: true,
     });
 
     return { hash, success: true };
@@ -95,6 +98,7 @@ export const useChainClaimWinnings = () => {
       abi: ConditionalTokensABI as any,
       functionName: 'redeemPositions',
       args: [contracts.usdc, parentCollectionId, conditionId as `0x${string}`, indexSets],
+      waitForReceipt: true,
     });
 
     return { hash, success: true };
@@ -114,6 +118,7 @@ export const useChainAddLiquidity = () => {
   ): Promise<ChainTransactionResult> => {
     if (!address) throw new Error('Wallet not connected');
     if (!contracts.amm) throw new Error('AMM address not configured');
+    if (!contracts.usdc) throw new Error('USDC address not configured');
 
     const amount = parseUnits(usdcAmount.toString(), 6);
 
@@ -122,6 +127,8 @@ export const useChainAddLiquidity = () => {
       abi: PredictionMarketAMMABI as any,
       functionName: 'addLiquidity',
       args: [marketId as `0x${string}`, amount],
+      erc20Approval: { token: contracts.usdc, spender: contracts.amm, amount },
+      waitForReceipt: true,
     });
 
     return { hash, success: true };
@@ -147,6 +154,7 @@ export const useChainRemoveLiquidity = () => {
       abi: PredictionMarketAMMABI as any,
       functionName: 'removeLiquidity',
       args: [marketId as `0x${string}`, shares],
+      waitForReceipt: true,
     });
 
     return { hash, success: true };
