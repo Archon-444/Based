@@ -181,14 +181,23 @@ contract UmaCtfAdapter is AccessControl, ReentrancyGuard, Pausable {
         if (assertedTruthfully) {
             uint256 winningOutcome = data.proposedOutcome;
 
-            // Build payouts array
-            uint256[] memory payouts = new uint256[](data.outcomeCount);
-            payouts[winningOutcome] = 1;
-
-            // Resolve via factory (atomic: beginResolution -> reportPayouts -> resolveMarket)
-            factory.beginResolution(marketId);
-            factory.reportPayoutsFor(marketId, payouts);
-            factory.resolveMarket(marketId);
+            // Move the market into Resolving regardless of how it got here, then report and
+            // resolve. An undisputed assertion settles from Active; an assertion that was
+            // disputed and later confirmed by the DVM settles from Disputed (the dispute
+            // callback already advanced Active -> Resolving -> Disputed). Previously this
+            // branch always called beginResolution(), which reverts on a Disputed market and
+            // permanently bricked every ever-disputed market with its collateral trapped.
+            MarketFactory.MarketStatus status = factory.getMarket(marketId).status;
+            if (status == MarketFactory.MarketStatus.Active) {
+                factory.beginResolution(marketId);
+                _reportAndResolve(marketId, data.outcomeCount, winningOutcome);
+            } else if (status == MarketFactory.MarketStatus.Disputed) {
+                factory.resetToResolving(marketId);
+                _reportAndResolve(marketId, data.outcomeCount, winningOutcome);
+            } else if (status == MarketFactory.MarketStatus.Resolving) {
+                _reportAndResolve(marketId, data.outcomeCount, winningOutcome);
+            }
+            // Resolved/Cancelled: market already terminal — do not revert the OOV3 callback.
 
             data.resolved = true;
             data.activeAssertionId = bytes32(0);
@@ -250,6 +259,16 @@ contract UmaCtfAdapter is AccessControl, ReentrancyGuard, Pausable {
     }
 
     // ──────────────────── Internal Helpers ────────────────────
+
+    /// @dev Reports a winner-take-all payout and finalizes the market. Caller must have already
+    ///      transitioned the market into Resolving.
+    function _reportAndResolve(bytes32 marketId, uint256 outcomeCount, uint256 winningOutcome) internal {
+        uint256[] memory payouts = new uint256[](outcomeCount);
+        payouts[winningOutcome] = 1;
+
+        factory.reportPayoutsFor(marketId, payouts);
+        factory.resolveMarket(marketId);
+    }
 
     function _uint256ToString(uint256 value) internal pure returns (bytes memory) {
         if (value == 0) return "0";

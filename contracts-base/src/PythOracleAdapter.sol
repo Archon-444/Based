@@ -27,6 +27,10 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         bool resolved;
     }
 
+    // ──────────────────── Roles ────────────────────
+
+    bytes32 public constant RESOLVER_ROLE = keccak256("RESOLVER_ROLE");
+
     // ──────────────────── Constants ────────────────────
 
     uint256 public constant MAX_PRICE_AGE = 300;
@@ -60,6 +64,7 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
     error MarketAlreadyRegistered(bytes32 marketId);
     error MarketAlreadyResolved(bytes32 marketId);
     error MarketNotRegistered(bytes32 marketId);
+    error MarketNotYetResolvable(uint256 deadline, uint256 currentTime);
     error OnlyBinaryMarkets(bytes32 marketId, uint256 outcomeCount);
     error RefundFailed();
 
@@ -70,6 +75,7 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         factory = MarketFactory(_factory);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(RESOLVER_ROLE, msg.sender);
     }
 
     // ──────────────────── External Functions ────────────────────
@@ -107,11 +113,25 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         emit MarketRegistered(marketId, feedId, strikePrice, uint8(resolutionType));
     }
 
-    function resolve(bytes32 marketId, bytes[] calldata pythUpdateData) external payable nonReentrant whenNotPaused {
+    function resolve(bytes32 marketId, bytes[] calldata pythUpdateData)
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        onlyRole(RESOLVER_ROLE)
+    {
         PythMarketConfig storage config = marketConfigs[marketId];
 
         if (!config.registered) revert MarketNotRegistered(marketId);
         if (config.resolved) revert MarketAlreadyResolved(marketId);
+
+        // Resolution must never happen before the market's deadline. Otherwise any
+        // outcome-token holder could call resolve() at a caller-chosen moment when the
+        // live spot price is on their side of the strike and drain their counterparties.
+        MarketFactory.Market memory market = factory.getMarket(marketId);
+        if (block.timestamp < market.deadline) {
+            revert MarketNotYetResolvable(market.deadline, block.timestamp);
+        }
 
         // Update Pyth price feeds
         uint256 fee = pyth.getUpdateFee(pythUpdateData);

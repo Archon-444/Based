@@ -280,6 +280,57 @@ contract UmaCtfAdapterTest is Test {
         assertEq(data.activeAssertionId, bytes32(0));
     }
 
+    function test_disputedCallback_setsMarketDisputed() public {
+        bytes32 assertionId = _assertDefaultOutcome();
+        mockOov3.mockDispute(assertionId);
+        MarketFactory.Market memory market = factory.getMarket(marketId);
+        assertEq(uint256(market.status), uint256(MarketFactory.MarketStatus.Disputed));
+    }
+
+    // ──────────────────── Dispute → DVM resolution (C2) ────────────────────
+
+    // Regression test for the permanent-stuck-state bug: once a market was disputed, the
+    // truthful DVM resolution callback used to call beginResolution() (which requires Active)
+    // on a Disputed market and revert, bricking the market forever. It must now resolve.
+    function test_disputedThenTruthfullyResolved_resolvesMarket() public {
+        bytes32 assertionId = _assertDefaultOutcome();
+
+        // Dispute moves the market Active -> Resolving -> Disputed.
+        mockOov3.mockDispute(assertionId);
+        assertEq(
+            uint256(factory.getMarket(marketId).status),
+            uint256(MarketFactory.MarketStatus.Disputed)
+        );
+
+        // The DVM confirms the original assertion truthful — this previously reverted.
+        mockOov3.mockSettle(assertionId, true);
+
+        MarketFactory.Market memory market = factory.getMarket(marketId);
+        assertEq(uint256(market.status), uint256(MarketFactory.MarketStatus.Resolved));
+        assertGt(ctf.payoutDenominator(market.conditionId), 0);
+
+        UmaCtfAdapter.MarketData memory data = adapter.getMarketData(marketId);
+        assertTrue(data.resolved);
+    }
+
+    // After a dispute, a fresh assertion can be made and, when confirmed, resolves the market
+    // (the adapter reaches Resolving via resetToResolving rather than beginResolution).
+    function test_disputedThenReasserted_resolvesMarket() public {
+        bytes32 assertionId = _assertDefaultOutcome();
+        mockOov3.mockDispute(assertionId);
+
+        // Re-assert the correct outcome; market is still Disputed at the factory.
+        vm.prank(asserter);
+        adapter.assertOutcome(marketId, 1);
+        bytes32 newAssertionId = adapter.getMarketData(marketId).activeAssertionId;
+        assertTrue(newAssertionId != bytes32(0));
+
+        mockOov3.mockSettle(newAssertionId, true);
+
+        MarketFactory.Market memory market = factory.getMarket(marketId);
+        assertEq(uint256(market.status), uint256(MarketFactory.MarketStatus.Resolved));
+    }
+
     // ──────────────────── Whitelist (4) ────────────────────
 
     function test_setProposerWhitelist_success() public {

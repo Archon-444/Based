@@ -219,17 +219,33 @@ contract MarketFactory is AccessControl, ReentrancyGuard, Pausable {
     function cancelMarket(bytes32 marketId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         Market storage market = _getExistingMarket(marketId);
 
-        if (market.status != MarketStatus.Created && market.status != MarketStatus.Active) {
-            revert MarketNotInStatus(marketId, MarketStatus.Created, market.status);
-        }
-
         MarketStatus oldStatus = market.status;
 
-        if (market.status == MarketStatus.Active) {
+        // Cancellable from any non-terminal state. Allowing Resolving/Disputed gives an escape
+        // hatch for markets stuck mid-resolution (e.g. a UMA dispute awaiting the DVM).
+        if (
+            oldStatus != MarketStatus.Created && oldStatus != MarketStatus.Active
+                && oldStatus != MarketStatus.Resolving && oldStatus != MarketStatus.Disputed
+        ) {
+            revert MarketNotInStatus(marketId, MarketStatus.Active, oldStatus);
+        }
+
+        // The market may be in the active set for any post-Created status (beginResolution and
+        // disputeMarket do not remove it); no-ops if absent.
+        if (oldStatus != MarketStatus.Created) {
             _removeFromActiveMarkets(marketId);
         }
 
         market.status = MarketStatus.Cancelled;
+
+        // Report an equal-weight payout so every outcome token redeems pro-rata on the CTF.
+        // Without this a holder of a single outcome could never recover collateral: the AMM
+        // blocks trading once the market is not Active and CTF redemption needs a reported payout.
+        uint256[] memory payouts = new uint256[](market.outcomeCount);
+        for (uint256 i = 0; i < market.outcomeCount; i++) {
+            payouts[i] = 1;
+        }
+        conditionalTokens.reportPayouts(market.questionId, payouts);
 
         emit MarketCancelled(marketId, block.timestamp);
         emit MarketStatusChanged(marketId, oldStatus, MarketStatus.Cancelled);
@@ -245,6 +261,14 @@ contract MarketFactory is AccessControl, ReentrancyGuard, Pausable {
 
     function reportPayoutsFor(bytes32 marketId, uint256[] calldata payouts) external onlyRole(RESOLVER_ROLE) {
         Market storage market = _getExistingMarket(marketId);
+
+        // Payouts may only be reported once the market is in Resolving. Without this guard a
+        // resolver could make outcome tokens 1:1 redeemable on the CTF while the AMM still
+        // reports the market as Active and keeps trading, letting a trader buy the winning
+        // outcome cheaply and redeem at LP expense.
+        if (market.status != MarketStatus.Resolving) {
+            revert MarketNotInStatus(marketId, MarketStatus.Resolving, market.status);
+        }
 
         require(payouts.length == market.outcomeCount, "Invalid payouts length");
 

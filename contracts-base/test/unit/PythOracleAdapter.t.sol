@@ -76,6 +76,8 @@ contract PythOracleAdapterTest is Test {
         mId = factory.createMarket(qId, "Test", 2, block.timestamp + 7 days, "", 0);
         factory.activateMarket(mId);
         adapter.registerMarket(mId, FEED_ID, strike, strikeHigh, resType);
+        // resolve() now enforces the market deadline, so warp past it for the success-path tests.
+        vm.warp(block.timestamp + 7 days + 1);
     }
 
     // ──────────────────── Constructor (3) ────────────────────
@@ -375,6 +377,51 @@ contract PythOracleAdapterTest is Test {
         vm.prank(unauthorized);
         vm.expectRevert();
         adapter.pause();
+    }
+
+    // ──────────────────── resolve access control + deadline (C1) ────────────────────
+
+    function test_resolve_revertsBeforeDeadline() public {
+        uint256 deadline = block.timestamp + 7 days;
+        bytes32 mId = factory.createMarket(keccak256("before-deadline"), "Test", 2, deadline, "", 0);
+        factory.activateMarket(mId);
+        adapter.registerMarket(mId, FEED_ID, STRIKE_PRICE, 0, PythOracleAdapter.ResolutionType.ABOVE);
+        mockPyth.setPrice(FEED_ID, 55000e8, -8);
+
+        // Same block as creation — well before the deadline.
+        vm.expectRevert(
+            abi.encodeWithSelector(PythOracleAdapter.MarketNotYetResolvable.selector, deadline, block.timestamp)
+        );
+        adapter.resolve{value: 1}(mId, new bytes[](0));
+    }
+
+    function test_resolve_revertsUnauthorizedCaller() public {
+        bytes32 mId = _createRegisterActivate(
+            keccak256("resolve-unauth"),
+            PythOracleAdapter.ResolutionType.ABOVE,
+            STRIKE_PRICE,
+            0
+        );
+        mockPyth.setPrice(FEED_ID, 55000e8, -8);
+
+        // Past the deadline, but caller lacks RESOLVER_ROLE.
+        vm.deal(unauthorized, 1 ether);
+        vm.prank(unauthorized);
+        vm.expectRevert();
+        adapter.resolve{value: 1}(mId, new bytes[](0));
+    }
+
+    function test_resolve_succeedsExactlyAtDeadline() public {
+        uint256 deadline = block.timestamp + 7 days;
+        bytes32 mId = factory.createMarket(keccak256("at-deadline"), "Test", 2, deadline, "", 0);
+        factory.activateMarket(mId);
+        adapter.registerMarket(mId, FEED_ID, STRIKE_PRICE, 0, PythOracleAdapter.ResolutionType.ABOVE);
+        mockPyth.setPrice(FEED_ID, 55000e8, -8);
+
+        vm.warp(deadline); // block.timestamp == deadline satisfies >= deadline
+        adapter.resolve{value: 1}(mId, new bytes[](0));
+
+        assertTrue(adapter.getMarketConfig(mId).resolved);
     }
 
     receive() external payable {}
