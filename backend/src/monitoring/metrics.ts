@@ -178,11 +178,20 @@ export const metricsMiddleware = (req: Request, res: Response, next: NextFunctio
   next();
 };
 
+const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1']);
+
 export const metricsHandler = async (req: Request, res: Response) => {
   if (env.METRICS_AUTH_TOKEN) {
     const provided = req.header('x-metrics-token') ?? req.header('authorization');
     if (!provided || provided.replace(/^Bearer\s+/i, '') !== env.METRICS_AUTH_TOKEN) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+  } else {
+    // Fail closed: with no token configured, only serve loopback (internal scrape). The
+    // endpoint otherwise leaks per-wallet tx counts, agent cost, and process internals.
+    const remote = req.socket.remoteAddress ?? '';
+    if (!LOOPBACK.has(remote)) {
+      return res.status(404).json({ error: 'Not found' });
     }
   }
 

@@ -62,6 +62,18 @@ const envSchema = z.object({
     .default('120')
     .transform((value) => parseInt(value, 10)),
   METRICS_AUTH_TOKEN: z.string().optional(),
+  // Explicit opt-in for the signature-less dev-wallet auth bypass. Must be turned on
+  // deliberately; it is never enabled by the mere absence of NODE_ENV=production.
+  ENABLE_DEV_AUTH: z.string().optional().default('false'),
+  // Number of trusted proxy hops in front of the app (Render/Vercel = 1). Controls how
+  // express derives req.ip so rate limiting keys on the real client, not the proxy.
+  TRUST_PROXY_HOPS: z
+    .string()
+    .optional()
+    .default('1')
+    .transform((value) => parseInt(value, 10)),
+  // Comma-separated extra WebSocket origins (in addition to CORS_ORIGIN).
+  WS_ALLOWED_ORIGINS: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

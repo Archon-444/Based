@@ -1,6 +1,20 @@
+import type { Request } from 'express';
 import rateLimit from 'express-rate-limit';
 
 import { env } from '../config/env.js';
+
+/**
+ * Key a limiter on the *authenticated* wallet (set by authenticateWallet) when present, else the
+ * real client IP. Never key on the raw `x-wallet-address` header: it is unauthenticated, so an
+ * attacker could rotate it to dodge their own limit or spoof a victim's to exhaust theirs.
+ */
+const keyByWalletOrIp =
+  (prefix: string) =>
+  (req: Request): string => {
+    const authed = (req as Request & { wallet?: { address?: string } }).wallet?.address;
+    if (authed) return `${prefix}:${authed}`;
+    return req.ip || req.socket.remoteAddress || 'unknown';
+  };
 
 /**
  * Standard rate limiter for public API endpoints
@@ -35,14 +49,7 @@ export const authenticatedApiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Use wallet address if available, fall back to IP
-  keyGenerator: (req) => {
-    const walletAddress = req.headers['x-wallet-address'];
-    if (typeof walletAddress === 'string') {
-      return `wallet:${walletAddress}`;
-    }
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  },
+  keyGenerator: keyByWalletOrIp('wallet'),
 });
 
 /**
@@ -58,13 +65,7 @@ export const adminApiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const walletAddress = req.headers['x-wallet-address'];
-    if (typeof walletAddress === 'string') {
-      return `admin:${walletAddress}`;
-    }
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  },
+  keyGenerator: keyByWalletOrIp('admin'),
 });
 
 /**
@@ -96,11 +97,5 @@ export const blockchainWriteLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => {
-    const walletAddress = req.headers['x-wallet-address'];
-    if (typeof walletAddress === 'string') {
-      return `blockchain:${walletAddress}`;
-    }
-    return req.ip || req.socket.remoteAddress || 'unknown';
-  },
+  keyGenerator: keyByWalletOrIp('blockchain'),
 });
