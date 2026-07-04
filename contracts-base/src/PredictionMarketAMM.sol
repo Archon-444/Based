@@ -20,6 +20,7 @@ contract PredictionMarketAMM is Ownable, ReentrancyGuard, IERC1155Receiver {
     error InvalidOutcomeIndex(uint256 provided, uint256 max);
     error MarketNotActive(bytes32 marketId);
     error NotOwner();
+    error NotMarketInitializer(address caller);
     error PoolAlreadyInitialized(bytes32 marketId);
     error PoolFrozen(bytes32 marketId);
     error PoolNotInitialized(bytes32 marketId);
@@ -114,6 +115,14 @@ contract PredictionMarketAMM is Ownable, ReentrancyGuard, IERC1155Receiver {
         if (usdcAmount < MIN_LIQUIDITY) revert InsufficientLiquidity(usdcAmount, MIN_LIQUIDITY);
 
         IMarketFactory.Market memory market = marketFactory.getMarket(marketId);
+
+        // Only the market creator or the AMM owner may seed the initial pool. Initialization is
+        // one-shot and permanently fixes lmsrB and the starting reserves, so a permissionless
+        // initializer could front-run the intended LP with a dust deposit and grief the market.
+        if (msg.sender != market.creator && msg.sender != owner()) {
+            revert NotMarketInitializer(msg.sender);
+        }
+
         bytes32 conditionId = market.conditionId;
         uint256 outcomeCount = market.outcomeCount;
 
@@ -264,6 +273,9 @@ contract PredictionMarketAMM is Ownable, ReentrancyGuard, IERC1155Receiver {
         }
 
         shares = (usdcAmount * pool.totalLpShares) / maxReserve;
+        // Reject deposits too small to mint any shares, otherwise the funds are added to reserves
+        // for free with nothing credited to the depositor.
+        if (shares == 0) revert InsufficientLiquidity(usdcAmount, 1);
 
         // Transfer USDC from user
         usdc.safeTransferFrom(msg.sender, address(this), usdcAmount);
@@ -370,6 +382,14 @@ contract PredictionMarketAMM is Ownable, ReentrancyGuard, IERC1155Receiver {
     function withdrawProtocolFees() external onlyOwner {
         uint256 amount = protocolFees;
         protocolFees = 0;
+        usdc.safeTransfer(msg.sender, amount);
+    }
+
+    /// @notice Withdraw accrued buyback fees. Without this the 4% buyback slice of every trade
+    ///         fee accumulated as USDC in the contract with no way to ever recover it.
+    function withdrawBuybackFees() external onlyOwner {
+        uint256 amount = buybackFees;
+        buybackFees = 0;
         usdc.safeTransfer(msg.sender, amount);
     }
 

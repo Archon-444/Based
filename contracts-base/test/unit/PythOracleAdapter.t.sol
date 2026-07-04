@@ -424,5 +424,36 @@ contract PythOracleAdapterTest is Test {
         assertTrue(adapter.getMarketConfig(mId).resolved);
     }
 
+    // ──────────────────── resolve confidence guard (C7) ────────────────────
+
+    function test_resolve_revertsWideConfidence() public {
+        bytes32 mId = _createRegisterActivate(
+            keccak256("wide-conf"),
+            PythOracleAdapter.ResolutionType.ABOVE,
+            STRIKE_PRICE,
+            0
+        );
+        // conf = 10% of price, well above the 2% MAX_CONF_BPS bound.
+        mockPyth.setPriceWithConf(FEED_ID, 55000e8, uint64(uint256(5500e8)), -8);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(PythOracleAdapter.PriceConfidenceTooWide.selector, uint64(uint256(5500e8)), int256(55000e8))
+        );
+        adapter.resolve{value: 1}(mId, new bytes[](0));
+    }
+
+    function test_resolve_allowsTightConfidence() public {
+        bytes32 mId = _createRegisterActivate(
+            keccak256("tight-conf"),
+            PythOracleAdapter.ResolutionType.ABOVE,
+            STRIKE_PRICE,
+            0
+        );
+        // conf = 1% of price, within the 2% bound.
+        mockPyth.setPriceWithConf(FEED_ID, 55000e8, uint64(uint256(550e8)), -8);
+        adapter.resolve{value: 1}(mId, new bytes[](0));
+        assertTrue(adapter.getMarketConfig(mId).resolved);
+    }
+
     receive() external payable {}
 }

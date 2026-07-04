@@ -22,6 +22,15 @@ contract MockPyth is IPyth {
         });
     }
 
+    function setPriceWithConf(bytes32 feedId, int64 price, uint64 conf, int32 expo) external {
+        prices[feedId] = IPyth.Price({
+            price: price,
+            conf: conf,
+            expo: expo,
+            publishTime: block.timestamp
+        });
+    }
+
     function setUpdateFee(uint256 fee) external {
         updateFee = fee;
     }

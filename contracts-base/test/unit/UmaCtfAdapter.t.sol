@@ -182,6 +182,15 @@ contract UmaCtfAdapterTest is Test {
         adapter.assertOutcome(marketId, 2);
     }
 
+    function test_assertOutcome_revertsCancelledMarket() public {
+        _registerDefaultMarket();
+        factory.cancelMarket(marketId); // admin cancels; market becomes terminal
+
+        vm.prank(asserter);
+        vm.expectRevert(abi.encodeWithSelector(UmaCtfAdapter.InvalidMarketStatus.selector, marketId));
+        adapter.assertOutcome(marketId, 0);
+    }
+
     function test_assertOutcome_revertsNotWhitelisted() public {
         _registerDefaultMarket();
         adapter.setProposerWhitelistEnabled(true);

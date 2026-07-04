@@ -34,6 +34,10 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
     // ──────────────────── Constants ────────────────────
 
     uint256 public constant MAX_PRICE_AGE = 300;
+    uint256 public constant BPS = 10_000;
+    // Reject a resolution price whose Pyth confidence interval is wider than this fraction of the
+    // price (2%). A wide interval signals an unreliable print that shouldn't decide a market.
+    uint256 public constant MAX_CONF_BPS = 200;
 
     // ──────────────────── State ────────────────────
 
@@ -66,6 +70,7 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
     error MarketNotRegistered(bytes32 marketId);
     error MarketNotYetResolvable(uint256 deadline, uint256 currentTime);
     error OnlyBinaryMarkets(bytes32 marketId, uint256 outcomeCount);
+    error PriceConfidenceTooWide(uint64 conf, int256 price);
     error RefundFailed();
 
     // ──────────────────── Constructor ────────────────────
@@ -141,6 +146,12 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         IPyth.Price memory priceData = pyth.getPriceNoOlderThan(config.feedId, MAX_PRICE_AGE);
         int256 price = int256(priceData.price);
         int32 expo = priceData.expo;
+
+        // Reject prints whose confidence interval is too wide relative to the price.
+        uint256 absPrice = price >= 0 ? uint256(price) : uint256(-price);
+        if (absPrice == 0 || uint256(priceData.conf) * BPS > MAX_CONF_BPS * absPrice) {
+            revert PriceConfidenceTooWide(priceData.conf, price);
+        }
 
         // Determine winning outcome based on resolution type
         uint256 winningOutcome;

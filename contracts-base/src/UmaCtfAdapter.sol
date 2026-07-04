@@ -131,6 +131,13 @@ contract UmaCtfAdapter is AccessControl, ReentrancyGuard, Pausable {
         if (proposerWhitelistEnabled && !whitelistedProposers[msg.sender]) revert NotWhitelisted(msg.sender);
         if (proposedOutcome >= data.outcomeCount) revert InvalidOutcome(proposedOutcome, data.outcomeCount);
 
+        // Don't waste a bond asserting on a market that is already finalized. Active, Resolving
+        // and Disputed are all still assertable (a disputed market may need a fresh assertion).
+        MarketFactory.MarketStatus status = factory.getMarket(marketId).status;
+        if (status == MarketFactory.MarketStatus.Cancelled || status == MarketFactory.MarketStatus.Resolved) {
+            revert InvalidMarketStatus(marketId);
+        }
+
         // Build claim from ancillary data and proposed outcome
         bytes memory claim = abi.encodePacked(
             data.ancillaryData,
