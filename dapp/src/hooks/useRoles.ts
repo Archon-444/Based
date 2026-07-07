@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { useUnifiedWallet } from './useUnifiedWallet';
+import { buildAuthHeaders, type WalletAuthContext } from '../services/api/client';
 import env from '../config/env';
 
 const API_BASE = env.apiUrl.replace(/\/$/, '');
@@ -113,21 +114,37 @@ export const useIsAdmin = () => useRoleCheck(RoleId.Admin);
 
 export const useRoleManagement = () => {
   const { address } = useAccount();
+  const wallet = useUnifiedWallet();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  // Sensitive role mutations must carry a real wallet signature, not just an x-wallet-address
+  // header (which anyone could spoof). Reuses the same signed-header scheme as the suggestions API.
+  const signedHeaders = useCallback(async (): Promise<Record<string, string>> => {
+    if (!wallet.address || !wallet.signMessage) {
+      throw new Error('Connect your wallet to authorize this action');
+    }
+    const auth: WalletAuthContext = {
+      address: wallet.address,
+      publicKey: wallet.publicKey,
+      chain: 'base',
+      signMessage: wallet.signMessage,
+    };
+    return buildAuthHeaders(auth);
+  }, [wallet.address, wallet.publicKey, wallet.signMessage]);
 
   const syncRoles = useCallback(async (targetAddress: string): Promise<UserRolesResult> => {
     if (!address) throw new Error('Connect an admin wallet before syncing roles');
 
     const response = await fetch(buildUrl('/roles/sync'), {
       method: 'POST',
-      headers: buildAdminHeaders(address),
+      headers: await signedHeaders(),
       body: JSON.stringify({ walletAddress: targetAddress.trim(), chain: 'base' }),
     });
 
     if (!response.ok) throw new Error(`Failed to sync roles: ${response.statusText}`);
     return parseUserRolesResponse(await response.json());
-  }, [address]);
+  }, [address, signedHeaders]);
 
   const getUserRoles = useCallback(async (targetAddress: string, options?: { sync?: boolean }): Promise<UserRolesResult> => {
     if (!address) throw new Error('Connect an admin wallet before fetching roles');
@@ -150,7 +167,7 @@ export const useRoleManagement = () => {
     try {
       await fetch(buildUrl('/roles/grant'), {
         method: 'POST',
-        headers: buildAdminHeaders(address),
+        headers: await signedHeaders(),
         body: JSON.stringify({ walletAddress: targetAddress.trim(), role: ROLE_CANONICAL_BY_ID[role], chain: 'base' }),
       });
       await syncRoles(targetAddress);
@@ -162,7 +179,7 @@ export const useRoleManagement = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [address, syncRoles]);
+  }, [address, syncRoles, signedHeaders]);
 
   const revokeRole = useCallback(async (targetAddress: string, role: RoleId): Promise<string | null> => {
     if (!address) throw new Error('Connect wallet');
@@ -172,7 +189,7 @@ export const useRoleManagement = () => {
     try {
       await fetch(buildUrl('/roles/revoke'), {
         method: 'POST',
-        headers: buildAdminHeaders(address),
+        headers: await signedHeaders(),
         body: JSON.stringify({ walletAddress: targetAddress.trim(), role: ROLE_CANONICAL_BY_ID[role], chain: 'base' }),
       });
       await syncRoles(targetAddress);
@@ -184,7 +201,7 @@ export const useRoleManagement = () => {
     } finally {
       setIsProcessing(false);
     }
-  }, [address, syncRoles]);
+  }, [address, syncRoles, signedHeaders]);
 
   return { grantRole, revokeRole, getUserRoles, syncRoles, isProcessing, error };
 };
