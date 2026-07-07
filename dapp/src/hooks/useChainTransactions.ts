@@ -34,7 +34,8 @@ export const useChainPlaceBet = () => {
     if (!contracts.amm) throw new Error('AMM address not configured');
     if (!contracts.usdc) throw new Error('USDC address not configured');
 
-    const amount = parseUnits(usdcAmount.toString(), 6);
+    // toFixed(6) avoids scientific-notation strings (e.g. "1e-7") that parseUnits rejects.
+    const amount = parseUnits(usdcAmount.toFixed(6), 6);
 
     const hash = await writeGasless({
       address: contracts.amm,
@@ -120,7 +121,8 @@ export const useChainAddLiquidity = () => {
     if (!contracts.amm) throw new Error('AMM address not configured');
     if (!contracts.usdc) throw new Error('USDC address not configured');
 
-    const amount = parseUnits(usdcAmount.toString(), 6);
+    // toFixed(6) avoids scientific-notation strings (e.g. "1e-7") that parseUnits rejects.
+    const amount = parseUnits(usdcAmount.toFixed(6), 6);
 
     const hash = await writeGasless({
       address: contracts.amm,

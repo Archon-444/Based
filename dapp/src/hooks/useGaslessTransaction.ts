@@ -19,7 +19,7 @@
 
 import { useCallback, useState } from 'react';
 import { useSendCalls } from 'wagmi';
-import { useAccount, useWriteContract } from 'wagmi';
+import { useAccount, useChainId, useSwitchChain, useWriteContract } from 'wagmi';
 import { readContract, waitForCallsStatus, waitForTransactionReceipt } from 'wagmi/actions';
 import { type Abi, encodeFunctionData, erc20Abi } from 'viem';
 import { env } from '../config/env';
@@ -53,6 +53,8 @@ export function useGaslessTransaction(): GaslessResult {
   const { connector, address } = useAccount();
   const { sendCallsAsync } = useSendCalls();
   const { writeContractAsync } = useWriteContract();
+  const activeChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
   const [isPending, setIsPending] = useState(false);
 
   // Coinbase Smart Wallet supports EIP-5792 capabilities
@@ -66,6 +68,16 @@ export function useGaslessTransaction(): GaslessResult {
     const shouldWait = params.waitForReceipt ?? true;
 
     try {
+      // Never sign a write against the wrong network. If the wallet is on another chain, ask it
+      // to switch to Base first; bail out with a clear error if it won't.
+      if (activeChainId !== env.baseChainId) {
+        try {
+          await switchChainAsync({ chainId: env.baseChainId });
+        } catch {
+          throw new Error(`Wrong network — please switch your wallet to chain ${env.baseChainId} (Base).`);
+        }
+      }
+
       // Determine whether an approval is required (allowance below the exact amount needed).
       let approvalNeeded = false;
       if (params.erc20Approval && address) {
@@ -105,6 +117,7 @@ export function useGaslessTransaction(): GaslessResult {
         });
 
         const result = await sendCallsAsync({
+          chainId: env.baseChainId,
           calls,
           capabilities: {
             paymasterService: { url: env.cdpPaymasterUrl },
@@ -129,6 +142,7 @@ export function useGaslessTransaction(): GaslessResult {
       // Fallback: EOA path (user pays gas). Approve first if needed, then the main call.
       if (approvalNeeded && params.erc20Approval) {
         const approveHash = await writeContractAsync({
+          chainId: env.baseChainId,
           address: params.erc20Approval.token,
           abi: erc20Abi,
           functionName: 'approve',
@@ -138,6 +152,7 @@ export function useGaslessTransaction(): GaslessResult {
       }
 
       const hash = await writeContractAsync({
+        chainId: env.baseChainId,
         address: params.address,
         abi: params.abi,
         functionName: params.functionName,
@@ -156,7 +171,7 @@ export function useGaslessTransaction(): GaslessResult {
     } finally {
       setIsPending(false);
     }
-  }, [isGaslessSupported, sendCallsAsync, writeContractAsync, address]);
+  }, [isGaslessSupported, sendCallsAsync, writeContractAsync, address, activeChainId, switchChainAsync]);
 
   return { writeGasless, isGaslessSupported, isPending };
 }
