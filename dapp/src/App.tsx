@@ -5,7 +5,6 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import { config } from './config/wagmi';
-import { SessionProvider } from './contexts/SessionContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -34,12 +33,10 @@ function lazyWithRetry(importFn: () => Promise<{ default: React.ComponentType }>
 // Lazy load mobile-specific components
 const PWAInstallPrompt = lazyWithRetry(() => import('./components/mobile/PWAInstallPrompt'));
 const NotificationPrompt = lazyWithRetry(() => import('./components/mobile/NotificationPrompt'));
-const BiometricPrompt = lazyWithRetry(() => import('./components/mobile/BiometricPrompt'));
 
 // Lazy load utility components
 const ServiceWorkerUpdate = lazyWithRetry(() => import('./components/ServiceWorkerUpdate'));
 const OfflineIndicator = lazyWithRetry(() => import('./components/OfflineIndicator'));
-const SessionTimeoutWarning = lazyWithRetry(() => import('./components/SessionTimeoutWarning'));
 
 // Lazy load pages
 const LandingPage = lazyWithRetry(() => import('./pages/LandingPage'));
@@ -102,54 +99,50 @@ function App() {
                 borderRadius: 'medium',
               })}
             >
-              <SessionProvider>
-                <Router>
-                  <ToastProvider />
-                  <Suspense fallback={null}>
-                    <OfflineIndicator />
-                    <ServiceWorkerUpdate />
-                    <SessionTimeoutWarning />
-                  </Suspense>
-                  <div className="min-h-screen flex flex-col bg-[#080B18] pb-16 md:pb-0">
-                    <OnboardingModal />
-                    <Header />
-                    <main className="flex-1">
-                      <Suspense fallback={<LoadingFallback />}>
-                        <AnimatePresence mode="wait">
-                          <Routes>
-                            <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
-                            <Route path="/markets" element={<PageTransition><MarketsPage /></PageTransition>} />
-                            <Route path="/market/:id" element={<PageTransition><MarketDetailPage /></PageTransition>} />
-                            <Route path="/create" element={<PageTransition><CreateMarketPage /></PageTransition>} />
-                            <Route path="/admin/suggestions" element={<PageTransition><AdminSuggestionsPage /></PageTransition>} />
-                            <Route path="/admin/roles" element={<PageTransition><AdminRolesPage /></PageTransition>} />
-                            <Route path="/admin/resolver" element={<PageTransition><AdminResolverPage /></PageTransition>} />
-                            <Route path="/dao" element={<PageTransition><DaoOverviewPage /></PageTransition>} />
-                            <Route path="/liquidity" element={<PageTransition><LiquidityPage /></PageTransition>} />
-                            <Route path="/color-test" element={<PageTransition><ColorTestPage /></PageTransition>} />
-                            <Route path="/tiki-demo" element={<PageTransition><TikiDemo /></PageTransition>} />
-                            <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
-                            <Route path="/leaderboard" element={<PageTransition><LeaderboardPage /></PageTransition>} />
-                            <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
-                            <Route path="/docs/developer" element={<PageTransition><DeveloperDocsPage /></PageTransition>} />
-                            <Route path="/faq" element={<PageTransition><FAQPage /></PageTransition>} />
-                            <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
-                            <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
-                            <Route path="/oracle" element={<PageTransition><OracleDashboardPage /></PageTransition>} />
-                          </Routes>
-                        </AnimatePresence>
-                      </Suspense>
-                    </main>
-                    <Footer />
-                    <MobileBottomNav />
-                    <Suspense fallback={null}>
-                      <PWAInstallPrompt />
-                      <NotificationPrompt />
-                      <BiometricPrompt />
+              <Router>
+                <ToastProvider />
+                <Suspense fallback={null}>
+                  <OfflineIndicator />
+                  <ServiceWorkerUpdate />
+                </Suspense>
+                <div className="min-h-screen flex flex-col bg-[#080B18] pb-16 md:pb-0">
+                  <OnboardingModal />
+                  <Header />
+                  <main className="flex-1">
+                    <Suspense fallback={<LoadingFallback />}>
+                      <AnimatePresence mode="wait">
+                        <Routes>
+                          <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
+                          <Route path="/markets" element={<PageTransition><MarketsPage /></PageTransition>} />
+                          <Route path="/market/:id" element={<PageTransition><MarketDetailPage /></PageTransition>} />
+                          <Route path="/create" element={<PageTransition><CreateMarketPage /></PageTransition>} />
+                          <Route path="/admin/suggestions" element={<PageTransition><AdminSuggestionsPage /></PageTransition>} />
+                          <Route path="/admin/roles" element={<PageTransition><AdminRolesPage /></PageTransition>} />
+                          <Route path="/admin/resolver" element={<PageTransition><AdminResolverPage /></PageTransition>} />
+                          <Route path="/dao" element={<PageTransition><DaoOverviewPage /></PageTransition>} />
+                          <Route path="/liquidity" element={<PageTransition><LiquidityPage /></PageTransition>} />
+                          <Route path="/color-test" element={<PageTransition><ColorTestPage /></PageTransition>} />
+                          <Route path="/tiki-demo" element={<PageTransition><TikiDemo /></PageTransition>} />
+                          <Route path="/dashboard" element={<PageTransition><DashboardPage /></PageTransition>} />
+                          <Route path="/leaderboard" element={<PageTransition><LeaderboardPage /></PageTransition>} />
+                          <Route path="/how-it-works" element={<PageTransition><HowItWorksPage /></PageTransition>} />
+                          <Route path="/docs/developer" element={<PageTransition><DeveloperDocsPage /></PageTransition>} />
+                          <Route path="/faq" element={<PageTransition><FAQPage /></PageTransition>} />
+                          <Route path="/privacy" element={<PageTransition><PrivacyPolicyPage /></PageTransition>} />
+                          <Route path="/terms" element={<PageTransition><TermsOfServicePage /></PageTransition>} />
+                          <Route path="/oracle" element={<PageTransition><OracleDashboardPage /></PageTransition>} />
+                        </Routes>
+                      </AnimatePresence>
                     </Suspense>
-                  </div>
-                </Router>
-              </SessionProvider>
+                  </main>
+                  <Footer />
+                  <MobileBottomNav />
+                  <Suspense fallback={null}>
+                    <PWAInstallPrompt />
+                    <NotificationPrompt />
+                  </Suspense>
+                </div>
+              </Router>
             </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
