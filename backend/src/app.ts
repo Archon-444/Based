@@ -76,6 +76,8 @@ app.use(
       'x-wallet-public-key',
       'x-wallet-timestamp',
       'x-wallet-nonce',
+      'x-wallet-domain',
+      'x-wallet-chain-id',
       'x-active-chain',
     ],
     maxAge: 86400, // 24 hours

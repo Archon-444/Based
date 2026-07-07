@@ -18,12 +18,34 @@ const API_BASE = env.apiUrl.replace(/\/$/, '');
 
 const buildUrl = (path: string) => `${API_BASE}${path.startsWith('/') ? path : `/${path}`}`;
 
-const SIGNING_PREFIX = 'Based::';
-
 const normalizeHex = (value: string): string => {
   if (!value) return value;
   return value.startsWith('0x') ? value.toLowerCase() : `0x${value.toLowerCase()}`;
 };
+
+/**
+ * Build the human-readable sign-in message (EIP-4361 / SIWE-style). Binding the domain, address,
+ * and chain into the signed payload means a signature obtained on a phishing site (which would
+ * carry that site's domain) can't be replayed against this API, and the user can see exactly what
+ * they are authorizing. The backend reconstructs this string verbatim from the request headers,
+ * so the format MUST stay byte-for-byte identical between the two.
+ */
+export const buildSignInMessage = (p: {
+  domain: string;
+  address: string;
+  chainId: string;
+  nonce: string;
+  issuedAt: string;
+}): string =>
+  [
+    'Based wants you to sign in with your wallet.',
+    '',
+    `Domain: ${p.domain}`,
+    `Address: ${p.address}`,
+    `Chain ID: ${p.chainId}`,
+    `Nonce: ${p.nonce}`,
+    `Issued At: ${p.issuedAt}`,
+  ].join('\n');
 
 const generateNonce = () => {
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -40,6 +62,7 @@ export interface WalletAuthContext {
   address: string;
   publicKey?: string;
   chain?: string;
+  chainId?: number;
   signMessage: (payload: {
     message: string;
     nonce: string;
@@ -56,7 +79,10 @@ export interface WalletAuthContext {
 async function buildAuthHeaders(auth: WalletAuthContext): Promise<Record<string, string>> {
   const nonce = generateNonce();
   const timestamp = Date.now().toString();
-  const message = `${SIGNING_PREFIX}${nonce}::${timestamp}`;
+  const address = normalizeHex(auth.address);
+  const domain = typeof window !== 'undefined' ? window.location.host : 'based';
+  const chainId = String(auth.chainId ?? env.baseChainId);
+  const message = buildSignInMessage({ domain, address, chainId, nonce, issuedAt: timestamp });
 
   const signed = await auth.signMessage({
     message,
@@ -75,12 +101,14 @@ async function buildAuthHeaders(auth: WalletAuthContext): Promise<Record<string,
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
-    'x-wallet-address': normalizeHex(auth.address),
+    'x-wallet-address': address,
     'x-wallet-public-key': normalizeHex(resolvedPublicKey),
     'x-wallet-signature': normalizeHex(signature),
     'x-wallet-message': message,
     'x-wallet-timestamp': timestamp,
     'x-wallet-nonce': nonce,
+    'x-wallet-domain': domain,
+    'x-wallet-chain-id': chainId,
   };
 
   if (auth.chain) {
