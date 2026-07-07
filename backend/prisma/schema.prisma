@@ -8,103 +8,129 @@ datasource db {
 }
 
 model Suggestion {
-  id                String              @id @default(uuid())
+  id                String            @id @default(uuid())
   question          String
-  category          String? 
+  category          String?
   outcomes          String[]
   durationHours     Int
   resolutionSource  String?
   proposer          String
   reviewer          String?
   reviewReason      String?
-  status            SuggestionStatus    @default(pending)
-  chain             Chain               @default(aptos)
-  upvotes           Int                 @default(0)
+  status            SuggestionStatus  @default(pending)
+  chain             Chain             @default(aptos)
+  upvotes           Int               @default(0)
   publishedMarketId String?
   publishedBy       String?
   publishedAt       DateTime?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
   approvedAt        DateTime?
   events            SuggestionEvent[]
+  votes             SuggestionVote[]
+}
+
+// One row per (suggestion, voter) — enforces one vote per wallet so upvotes can't be inflated.
+model SuggestionVote {
+  id           String     @id @default(uuid())
+  suggestionId String
+  suggestion   Suggestion @relation(fields: [suggestionId], references: [id])
+  voterWallet  String
+  value        Int        @default(0)
+  chain        Chain?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([suggestionId, voterWallet])
+  @@index([suggestionId])
+}
+
+// Single-use auth nonces, persisted so replay protection survives restarts and spans instances.
+model UsedNonce {
+  address   String
+  nonce     String
+  expiresAt DateTime
+
+  @@id([address, nonce])
+  @@index([expiresAt])
 }
 
 model SuggestionEvent {
-  id            String          @id @default(uuid())
-  suggestionId  String
-  suggestion    Suggestion      @relation(fields: [suggestionId], references: [id])
-  eventType     SuggestionEventType
-  actorWallet   String
-  metadata      Json?
-  timestamp     DateTime        @default(now())
+  id           String              @id @default(uuid())
+  suggestionId String
+  suggestion   Suggestion          @relation(fields: [suggestionId], references: [id])
+  eventType    SuggestionEventType
+  actorWallet  String
+  metadata     Json?
+  timestamp    DateTime            @default(now())
 
   @@index([suggestionId])
   @@index([timestamp])
 }
 
 model User {
-  walletAddress     String      @id
-  roles             String[]
-  onChainRolesSynced Boolean    @default(false)
-  lastRoleSync      DateTime?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  roleChanges       RoleChange[]
+  walletAddress      String       @id
+  roles              String[]
+  onChainRolesSynced Boolean      @default(false)
+  lastRoleSync       DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  roleChanges        RoleChange[]
 }
 
 model RoleChange {
-  id            String    @id @default(uuid())
-  walletAddress String
-  user          User      @relation(fields: [walletAddress], references: [walletAddress])
-  role          String
-  action        RoleAction
-  grantedBy     String
+  id              String     @id @default(uuid())
+  walletAddress   String
+  user            User       @relation(fields: [walletAddress], references: [walletAddress])
+  role            String
+  action          RoleAction
+  grantedBy       String
   transactionHash String?
-  chain         Chain?
-  timestamp     DateTime  @default(now())
+  chain           Chain?
+  timestamp       DateTime   @default(now())
 
   @@index([walletAddress])
   @@index([timestamp])
 }
 
 model Market {
-  id              String        @id @default(uuid())
-  onChainId       String
-  chain           Chain
-  question        String
-  category        String?
-  outcomes        String[]
-  creatorWallet   String?
-  endDate         DateTime?
-  status          MarketStatus  @default(active)
-  totalVolume     BigInt        @default(0)
-  liquidityParam  BigInt?
-  outcomePools    BigInt[]
-  resolvedOutcome Int?
-  createdAt       DateTime      @default(now())
-  resolvedAt      DateTime?
-  lastSyncedAt    DateTime?
-  transactionHash String?
-  suiMarketObjectId    String?
-  suiShardObjectIds    String[]  @default([])
-  suiQueueObjectId     String?
+  id                String            @id @default(uuid())
+  onChainId         String
+  chain             Chain
+  question          String
+  category          String?
+  outcomes          String[]
+  creatorWallet     String?
+  endDate           DateTime?
+  status            MarketStatus      @default(active)
+  totalVolume       BigInt            @default(0)
+  liquidityParam    BigInt?
+  outcomePools      BigInt[]
+  resolvedOutcome   Int?
+  createdAt         DateTime          @default(now())
+  resolvedAt        DateTime?
+  lastSyncedAt      DateTime?
+  transactionHash   String?
+  suiMarketObjectId String?
+  suiShardObjectIds String[]          @default([])
+  suiQueueObjectId  String?
   // Base chain fields
-  conditionId          String?            // Gnosis CTF condition ID (bytes32 hex)
-  questionId           String?            // bytes32 hex
-  txHash               String?            // creation tx hash
-  blockNumber          Int?
-  chainId              Int?               @default(8453)
-  ammAddress           String?
-  feeRate              Int?               // basis points from PoolInitialized
-  resolutionType       String?            // "uma" | "pyth" | "manual"
-  pythFeedId           String?
-  strikePrice          String?            // stored as string for precision
-  events               BlockchainEvent[]
-  trades               Trade[]
-  liquidityEvents      LiquidityEvent[]
-  umaAssertions        UmaAssertion[]
-  agentActions         AgentAction[]
-  agentCommentary      AgentCommentary[]
+  conditionId       String? // Gnosis CTF condition ID (bytes32 hex)
+  questionId        String? // bytes32 hex
+  txHash            String? // creation tx hash
+  blockNumber       Int?
+  chainId           Int?              @default(8453)
+  ammAddress        String?
+  feeRate           Int? // basis points from PoolInitialized
+  resolutionType    String? // "uma" | "pyth" | "manual"
+  pythFeedId        String?
+  strikePrice       String? // stored as string for precision
+  events            BlockchainEvent[]
+  trades            Trade[]
+  liquidityEvents   LiquidityEvent[]
+  umaAssertions     UmaAssertion[]
+  agentActions      AgentAction[]
+  agentCommentary   AgentCommentary[]
 
   @@unique([onChainId, chain])
   @@index([status])
@@ -112,21 +138,21 @@ model Market {
 }
 
 model LeaderboardEntry {
-  id            String             @id @default(uuid())
+  id            String            @id @default(uuid())
   walletAddress String
   displayName   String?
   metric        LeaderboardMetric
   period        LeaderboardPeriod
-  chain         Chain              @default(aptos)
+  chain         Chain             @default(aptos)
   rank          Int
-  value         Decimal            @default(0)
-  totalProfit   Decimal            @default(0)
-  totalVolume   Decimal            @default(0)
-  totalBets     Int                @default(0)
-  winRate       Float              @default(0)
-  badges        String[]           @default([])
+  value         Decimal           @default(0)
+  totalProfit   Decimal           @default(0)
+  totalVolume   Decimal           @default(0)
+  totalBets     Int               @default(0)
+  winRate       Float             @default(0)
+  badges        String[]          @default([])
   metadata      Json?
-  snapshotAt    DateTime           @default(now())
+  snapshotAt    DateTime          @default(now())
 
   @@index([metric, period, chain, rank])
   @@index([walletAddress, metric, period, chain])
@@ -145,21 +171,21 @@ model BlockchainEvent {
   blockHeight     BigInt?
   timestamp       DateTime?
 
+  @@unique([chain, transactionHash, sequenceNumber])
   @@index([chain, sequenceNumber])
   @@index([eventType])
   @@index([marketId])
-  @@unique([chain, transactionHash, sequenceNumber])
 }
 
 model IndexerState {
-  id                    String    @id @default(uuid())
-  chain                 Chain
-  contractAddress       String?
-  lastProcessedVersion  BigInt    @default(0)
+  id                     String    @id @default(uuid())
+  chain                  Chain
+  contractAddress        String?
+  lastProcessedVersion   BigInt    @default(0)
   lastProcessedTimestamp DateTime?
-  isRunning             Boolean   @default(false)
-  lastError             String?
-  updatedAt             DateTime  @updatedAt
+  isRunning              Boolean   @default(false)
+  lastError              String?
+  updatedAt              DateTime  @updatedAt
 
   @@unique([chain, contractAddress])
   @@index([chain])
@@ -292,35 +318,35 @@ enum AssertionStatus {
 }
 
 model AgentAction {
-  id            String    @id @default(uuid())
-  agent         String
-  marketId      String?
-  market        Market?   @relation(fields: [marketId], references: [id])
-  action        String
-  confidence    Int?
-  reasoning     String?
-  sources       String[]
-  inputTokens   Int       @default(0)
-  outputTokens  Int       @default(0)
-  costUsd       Float     @default(0)
-  txHash        String?
-  success       Boolean   @default(true)
-  error         String?
-  createdAt     DateTime  @default(now())
+  id           String   @id @default(uuid())
+  agent        String
+  marketId     String?
+  market       Market?  @relation(fields: [marketId], references: [id])
+  action       String
+  confidence   Int?
+  reasoning    String?
+  sources      String[]
+  inputTokens  Int      @default(0)
+  outputTokens Int      @default(0)
+  costUsd      Float    @default(0)
+  txHash       String?
+  success      Boolean  @default(true)
+  error        String?
+  createdAt    DateTime @default(now())
 
   @@index([agent, createdAt])
   @@index([marketId])
 }
 
 model AgentCommentary {
-  id          String    @id @default(uuid())
-  marketId    String
-  market      Market    @relation(fields: [marketId], references: [id])
-  headline    String
-  body        String
-  sentiment   String
-  keyFactors  String[]
-  createdAt   DateTime  @default(now())
+  id         String   @id @default(uuid())
+  marketId   String
+  market     Market   @relation(fields: [marketId], references: [id])
+  headline   String
+  body       String
+  sentiment  String
+  keyFactors String[]
+  createdAt  DateTime @default(now())
 
   @@index([marketId, createdAt])
 }
