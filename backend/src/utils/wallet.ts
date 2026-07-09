@@ -1,11 +1,10 @@
+import { Prisma } from '@prisma/client';
 import { verifyMessage } from 'viem';
 
 import { env } from '../config/env.js';
+import { prisma } from '../database/prismaClient.js';
 
 const SIGNING_PREFIX = 'Based::';
-const seenNonces = new Map<string, number>();
-const CLEANUP_INTERVAL = 60_000;
-let lastCleanup = Date.now();
 
 interface VerifyWalletSignatureParams {
   signature: string;
@@ -15,19 +14,6 @@ interface VerifyWalletSignatureParams {
   nonce: string;
   publicKey: string;
 }
-
-const cleanupExpiredNonces = () => {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) {
-    return;
-  }
-  for (const [key, timestamp] of seenNonces.entries()) {
-    if (now - timestamp > env.SIGNATURE_TTL_MS) {
-      seenNonces.delete(key);
-    }
-  }
-  lastCleanup = now;
-};
 
 export const verifyWalletSignature = async ({
   signature,
@@ -60,33 +46,54 @@ export const verifyWalletSignature = async ({
       return false;
     }
 
-    // Check for nonce replay
-    cleanupExpiredNonces();
-    const cacheKey = `${address}:${nonce}`;
-    if (seenNonces.has(cacheKey)) {
-      console.warn('[wallet.ts] Nonce replay detected:', cacheKey);
-      return false;
-    }
-
     // EVM signature verification (EIP-191 personal_sign)
+    let valid = false;
     try {
-      const valid = await verifyMessage({
+      valid = await verifyMessage({
         address: address as `0x${string}`,
         message,
         signature: signature as `0x${string}`,
       });
-
-      if (!valid) {
-        return false;
-      }
     } catch (error) {
       console.error('[wallet.ts] Signature verification failed:', error);
       return false;
     }
+    if (!valid) {
+      return false;
+    }
 
-    seenNonces.set(cacheKey, Date.now());
+    // Atomically consume the nonce. Persisted (not an in-memory Map) so replay protection survives
+    // restarts and spans horizontally-scaled instances; a unique-constraint violation on
+    // (address, nonce) means the nonce was already used → replay.
+    try {
+      await prisma.usedNonce.create({
+        data: {
+          address,
+          nonce,
+          expiresAt: new Date(timestamp + env.SIGNATURE_TTL_MS),
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        console.warn('[wallet.ts] Nonce replay detected:', `${address}:${nonce}`);
+        return false;
+      }
+      throw error;
+    }
+
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
+};
+
+/**
+ * Delete expired used-nonce rows. Housekeeping only — a replayed request with an expired timestamp
+ * is already rejected by the age check above; this just bounds table growth. Run periodically.
+ */
+export const cleanupExpiredNonces = async (): Promise<number> => {
+  const result = await prisma.usedNonce.deleteMany({
+    where: { expiresAt: { lt: new Date() } },
+  });
+  return result.count;
 };

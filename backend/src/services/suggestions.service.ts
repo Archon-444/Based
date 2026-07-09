@@ -166,23 +166,44 @@ export const suggestionService = {
     delta: number;
     voterChain?: 'aptos' | 'sui' | 'movement' | 'base';
   }) {
-    const suggestion = await prisma.suggestion.update({
-      where: { id: params.id },
-      data: {
-        upvotes: { increment: params.delta },
-      },
-    });
+    // `delta` is the voter's desired vote value (-1 | 0 | 1), not a blind increment. We record one
+    // vote per (suggestion, voter) and only apply the difference from their previous vote to the
+    // aggregate, so a wallet can't inflate `upvotes` by voting repeatedly.
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.suggestionVote.findUnique({
+        where: { suggestionId_voterWallet: { suggestionId: params.id, voterWallet: params.voter } },
+      });
+      const previous = existing?.value ?? 0;
+      const next = params.delta;
+      const adjustment = next - previous;
 
-    await prisma.suggestionEvent.create({
-      data: {
-        suggestionId: suggestion.id,
-        actorWallet: params.voter,
-        eventType: 'vote',
-        metadata: { delta: params.delta, chain: params.voterChain },
-      },
-    });
+      await tx.suggestionVote.upsert({
+        where: { suggestionId_voterWallet: { suggestionId: params.id, voterWallet: params.voter } },
+        update: { value: next, chain: params.voterChain },
+        create: {
+          suggestionId: params.id,
+          voterWallet: params.voter,
+          value: next,
+          chain: params.voterChain,
+        },
+      });
 
-    return suggestion;
+      const suggestion = await tx.suggestion.update({
+        where: { id: params.id },
+        data: adjustment === 0 ? {} : { upvotes: { increment: adjustment } },
+      });
+
+      await tx.suggestionEvent.create({
+        data: {
+          suggestionId: suggestion.id,
+          actorWallet: params.voter,
+          eventType: 'vote',
+          metadata: { value: next, previous, chain: params.voterChain },
+        },
+      });
+
+      return suggestion;
+    });
   },
 
   async listEvents(id: string) {
