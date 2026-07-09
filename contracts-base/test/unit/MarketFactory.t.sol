@@ -470,6 +470,95 @@ contract MarketFactoryTest is Test {
         assertEq(activeAfter.length, 0);
     }
 
+    // ──────────────────── cancelMarket refund + reachability (C8) ────────────────────
+
+    function test_cancelMarket_reportsEqualPayouts() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId);
+
+        factory.cancelMarket(marketId);
+
+        // Equal-weight payout reported so single-outcome holders can redeem pro-rata.
+        bytes32 conditionId = factory.getMarket(marketId).conditionId;
+        assertEq(ctf.payoutDenominator(conditionId), DEFAULT_OUTCOME_COUNT);
+    }
+
+    function test_cancelMarket_fromResolving() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId);
+        factory.beginResolution(marketId);
+
+        factory.cancelMarket(marketId);
+
+        assertEq(uint256(factory.getMarket(marketId).status), uint256(MarketFactory.MarketStatus.Cancelled));
+        bytes32[] memory active = factory.getActiveMarkets();
+        assertEq(active.length, 0);
+    }
+
+    function test_cancelMarket_fromDisputed() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId);
+        factory.beginResolution(marketId);
+        factory.disputeMarket(marketId);
+
+        factory.cancelMarket(marketId);
+
+        assertEq(uint256(factory.getMarket(marketId).status), uint256(MarketFactory.MarketStatus.Cancelled));
+    }
+
+    function test_cancelMarket_revertsFromResolved() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId);
+        factory.beginResolution(marketId);
+        factory.resolveMarket(marketId);
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MarketFactory.MarketNotInStatus.selector,
+                marketId,
+                MarketFactory.MarketStatus.Active,
+                MarketFactory.MarketStatus.Resolved
+            )
+        );
+        factory.cancelMarket(marketId);
+    }
+
+    // ──────────────────── reportPayoutsFor status guard (C6) ────────────────────
+
+    function test_reportPayoutsFor_revertsWhenNotResolving() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId); // Active, not Resolving
+
+        uint256[] memory payouts = new uint256[](2);
+        payouts[0] = 1;
+        payouts[1] = 0;
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                MarketFactory.MarketNotInStatus.selector,
+                marketId,
+                MarketFactory.MarketStatus.Resolving,
+                MarketFactory.MarketStatus.Active
+            )
+        );
+        factory.reportPayoutsFor(marketId, payouts);
+    }
+
+    function test_reportPayoutsFor_succeedsWhenResolving() public {
+        bytes32 marketId = _createDefaultMarket();
+        factory.activateMarket(marketId);
+        factory.beginResolution(marketId);
+
+        uint256[] memory payouts = new uint256[](2);
+        payouts[0] = 1;
+        payouts[1] = 0;
+
+        factory.reportPayoutsFor(marketId, payouts);
+
+        bytes32 conditionId = factory.getMarket(marketId).conditionId;
+        assertGt(ctf.payoutDenominator(conditionId), 0);
+    }
+
     function test_activateMarket_revertsWrongStatus() public {
         bytes32 marketId = _createDefaultMarket();
         factory.activateMarket(marketId);

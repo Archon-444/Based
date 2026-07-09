@@ -27,9 +27,17 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         bool resolved;
     }
 
+    // ──────────────────── Roles ────────────────────
+
+    bytes32 public constant RESOLVER_ROLE = keccak256("RESOLVER_ROLE");
+
     // ──────────────────── Constants ────────────────────
 
     uint256 public constant MAX_PRICE_AGE = 300;
+    uint256 public constant BPS = 10_000;
+    // Reject a resolution price whose Pyth confidence interval is wider than this fraction of the
+    // price (2%). A wide interval signals an unreliable print that shouldn't decide a market.
+    uint256 public constant MAX_CONF_BPS = 200;
 
     // ──────────────────── State ────────────────────
 
@@ -60,7 +68,9 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
     error MarketAlreadyRegistered(bytes32 marketId);
     error MarketAlreadyResolved(bytes32 marketId);
     error MarketNotRegistered(bytes32 marketId);
+    error MarketNotYetResolvable(uint256 deadline, uint256 currentTime);
     error OnlyBinaryMarkets(bytes32 marketId, uint256 outcomeCount);
+    error PriceConfidenceTooWide(uint64 conf, int256 price);
     error RefundFailed();
 
     // ──────────────────── Constructor ────────────────────
@@ -70,6 +80,7 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         factory = MarketFactory(_factory);
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(RESOLVER_ROLE, msg.sender);
     }
 
     // ──────────────────── External Functions ────────────────────
@@ -107,11 +118,25 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         emit MarketRegistered(marketId, feedId, strikePrice, uint8(resolutionType));
     }
 
-    function resolve(bytes32 marketId, bytes[] calldata pythUpdateData) external payable nonReentrant whenNotPaused {
+    function resolve(bytes32 marketId, bytes[] calldata pythUpdateData)
+        external
+        payable
+        nonReentrant
+        whenNotPaused
+        onlyRole(RESOLVER_ROLE)
+    {
         PythMarketConfig storage config = marketConfigs[marketId];
 
         if (!config.registered) revert MarketNotRegistered(marketId);
         if (config.resolved) revert MarketAlreadyResolved(marketId);
+
+        // Resolution must never happen before the market's deadline. Otherwise any
+        // outcome-token holder could call resolve() at a caller-chosen moment when the
+        // live spot price is on their side of the strike and drain their counterparties.
+        MarketFactory.Market memory market = factory.getMarket(marketId);
+        if (block.timestamp < market.deadline) {
+            revert MarketNotYetResolvable(market.deadline, block.timestamp);
+        }
 
         // Update Pyth price feeds
         uint256 fee = pyth.getUpdateFee(pythUpdateData);
@@ -121,6 +146,12 @@ contract PythOracleAdapter is AccessControl, ReentrancyGuard, Pausable {
         IPyth.Price memory priceData = pyth.getPriceNoOlderThan(config.feedId, MAX_PRICE_AGE);
         int256 price = int256(priceData.price);
         int32 expo = priceData.expo;
+
+        // Reject prints whose confidence interval is too wide relative to the price.
+        uint256 absPrice = price >= 0 ? uint256(price) : uint256(-price);
+        if (absPrice == 0 || uint256(priceData.conf) * BPS > MAX_CONF_BPS * absPrice) {
+            revert PriceConfidenceTooWide(priceData.conf, price);
+        }
 
         // Determine winning outcome based on resolution type
         uint256 winningOutcome;

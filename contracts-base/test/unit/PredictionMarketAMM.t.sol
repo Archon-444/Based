@@ -404,4 +404,39 @@ contract PredictionMarketAMMTest is Test, IERC1155Receiver {
         vm.expectRevert();
         amm.freezePool(marketId);
     }
+
+    // ──────────────────── withdrawBuybackFees (C4) ────────────────────
+
+    function test_withdrawBuybackFees_success() public {
+        _initDefaultPool();
+
+        amm.buy(marketId, 0, TRADE_AMOUNT, 0);
+
+        uint256 fees = amm.buybackFees();
+        assertGt(fees, 0, "Buyback fees should be > 0 after a trade");
+
+        uint256 usdcBefore = usdc.balanceOf(owner);
+        amm.withdrawBuybackFees();
+
+        assertEq(usdc.balanceOf(owner), usdcBefore + fees);
+        assertEq(amm.buybackFees(), 0);
+    }
+
+    function test_withdrawBuybackFees_revertsNonOwner() public {
+        _initDefaultPool();
+        vm.prank(trader);
+        vm.expectRevert();
+        amm.withdrawBuybackFees();
+    }
+
+    // ──────────────────── initializePool access control (C9) ────────────────────
+
+    function test_initializePool_revertsNonInitializer() public {
+        // trader is neither the market creator (owner) nor the AMM owner.
+        vm.prank(trader);
+        vm.expectRevert(
+            abi.encodeWithSelector(PredictionMarketAMM.NotMarketInitializer.selector, trader)
+        );
+        amm.initializePool(marketId, INIT_LIQUIDITY);
+    }
 }
