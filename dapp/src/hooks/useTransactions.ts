@@ -11,7 +11,7 @@ export const usePlaceBet = () => {
   const rateLimiterRef = useRef(new RateLimiter(5, 60000));
 
   const placeBet = useCallback(
-    async (marketId: string, outcome: number, amount: number): Promise<string | null> => {
+    async (marketId: string, outcome: number, amount: number, minTokensOut: bigint): Promise<string | null> => {
       if (!Number.isFinite(amount) || amount <= 0) {
         const err = new Error('Bet amount must be greater than zero');
         setError(err);
@@ -31,7 +31,7 @@ export const usePlaceBet = () => {
       const toastId = toast.loading('Placing bet on Base...');
 
       try {
-        const result = await chainPlaceBet(marketId, outcome, amount);
+        const result = await chainPlaceBet(marketId, outcome, amount, minTokensOut);
         toast.dismiss(toastId);
         toast.success('Bet placed successfully!');
         return result.hash;

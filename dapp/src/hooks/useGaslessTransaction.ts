@@ -8,13 +8,28 @@
  * - Coinbase Smart Wallet supports EIP-5792 wallet_sendCalls with paymasterService
  * - When cdpPaymasterUrl is configured and the wallet supports it, transactions are gasless
  * - For MetaMask/other wallets, falls back to normal (user pays gas)
+ *
+ * Safety:
+ * - Optional `erc20Approval` ensures the spender has an exact-amount allowance before the
+ *   call runs — batched atomically into the same EIP-5792 bundle for smart wallets, or sent
+ *   as a preceding transaction for EOAs. No unlimited (MaxUint256) approvals.
+ * - When `waitForReceipt` is set, the promise only resolves after the transaction is mined
+ *   successfully and REJECTS on revert, so callers never report success for a failed tx.
  */
 
 import { useCallback, useState } from 'react';
 import { useSendCalls } from 'wagmi';
-import { useAccount, useWriteContract } from 'wagmi';
-import { type Abi, encodeFunctionData } from 'viem';
+import { useAccount, useChainId, useSwitchChain, useWriteContract } from 'wagmi';
+import { readContract, waitForCallsStatus, waitForTransactionReceipt } from 'wagmi/actions';
+import { type Abi, encodeFunctionData, erc20Abi } from 'viem';
 import { env } from '../config/env';
+import { config } from '../config/wagmi';
+
+interface Erc20Approval {
+  token: `0x${string}`;
+  spender: `0x${string}`;
+  amount: bigint;
+}
 
 interface GaslessWriteParams {
   address: `0x${string}`;
@@ -22,6 +37,10 @@ interface GaslessWriteParams {
   functionName: string;
   args: readonly unknown[];
   value?: bigint;
+  /** Ensure `spender` can pull exactly `amount` of `token` before the call executes. */
+  erc20Approval?: Erc20Approval;
+  /** Block until the tx is mined; reject on revert. Defaults to true. */
+  waitForReceipt?: boolean;
 }
 
 interface GaslessResult {
@@ -31,9 +50,11 @@ interface GaslessResult {
 }
 
 export function useGaslessTransaction(): GaslessResult {
-  const { connector } = useAccount();
+  const { connector, address } = useAccount();
   const { sendCallsAsync } = useSendCalls();
   const { writeContractAsync } = useWriteContract();
+  const activeChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
   const [isPending, setIsPending] = useState(false);
 
   // Coinbase Smart Wallet supports EIP-5792 capabilities
@@ -44,34 +65,94 @@ export function useGaslessTransaction(): GaslessResult {
   const writeGasless = useCallback(async (params: GaslessWriteParams): Promise<string> => {
     setIsPending(true);
 
+    const shouldWait = params.waitForReceipt ?? true;
+
     try {
+      // Never sign a write against the wrong network. If the wallet is on another chain, ask it
+      // to switch to Base first; bail out with a clear error if it won't.
+      if (activeChainId !== env.baseChainId) {
+        try {
+          await switchChainAsync({ chainId: env.baseChainId });
+        } catch {
+          throw new Error(`Wrong network — please switch your wallet to chain ${env.baseChainId} (Base).`);
+        }
+      }
+
+      // Determine whether an approval is required (allowance below the exact amount needed).
+      let approvalNeeded = false;
+      if (params.erc20Approval && address) {
+        const current = (await readContract(config, {
+          address: params.erc20Approval.token,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [address, params.erc20Approval.spender],
+        } as any)) as bigint;
+        approvalNeeded = current < params.erc20Approval.amount;
+      }
+
       if (isGaslessSupported) {
-        // Use EIP-5792 sendCalls with paymaster sponsorship
-        const data = encodeFunctionData({
-          abi: params.abi,
-          functionName: params.functionName,
-          args: params.args as any,
+        // Batch [approve?, main] atomically into one EIP-5792 bundle.
+        const calls: { to: `0x${string}`; data: `0x${string}`; value: bigint }[] = [];
+
+        if (approvalNeeded && params.erc20Approval) {
+          calls.push({
+            to: params.erc20Approval.token,
+            data: encodeFunctionData({
+              abi: erc20Abi,
+              functionName: 'approve',
+              args: [params.erc20Approval.spender, params.erc20Approval.amount],
+            }),
+            value: 0n,
+          });
+        }
+
+        calls.push({
+          to: params.address,
+          data: encodeFunctionData({
+            abi: params.abi,
+            functionName: params.functionName,
+            args: params.args as any,
+          }),
+          value: params.value ?? 0n,
         });
 
         const result = await sendCallsAsync({
-          calls: [{
-            to: params.address,
-            data,
-            value: params.value ?? 0n,
-          }],
+          chainId: env.baseChainId,
+          calls,
           capabilities: {
-            paymasterService: {
-              url: env.cdpPaymasterUrl,
-            },
+            paymasterService: { url: env.cdpPaymasterUrl },
           },
         } as any);
 
-        // sendCallsAsync returns { id: string } — the call bundle ID
-        return typeof result === 'string' ? result : (result as any).id ?? String(result);
+        // sendCallsAsync returns { id: string } — the call bundle ID.
+        const id = typeof result === 'string' ? result : (result as any).id ?? String(result);
+
+        if (shouldWait) {
+          // Reject unless the whole bundle confirms; surface the settled tx hash.
+          const settled = await waitForCallsStatus(config, { id });
+          if (settled.status !== 'success') {
+            throw new Error('Transaction bundle failed on-chain');
+          }
+          const txHash = settled.receipts?.[settled.receipts.length - 1]?.transactionHash;
+          return txHash ?? id;
+        }
+        return id;
       }
 
-      // Fallback: regular writeContract (user pays gas)
+      // Fallback: EOA path (user pays gas). Approve first if needed, then the main call.
+      if (approvalNeeded && params.erc20Approval) {
+        const approveHash = await writeContractAsync({
+          chainId: env.baseChainId,
+          address: params.erc20Approval.token,
+          abi: erc20Abi,
+          functionName: 'approve',
+          args: [params.erc20Approval.spender, params.erc20Approval.amount],
+        } as any);
+        await waitForTransactionReceipt(config, { hash: approveHash });
+      }
+
       const hash = await writeContractAsync({
+        chainId: env.baseChainId,
         address: params.address,
         abi: params.abi,
         functionName: params.functionName,
@@ -79,11 +160,18 @@ export function useGaslessTransaction(): GaslessResult {
         value: params.value,
       } as any);
 
+      if (shouldWait) {
+        const receipt = await waitForTransactionReceipt(config, { hash });
+        if (receipt.status === 'reverted') {
+          throw new Error('Transaction reverted on-chain');
+        }
+      }
+
       return hash;
     } finally {
       setIsPending(false);
     }
-  }, [isGaslessSupported, sendCallsAsync, writeContractAsync]);
+  }, [isGaslessSupported, sendCallsAsync, writeContractAsync, address, activeChainId, switchChainAsync]);
 
   return { writeGasless, isGaslessSupported, isPending };
 }

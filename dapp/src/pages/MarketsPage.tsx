@@ -17,6 +17,7 @@ import { useChain } from '../contexts/ChainContext';
 
 interface DisplayMarket {
   id: string;
+  onChainId?: string;
   question: string;
   category: MarketCategory;
   totalStakes: number;
