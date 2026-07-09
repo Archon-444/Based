@@ -15,7 +15,9 @@ const router = Router();
 
 // Apply authentication and role checks to all routes
 router.use(authenticateWallet);
-router.use(requireRole('admin')); // Require admin role for resolver management
+// Use the canonical role name — the DB/requireRole store 'ROLE_ADMIN', so the previous literal
+// 'admin' matched nothing and left these endpoints permanently unreachable (fail-closed but wrong).
+router.use(requireRole('ROLE_ADMIN'));
 
 /**
  * GET /resolver/status
@@ -112,10 +114,11 @@ router.post('/resolve/:marketId', async (req, res) => {
       data: result,
     });
   } catch (error) {
+    // Log the detail server-side; don't leak raw error/revert messages to the client.
     logger.error({ error, marketId: req.params.marketId }, 'Failed to resolve market');
     res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to resolve market',
+      error: 'Failed to resolve market',
     });
   }
 });

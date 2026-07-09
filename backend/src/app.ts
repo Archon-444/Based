@@ -50,8 +50,9 @@ const allowedOrigins = env.CORS_ORIGIN.split(',').map((item) => item.trim());
 function isOriginAllowed(origin: string): boolean {
   // Exact match against whitelist
   if (allowedOrigins.includes(origin)) return true;
-  // Allow all Vercel preview deployments for this project
-  if (/^https:\/\/based[a-z0-9-]*\.vercel\.app$/.test(origin)) return true;
+  // Allow this project's Vercel preview deployments only. Requiring the team suffix prevents an
+  // attacker from registering an arbitrary `based-evil.vercel.app` that the old pattern accepted.
+  if (/^https:\/\/based[a-z0-9-]*-archon-444s-projects\.vercel\.app$/.test(origin)) return true;
   return false;
 }
 
@@ -139,28 +140,31 @@ const globalLimiter = createRateLimiter(
 
 app.use(globalLimiter);
 
-// Swagger API Documentation
-// Disable CSP for Swagger UI (it uses inline scripts)
-app.use('/api-docs', (req, res, next) => {
-  res.removeHeader('Content-Security-Policy');
-  next();
-});
+// Swagger API Documentation — not served in production (publishes the full API surface with CSP
+// stripped). Enable outside production, or explicitly via ENABLE_API_DOCS=true.
+if (env.NODE_ENV !== 'production' || process.env.ENABLE_API_DOCS === 'true') {
+  // Disable CSP for Swagger UI (it uses inline scripts)
+  app.use('/api-docs', (req, res, next) => {
+    res.removeHeader('Content-Security-Policy');
+    next();
+  });
 
-app.use(
-  '/api-docs',
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Based API Docs',
-    customfavIcon: '/favicon.ico',
-  })
-);
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Based API Docs',
+      customfavIcon: '/favicon.ico',
+    })
+  );
 
-// OpenAPI JSON spec endpoint
-app.get('/api-docs.json', (_req, res) => {
-  res.setHeader('Content-Type', 'application/json');
-  res.send(swaggerSpec);
-});
+  // OpenAPI JSON spec endpoint
+  app.get('/api-docs.json', (_req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.send(swaggerSpec);
+  });
+}
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
