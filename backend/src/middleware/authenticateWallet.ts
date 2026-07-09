@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 
+import { env } from '../config/env.js';
 import { verifyWalletSignature } from '../utils/wallet.js';
 
 type SupportedChain = 'aptos' | 'sui' | 'movement' | 'base';
@@ -30,9 +31,11 @@ export const authenticateWallet = async (req: Request, res: Response, next: Next
   try {
     const chainHeader = normalizeChain(req.header('x-active-chain'));
 
-    // Check for dev-wallet bypass (only in development)
+    // Dev-wallet bypass: authenticates as an arbitrary address with NO signature.
+    // Gated behind an explicit opt-in flag so a deploy that merely forgets to set
+    // NODE_ENV=production can never expose it, and hard-blocked in production regardless.
     const devWallet = req.header('x-dev-wallet-address');
-    if (devWallet && process.env.NODE_ENV !== 'production') {
+    if (devWallet && env.ENABLE_DEV_AUTH === 'true' && env.NODE_ENV !== 'production') {
       req.wallet = { address: devWallet, chain: chainHeader };
       return next();
     }

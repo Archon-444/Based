@@ -15,6 +15,11 @@ import { router as apiRouter } from './routes/index.js';
 
 const app = express();
 
+// Trust the configured number of proxy hops (Render/Vercel terminate TLS in front of us) so
+// req.ip reflects the real client. Without this, req.ip collapses to the proxy address and the
+// global limiter buckets every user together — one client could lock everyone out.
+app.set('trust proxy', env.TRUST_PROXY_HOPS);
+
 // Strict security headers
 app.use(
   helmet({
