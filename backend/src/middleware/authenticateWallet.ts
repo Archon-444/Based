@@ -43,8 +43,19 @@ export const authenticateWallet = async (req: Request, res: Response, next: Next
     const timestamp = req.header('x-wallet-timestamp');
     const nonce = req.header('x-wallet-nonce');
     const publicKey = req.header('x-wallet-public-key');
+    const domain = req.header('x-wallet-domain');
+    const chainId = req.header('x-wallet-chain-id');
 
-    if (!signature || !message || !address || !timestamp || !nonce || !publicKey) {
+    if (
+      !signature ||
+      !message ||
+      !address ||
+      !timestamp ||
+      !nonce ||
+      !publicKey ||
+      !domain ||
+      !chainId
+    ) {
       return res.status(401).json({ error: 'Missing wallet authentication headers' });
     }
 
@@ -69,6 +80,8 @@ export const authenticateWallet = async (req: Request, res: Response, next: Next
       timestamp,
       nonce,
       publicKey,
+      domain,
+      chainId,
     });
     if (!isValid) {
       return res.status(401).json({ error: 'Invalid wallet signature' });
